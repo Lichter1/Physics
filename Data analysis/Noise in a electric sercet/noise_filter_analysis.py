@@ -29,7 +29,7 @@ def load_data(filepath):
     return np.array(data) if data else np.array([]).reshape(0, 2)
 
 
-def filter_white_noise(frequencies, amplitudes, method='iqr', threshold=3.0):
+def filter_white_noise(frequencies, amplitudes, method='iqr', threshold=3.0, neighbor_points=3):
     """
     Filter data to extract only white noise baseline.
 
@@ -43,6 +43,8 @@ def filter_white_noise(frequencies, amplitudes, method='iqr', threshold=3.0):
         Filtering method: 'iqr' (Interquartile Range) or 'mad' (Median Absolute Deviation)
     threshold : float
         Number of IQRs or MADs above median to consider as outlier
+    neighbor_points : int
+        Number of neighboring points to remove on each side of detected outliers (default: 3)
 
     Returns:
     --------
@@ -77,6 +79,24 @@ def filter_white_noise(frequencies, amplitudes, method='iqr', threshold=3.0):
     else:
         raise ValueError(f"Unknown method: {method}")
 
+    # Expand rejection to neighboring points
+    if neighbor_points > 0:
+        # Find indices of rejected points
+        rejected_indices = np.where(~mask)[0]
+
+        # Create a new mask to mark all points to be rejected
+        expanded_mask = mask.copy()
+
+        for idx in rejected_indices:
+            # Mark neighbors to the left
+            start = max(0, idx - neighbor_points)
+            # Mark neighbors to the right
+            end = min(len(mask), idx + neighbor_points + 1)
+            # Reject all points in this range
+            expanded_mask[start:end] = False
+
+        mask = expanded_mask
+
     return mask
 
 
@@ -95,6 +115,14 @@ def analyze_single_resistor(filepath, output_dir=".", show_plots=True):
     """
 
     filepath = Path(filepath)
+    output_dir = Path(output_dir)
+
+    # Create organized output directories
+    filtered_dir = output_dir / "output" / "filtered_plots"
+    distribution_dir = output_dir / "output" / "distribution_plots"
+    filtered_dir.mkdir(parents=True, exist_ok=True)
+    distribution_dir.mkdir(parents=True, exist_ok=True)
+
     print(f"\n{'='*70}")
     print(f"Analyzing: {filepath.name}")
     print(f"{'='*70}")
@@ -110,7 +138,8 @@ def analyze_single_resistor(filepath, output_dir=".", show_plots=True):
 
     # Apply filtering
     print("\nApplying IQR-based filtering to remove peaks...")
-    mask = filter_white_noise(frequencies, amplitudes, method='iqr', threshold=2.5)
+    print("Removing 3 neighboring points on each side of detected outliers...")
+    mask = filter_white_noise(frequencies, amplitudes, method='iqr', threshold=2.5, neighbor_points=3)
 
     # Separate filtered and rejected data
     freq_accepted = frequencies[mask]
@@ -150,94 +179,116 @@ def analyze_single_resistor(filepath, output_dir=".", show_plots=True):
     print(f"  Uncertainty range (±1σ): [{mu-sigma:.4f}, {mu+sigma:.4f}] dB")
     print(f"  Uncertainty range (±2σ): [{mu-2*sigma:.4f}, {mu+2*sigma:.4f}] dB")
 
-    # Create visualization with 3 subplots
-    fig = plt.figure(figsize=(16, 12))
-    gs = fig.add_gridspec(3, 2, hspace=0.3, wspace=0.3)
-
-    ax1 = fig.add_subplot(gs[0, :])  # Top: full spectrum
-    ax2 = fig.add_subplot(gs[1, :])  # Middle: zoomed view
-    ax3 = fig.add_subplot(gs[2, 0])  # Bottom left: histogram
-    ax4 = fig.add_subplot(gs[2, 1])  # Bottom right: Q-Q plot
+    # Create main plot with inset zoom
+    fig, ax = plt.subplots(figsize=(12, 6))
 
     # Plot 1: Filtered data visualization (full spectrum)
-    ax1.scatter(freq_rejected, amp_rejected, c='red', s=10, alpha=0.6,
+    ax.scatter(freq_rejected, amp_rejected, c='red', s=10, alpha=0.6,
                 label=f'Rejected ({len(freq_rejected)} pts)', marker='x')
-    ax1.scatter(freq_accepted, amp_accepted, c='green', s=5, alpha=0.4,
+    ax.scatter(freq_accepted, amp_accepted, c='green', s=5, alpha=0.4,
                 label=f'Accepted - White Noise ({len(freq_accepted)} pts)', marker='.')
 
-    ax1.set_xlabel('Frequency (Hz)', fontsize=12)
-    ax1.set_ylabel('Amplitude (dB)', fontsize=12)
-    ax1.set_title(f'White Noise Filtering - {filepath.stem}', fontsize=14, fontweight='bold')
-    ax1.legend(loc='upper right', fontsize=10)
-    ax1.grid(True, alpha=0.3)
-    ax1.set_xlim(0, frequencies[-1])
+    ax.set_xlabel('Frequency (Hz)', fontsize=12)
+    ax.set_ylabel('Amplitude (dB)', fontsize=12)
+    ax.set_title(f'White Noise Filtering - {filepath.stem}', fontsize=14, fontweight='bold')
+    ax.legend(loc='upper right', fontsize=10)
+    ax.grid(True, alpha=0.3)
+    ax.set_xlim(0, frequencies[-1])
 
-    # Plot 2: Zoomed view
+    # Add zoomed-in inset showing detail
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+    axins = inset_axes(ax, width="75%", height="55%", loc='lower left',
+                       bbox_to_anchor=(0.15, 0.30, 1, 1), bbox_transform=ax.transAxes)
+
+    # Calculate zoom region (middle portion of the frequency range)
     mid_freq = frequencies[len(frequencies)//2]
     freq_window = (frequencies[-1] - frequencies[0]) / 6
-    zoom_mask = (frequencies > mid_freq - freq_window/2) & (frequencies < mid_freq + freq_window/2)
+    zoom_mask_freq = (frequencies > mid_freq - freq_window/2) & (frequencies < mid_freq + freq_window/2)
 
-    zoom_accepted = mask & zoom_mask
-    zoom_rejected = (~mask) & zoom_mask
+    zoom_accepted = mask & zoom_mask_freq
+    zoom_rejected = (~mask) & zoom_mask_freq
 
-    ax2.scatter(frequencies[zoom_rejected], amplitudes[zoom_rejected],
+    # Plot the zoomed data in the inset
+    axins.scatter(frequencies[zoom_rejected], amplitudes[zoom_rejected],
                 c='red', s=20, alpha=0.6, label='Rejected', marker='x')
-    ax2.scatter(frequencies[zoom_accepted], amplitudes[zoom_accepted],
+    axins.scatter(frequencies[zoom_accepted], amplitudes[zoom_accepted],
                 c='green', s=15, alpha=0.5, label='White Noise', marker='.')
 
-    ax2.set_xlabel('Frequency (Hz)', fontsize=12)
-    ax2.set_ylabel('Amplitude (dB)', fontsize=12)
-    ax2.set_title(f'Zoomed View: {mid_freq-freq_window/2:.0f} - {mid_freq+freq_window/2:.0f} Hz',
-                  fontsize=12)
-    ax2.legend(loc='upper right', fontsize=10)
-    ax2.grid(True, alpha=0.3)
+    # Set zoom limits for inset
+    axins.set_xlim(mid_freq - freq_window/2, mid_freq + freq_window/2)
+    # Calculate appropriate y-limits for zoom region
+    zoom_data = amplitudes[zoom_mask_freq]
+    if len(zoom_data) > 0:
+        y_margin = (zoom_data.max() - zoom_data.min()) * 0.1
+        axins.set_ylim(zoom_data.min() - y_margin, zoom_data.max() + y_margin)
+    axins.grid(True, alpha=0.3)
+    axins.set_title(f'Zoomed View: {mid_freq-freq_window/2:.0f} - {mid_freq+freq_window/2:.0f} Hz',
+                    fontsize=10, fontweight='bold', pad=5)
+    axins.tick_params(labelsize=8)
 
-    # Plot 3: Histogram with Gaussian fit
+    # Add a rectangle in the main plot to show zoomed region
+    from matplotlib.patches import Rectangle
+    if len(zoom_data) > 0:
+        y_margin = (zoom_data.max() - zoom_data.min()) * 0.1
+        rect = Rectangle((mid_freq - freq_window/2, zoom_data.min() - y_margin),
+                        freq_window, zoom_data.max() - zoom_data.min() + 2*y_margin,
+                        linewidth=1.5, edgecolor='black',
+                        facecolor='none', linestyle='--', alpha=0.5)
+        ax.add_patch(rect)
+
+    # Adjust layout
+    fig.set_constrained_layout(False)
+    plt.subplots_adjust(right=0.95)
+
+    # Save main figure
+    output_path = filtered_dir / f"filtered_{filepath.stem}.png"
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    print(f"\nMain plot saved to: {output_path}")
+
+    # Create separate distribution plot
+    fig_dist, ax_dist = plt.subplots(figsize=(10, 6))
+
     n_bins = 40
-    counts, bins, patches = ax3.hist(amp_accepted, bins=n_bins, density=True,
-                                      alpha=0.7, color='green', edgecolor='black',
-                                      label='White Noise Data')
+    ax_dist.hist(amp_accepted, bins=n_bins, density=True,
+                 alpha=0.7, color='green', edgecolor='black',
+                 label='White Noise Data')
 
     # Plot fitted Gaussian
     x_range = np.linspace(amp_accepted.min(), amp_accepted.max(), 200)
     gaussian_fit = stats.norm.pdf(x_range, mu, sigma)
-    ax3.plot(x_range, gaussian_fit, 'r-', linewidth=2.5,
-             label=f'Gaussian Fit\nμ={mu:.3f} dB\nσ={sigma:.3f} dB')
+    ax_dist.plot(x_range, gaussian_fit, 'r-', linewidth=2.5,
+                 label=f'Gaussian Fit\nμ={mu:.3f} dB\nσ={sigma:.3f} dB')
 
     # Mark mean and ±1σ, ±2σ
-    ax3.axvline(mu, color='red', linestyle='--', linewidth=1.5, alpha=0.7, label='Mean (μ)')
-    ax3.axvline(mu - sigma, color='orange', linestyle=':', linewidth=1.5, alpha=0.7, label='±1σ')
-    ax3.axvline(mu + sigma, color='orange', linestyle=':', linewidth=1.5, alpha=0.7)
-    ax3.axvline(mu - 2*sigma, color='yellow', linestyle=':', linewidth=1, alpha=0.5, label='±2σ')
-    ax3.axvline(mu + 2*sigma, color='yellow', linestyle=':', linewidth=1, alpha=0.5)
+    ax_dist.axvline(mu, color='red', linestyle='--', linewidth=1.5, alpha=0.7, label='Mean (μ)')
+    ax_dist.axvline(mu - sigma, color='orange', linestyle=':', linewidth=1.5, alpha=0.7, label='±1σ')
+    ax_dist.axvline(mu + sigma, color='orange', linestyle=':', linewidth=1.5, alpha=0.7)
+    ax_dist.axvline(mu - 2*sigma, color='yellow', linestyle=':', linewidth=1, alpha=0.5, label='±2σ')
+    ax_dist.axvline(mu + 2*sigma, color='yellow', linestyle=':', linewidth=1, alpha=0.5)
 
-    ax3.set_xlabel('Amplitude (dB)', fontsize=12)
-    ax3.set_ylabel('Probability Density', fontsize=12)
-    ax3.set_title('Distribution of White Noise Values', fontsize=12, fontweight='bold')
-    ax3.legend(loc='upper right', fontsize=9)
-    ax3.grid(True, alpha=0.3)
+    ax_dist.set_xlabel('Amplitude (dB)', fontsize=12)
+    ax_dist.set_ylabel('Probability Density', fontsize=12)
+    ax_dist.set_title(f'Distribution of White Noise Values - {filepath.stem}', fontsize=12, fontweight='bold')
+    ax_dist.legend(loc='upper right', fontsize=9)
+    ax_dist.grid(True, alpha=0.3)
 
-    # Plot 4: Q-Q plot to verify normality
-    stats.probplot(amp_accepted, dist="norm", plot=ax4)
-    ax4.set_title('Q-Q Plot (Normality Check)', fontsize=12, fontweight='bold')
-    ax4.grid(True, alpha=0.3)
+    # Add Shapiro-Wilk test result
+    #_, p_value = stats.shapiro(amp_accepted)
+    #ax_dist.text(0.05, 0.95, f'Shapiro-Wilk test\np-value: {p_value:.4f}',
+    #             transform=ax_dist.transAxes, fontsize=10,
+     ##            verticalalignment='top',
+    #             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
 
-    # Add text annotation on Q-Q plot
-    _, p_value = stats.shapiro(amp_accepted)
-    ax4.text(0.05, 0.95, f'Shapiro-Wilk test\np-value: {p_value:.4f}',
-             transform=ax4.transAxes, fontsize=10,
-             verticalalignment='top',
-             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
-
-    # Save figure
-    output_path = Path(output_dir) / f"filtered_{filepath.stem}.png"
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"\nPlot saved to: {output_path}")
+    # Save distribution figure
+    dist_output_path = distribution_dir / f"distribution_{filepath.stem}.png"
+    plt.savefig(dist_output_path, dpi=300, bbox_inches='tight')
+    print(f"Distribution plot saved to: {dist_output_path}")
 
     if show_plots:
         plt.show()
     else:
-        plt.close()
+        plt.close(fig)
+        plt.close(fig_dist)
 
     # Return filtered data for further analysis
     return {
@@ -313,16 +364,23 @@ def analyze_all_resistors(data_folder="experiment 1 bandwidth 250Hz 14.6[C]",
 def main():
     import sys
 
-    if len(sys.argv) > 1 and sys.argv[1] == "--all":
+    # Get the directory where the script is located
+    script_dir = Path(__file__).parent
+    data_folder = script_dir / "experiment 1 bandwidth 250Hz 14.6[C]"
+
+    if True: #len(sys.argv) > 1 and sys.argv[1] == "--all":
         # Analyze all resistors
         results = analyze_all_resistors(
-            data_folder="experiment 1 bandwidth 250Hz 14.6[C]",
-            output_dir=".",
+            data_folder=data_folder,
+            output_dir=script_dir,
             show_plots=False
         )
 
         # Save results to file
-        with open("noise_analysis_results.txt", "w") as f:
+        results_dir = script_dir / "output" / "results"
+        results_dir.mkdir(parents=True, exist_ok=True)
+        results_file = results_dir / "noise_analysis_results.txt"
+        with open(results_file, "w") as f:
             f.write("White Noise Analysis Results\n")
             f.write("="*70 + "\n\n")
             f.write(f"{'Resistance':>12} | {'Mean V² (dB)':>14} | {'σ (dB)':>10} | {'±2σ (95% CI)':>12}\n")
@@ -332,25 +390,25 @@ def main():
                 r_label = f"{resistance:.0f} Ω" if resistance < 1000 else f"{resistance/1000:.1f} kΩ"
                 f.write(f"{r_label:>12} | {r['mu']:>14.4f} | {r['sigma']:>10.4f} | ±{2*r['sigma']:>11.4f}\n")
 
-        print("\nResults saved to: noise_analysis_results.txt")
+        print(f"\nResults saved to: {results_file}")
 
     else:
         # Test with 913 ohm resistor only
-        data_file = Path("experiment 1 bandwidth 250Hz 14.6[C]/913ohm ido.txt")
+        data_file = data_folder / "913ohm ido.txt"
 
         if not data_file.exists():
-            data_file = Path("experiment 1 bandwidth 250Hz 14.6[C]/913 ohm.txt")
+            data_file = data_folder / "913 ohm.txt"
 
         if not data_file.exists():
             print(f"Error: Could not find data file at {data_file}")
             print("\nSearching for 913 ohm files...")
-            for f in Path("experiment 1 bandwidth 250Hz 14.6[C]").glob("*913*"):
+            for f in data_folder.glob("*913*"):
                 print(f"  Found: {f}")
                 data_file = f
                 break
 
         if data_file.exists():
-            result = analyze_single_resistor(data_file, output_dir=".", show_plots=True)
+            result = analyze_single_resistor(data_file, output_dir=script_dir, show_plots=True)
 
             print(f"\n{'='*70}")
             print("ANALYSIS COMPLETE - FINAL RESULTS")
