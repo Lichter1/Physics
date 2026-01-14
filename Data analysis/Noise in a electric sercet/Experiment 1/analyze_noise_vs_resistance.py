@@ -18,7 +18,7 @@ WINDOW_CORRECTION_FACTOR = 1.30  # C_win for Hamming window
 SIGMA_MULTIPLIER = 2  # Set to 1 for 1σ (68% CI), 2 for 2σ (95% CI)
 
 # Physical parameters for Boltzmann constant calculation
-TEMPERATURE = 287.75  # K (room temperature)
+TEMPERATURE = 287.75 # K (room temperature)
 DELTA_F = 250  # Hz (bandwidth)
 BOLTZMANN_EXPECTED = 1.380649e-23  # J/K (known value)
 # =============================================================================

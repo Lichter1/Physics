@@ -159,7 +159,7 @@ def main():
         axins.plot(frequencies, amplitudes, color=color, alpha=0.7, linewidth=0.8)
 
     # Set zoom limits for inset (focus on noise floor region)
-    axins.set_xlim(0, 100000)
+    axins.set_xlim(0, 50000)
     axins.set_ylim(-105, -70)
     axins.grid(True, alpha=0.3)
     axins.set_title('Zoomed View: Noise Floor Detail', fontsize=10, fontweight='bold', pad=5)
@@ -167,7 +167,7 @@ def main():
 
     # Add a rectangle in the main plot to show zoomed region
     from matplotlib.patches import Rectangle
-    rect = Rectangle((0, -105), 100000, 35, linewidth=1.5, edgecolor='black',
+    rect = Rectangle((0, -105), 50000, 35, linewidth=1.5, edgecolor='black',
                      facecolor='none', linestyle='--', alpha=0.5)
     ax.add_patch(rect)
 

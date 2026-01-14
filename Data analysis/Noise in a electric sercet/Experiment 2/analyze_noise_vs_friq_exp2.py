@@ -28,8 +28,18 @@ WINDOW_CORRECTION_FACTOR = 1.30  # C_win for Hamming window
 SIGMA_MULTIPLIER = 2  # Set to 1 for 1σ (68% CI), 2 for 2σ (95% CI)
 
 # Physical parameters for Boltzmann constant calculation
-TEMPERATURE = 287.75  # K (14.6°C converted to Kelvin)
-RESISTANCE = 68300  # Ω (68.3 kΩ)
+TEMPERATURE = 333.15  # K (14.6°C converted to Kelvin)
+TEMPERATURE_ERR = 0.2  # K (uncertainty in temperature)
+
+# Resistance: R_total = R_resistor + R_0 (internal resistance from Experiment 1)
+R_RESISTOR = 68300  # Ω (68.3 kΩ nominal resistor)
+R_RESISTOR_ERR = 100  # Ω (resistor tolerance)
+R_0 = 419  # Ω (internal resistance from Experiment 1)
+R_0_ERR = 281  # Ω (uncertainty from Experiment 1, 1σ)
+# Total resistance with combined uncertainty (add in quadrature)
+RESISTANCE = R_RESISTOR + R_0  # 68719 Ω
+RESISTANCE_ERR = np.sqrt(R_RESISTOR_ERR**2 + R_0_ERR**2)  # ~299 Ω
+
 BOLTZMANN_EXPECTED = 1.380649e-23  # J/K (known value)
 # =============================================================================
 
@@ -143,7 +153,7 @@ def perform_weighted_linear_fit(x, y, sigma_y):
     return a, b, a_err, b_err, chi2, reduced_chi2
 
 
-def calculate_boltzmann_constant(a, a_err, T, R):
+def calculate_boltzmann_constant(a, a_err, T, T_err, R, R_err):
     """
     Calculate Boltzmann constant from slope of V² vs Δf fit.
 
@@ -158,8 +168,12 @@ def calculate_boltzmann_constant(a, a_err, T, R):
         Uncertainty in slope (1σ)
     T : float
         Temperature (K)
+    T_err : float
+        Uncertainty in temperature (1σ)
     R : float
         Resistance (Ω)
+    R_err : float
+        Uncertainty in resistance (1σ)
 
     Returns:
     --------
@@ -169,8 +183,12 @@ def calculate_boltzmann_constant(a, a_err, T, R):
         Uncertainty in k (1σ)
     """
     k = a / (4 * T * R)
-    # Error propagation: k_err/k = a_err/a (T and R are exact)
-    k_err = a_err / (4 * T * R)
+    # Error propagation: (Δk/k)² = (Δa/a)² + (ΔT/T)² + (ΔR/R)²
+    relative_err_a = a_err / a
+    relative_err_T = T_err / T if T_err > 0 else 0
+    relative_err_R = R_err / R if R_err > 0 else 0
+    relative_err_k = np.sqrt(relative_err_a**2 + relative_err_T**2 + relative_err_R**2)
+    k_err = k * relative_err_k
     return k, k_err
 
 
@@ -235,8 +253,11 @@ def main():
     print("="*60)
     print("EXPERIMENT 2 - FIXED PARAMETERS")
     print("="*60)
-    print(f"Temperature (T):  {TEMPERATURE} K ({TEMPERATURE - 273.15:.1f}°C)")
-    print(f"Resistance (R):   {RESISTANCE} Ω ({RESISTANCE/1000:.1f} kΩ)")
+    print(f"Temperature (T):  {TEMPERATURE} ± {TEMPERATURE_ERR} K ({TEMPERATURE - 273.15:.1f}°C)")
+    print(f"Resistance:")
+    print(f"  R_resistor:     {R_RESISTOR} ± {R_RESISTOR_ERR} Ω")
+    print(f"  R₀ (from Exp1): {R_0} ± {R_0_ERR} Ω")
+    print(f"  R_total:        {RESISTANCE} ± {RESISTANCE_ERR:.0f} Ω ({RESISTANCE/1000:.2f} kΩ)")
     print("Variable:         FFT Bandwidth (Δf)")
     print("="*60 + "\n")
 
@@ -294,7 +315,7 @@ def main():
     print("DERIVED PHYSICAL QUANTITIES")
     print("="*60)
 
-    k_measured, k_err_1sigma = calculate_boltzmann_constant(a, a_err, TEMPERATURE, RESISTANCE)
+    k_measured, k_err_1sigma = calculate_boltzmann_constant(a, a_err, TEMPERATURE, TEMPERATURE_ERR, RESISTANCE, RESISTANCE_ERR)
     k_err_reported = k_err_1sigma * SIGMA_MULTIPLIER
 
     print(f"\nBoltzmann constant (k):")
@@ -302,6 +323,11 @@ def main():
     print(f"  k = a / (4TR)")
     print(f"  Measured:  k = ({k_measured:.4e} ± {k_err_reported:.4e}) J/K  ({SIGMA_MULTIPLIER}σ)")
     print(f"  Expected:  k = {BOLTZMANN_EXPECTED:.4e} J/K")
+    print(f"\n  Error contributions (1σ):")
+    print(f"    From slope (Δa/a):       {100*a_err/a:.2f}%")
+    print(f"    From temperature (ΔT/T): {100*TEMPERATURE_ERR/TEMPERATURE:.2f}%")
+    print(f"    From resistance (ΔR/R):  {100*RESISTANCE_ERR/RESISTANCE:.2f}%")
+    print(f"    Combined (Δk/k):         {100*k_err_1sigma/k_measured:.2f}%")
 
     # Calculate relative error
     relative_error = abs(k_measured - BOLTZMANN_EXPECTED) / BOLTZMANN_EXPECTED * 100
@@ -347,7 +373,8 @@ def main():
         f'k_expected = {BOLTZMANN_EXPECTED:.2e} J/K',
         f'Relative error: {relative_error:.1f}%',
         '',
-        f'Fixed: R={RESISTANCE/1000:.1f}kΩ, T={TEMPERATURE:.1f}K',
+        f'Fixed: R={RESISTANCE/1000:.2f}±{RESISTANCE_ERR/1000:.2f}kΩ',
+        f'       T={TEMPERATURE:.2f}±{TEMPERATURE_ERR}K',
         f'Corrections: G={PREAMPLIFIER_GAIN}, C_win={WINDOW_CORRECTION_FACTOR}'
     ])
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.8)
@@ -357,7 +384,7 @@ def main():
     # Labels and formatting
     ax.set_xlabel('Bandwidth Δf (Hz)', fontsize=12, fontweight='bold')
     ax.set_ylabel('Noise Amplitude V²_corr (V²)', fontsize=12, fontweight='bold')
-    ax.set_title('White Noise Amplitude vs Bandwidth - Experiment 2\n(R=68.3kΩ, T=14.6°C)',
+    ax.set_title(f'White Noise Amplitude vs Bandwidth - Experiment 2\n(R={RESISTANCE/1000:.2f}kΩ, T=14.6°C)',
                  fontsize=13, fontweight='bold')
     ax.legend(fontsize=10, loc='lower right')
     ax.grid(True, alpha=0.3)
