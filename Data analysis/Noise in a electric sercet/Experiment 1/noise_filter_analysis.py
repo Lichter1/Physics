@@ -150,34 +150,37 @@ def analyze_single_resistor(filepath, output_dir=".", show_plots=True):
     print(f"Accepted points (white noise): {len(freq_accepted)} ({100*len(freq_accepted)/len(frequencies):.1f}%)")
     print(f"Rejected points (peaks): {len(freq_rejected)} ({100*len(freq_rejected)/len(frequencies):.1f}%)")
 
-    # Convert to linear scale for statistics
+    # Convert from dB to linear scale (power)
+    # dB values represent 10*log10(P), so P = 10^(dB/10)
     linear_accepted = 10 ** (amp_accepted / 10)
 
-    # Calculate statistics in dB scale (more meaningful for noise measurements)
-    mean_db = np.mean(amp_accepted)
-    std_db = np.std(amp_accepted)
-    median_db = np.median(amp_accepted)
-
-    # Also calculate in linear scale
+    # Calculate statistics in LINEAR scale (physically meaningful for thermal noise)
+    # Thermal noise voltage has Gaussian distribution, so power (V²) analysis should be in linear
     mean_linear = np.mean(linear_accepted)
     std_linear = np.std(linear_accepted)
+    median_linear = np.median(linear_accepted)
 
-    print(f"\nWhite Noise Statistics:")
-    print(f"  In dB scale:")
-    print(f"    Mean (μ): {mean_db:.4f} dB")
-    print(f"    Std Dev (σ): {std_db:.4f} dB")
+    # Also report dB equivalents for reference
+    mean_db = 10 * np.log10(mean_linear)
+    median_db = 10 * np.log10(median_linear)
+
+    print(f"\nWhite Noise Statistics (Linear Scale - Power):")
+    print(f"  Mean (μ): {mean_linear:.6e}")
+    print(f"  Std Dev (σ): {std_linear:.6e}")
+    print(f"  Median: {median_linear:.6e}")
+    print(f"  Coefficient of Variation (σ/μ): {std_linear/mean_linear:.4f}")
+    print(f"\n  dB equivalents (for reference):")
+    print(f"    Mean: {mean_db:.4f} dB")
     print(f"    Median: {median_db:.4f} dB")
-    print(f"  In linear scale (power):")
-    print(f"    Mean: {mean_linear:.6e}")
-    print(f"    Std Dev: {std_linear:.6e}")
 
-    # Fit Gaussian to the dB values
-    mu, sigma = stats.norm.fit(amp_accepted)
-    print(f"\nGaussian Fit (dB scale):")
-    print(f"  μ (mean): {mu:.4f} dB")
-    print(f"  σ (sigma): {sigma:.4f} dB")
-    print(f"  Uncertainty range (±1σ): [{mu-sigma:.4f}, {mu+sigma:.4f}] dB")
-    print(f"  Uncertainty range (±2σ): [{mu-2*sigma:.4f}, {mu+2*sigma:.4f}] dB")
+    # Fit Gaussian to the LINEAR power values (correct approach)
+    mu_linear, sigma_linear = stats.norm.fit(linear_accepted)
+    print(f"\nGaussian Fit (Linear Power Scale):")
+    print(f"  μ (mean): {mu_linear:.6e}")
+    print(f"  σ (sigma): {sigma_linear:.6e}")
+    print(f"  Uncertainty range (±1σ): [{mu_linear-sigma_linear:.6e}, {mu_linear+sigma_linear:.6e}]")
+    print(f"  Uncertainty range (±2σ): [{mu_linear-2*sigma_linear:.6e}, {mu_linear+2*sigma_linear:.6e}]")
+    print(f"  In dB: μ = {10*np.log10(mu_linear):.4f} dB")
 
     # Create main plot with inset zoom
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -245,39 +248,35 @@ def analyze_single_resistor(filepath, output_dir=".", show_plots=True):
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     print(f"\nMain plot saved to: {output_path}")
 
-    # Create separate distribution plot
+    # Create separate distribution plot - using LINEAR power values (correct for thermal noise)
     fig_dist, ax_dist = plt.subplots(figsize=(10, 6))
 
     n_bins = 40
-    ax_dist.hist(amp_accepted, bins=n_bins, density=True,
+    ax_dist.hist(linear_accepted, bins=n_bins, density=True,
                  alpha=0.7, color='green', edgecolor='black',
-                 label='White Noise Data')
+                 label='White Noise Data (Linear Power)')
 
-    # Plot fitted Gaussian
-    x_range = np.linspace(amp_accepted.min(), amp_accepted.max(), 200)
-    gaussian_fit = stats.norm.pdf(x_range, mu, sigma)
+    # Plot fitted Gaussian on linear values
+    x_range = np.linspace(linear_accepted.min(), linear_accepted.max(), 200)
+    gaussian_fit = stats.norm.pdf(x_range, mu_linear, sigma_linear)
     ax_dist.plot(x_range, gaussian_fit, 'r-', linewidth=2.5,
-                 label=f'Gaussian Fit\nμ={mu:.3f} dB\nσ={sigma:.3f} dB')
+                 label=f'Gaussian Fit\nμ={mu_linear:.3e}\nσ={sigma_linear:.3e}')
 
     # Mark mean and ±1σ, ±2σ
-    ax_dist.axvline(mu, color='red', linestyle='--', linewidth=1.5, alpha=0.7, label='Mean (μ)')
-    ax_dist.axvline(mu - sigma, color='orange', linestyle=':', linewidth=1.5, alpha=0.7, label='±1σ')
-    ax_dist.axvline(mu + sigma, color='orange', linestyle=':', linewidth=1.5, alpha=0.7)
-    ax_dist.axvline(mu - 2*sigma, color='yellow', linestyle=':', linewidth=1, alpha=0.5, label='±2σ')
-    ax_dist.axvline(mu + 2*sigma, color='yellow', linestyle=':', linewidth=1, alpha=0.5)
+    ax_dist.axvline(mu_linear, color='red', linestyle='--', linewidth=1.5, alpha=0.7, label='Mean (μ)')
+    ax_dist.axvline(mu_linear - sigma_linear, color='orange', linestyle=':', linewidth=1.5, alpha=0.7, label='±1σ')
+    ax_dist.axvline(mu_linear + sigma_linear, color='orange', linestyle=':', linewidth=1.5, alpha=0.7)
+    ax_dist.axvline(mu_linear - 2*sigma_linear, color='purple', linestyle=':', linewidth=1, alpha=0.7, label='±2σ')
+    ax_dist.axvline(mu_linear + 2*sigma_linear, color='purple', linestyle=':', linewidth=1, alpha=0.7)
 
-    ax_dist.set_xlabel('Amplitude (dB)', fontsize=12)
+    ax_dist.set_xlabel('V² [V]', fontsize=12)
     ax_dist.set_ylabel('Probability Density', fontsize=12)
-    ax_dist.set_title(f'Distribution of White Noise Values - {filepath.stem}', fontsize=12, fontweight='bold')
+    ax_dist.set_title(f'Distribution of White Noise Power  - {filepath.stem}', fontsize=12, fontweight='bold')
     ax_dist.legend(loc='upper right', fontsize=9)
     ax_dist.grid(True, alpha=0.3)
 
-    # Add Shapiro-Wilk test result
-    #_, p_value = stats.shapiro(amp_accepted)
-    #ax_dist.text(0.05, 0.95, f'Shapiro-Wilk test\np-value: {p_value:.4f}',
-    #             transform=ax_dist.transAxes, fontsize=10,
-     ##            verticalalignment='top',
-    #             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    # Use scientific notation for x-axis
+    ax_dist.ticklabel_format(axis='x', style='scientific', scilimits=(0,0))
 
     # Save distribution figure
     dist_output_path = distribution_dir / f"distribution_{filepath.stem}.png"
@@ -298,9 +297,9 @@ def analyze_single_resistor(filepath, output_dir=".", show_plots=True):
         'mask': mask,
         'rejection_rate': 100 * len(freq_rejected) / len(frequencies),
         'mean_db': mean_db,
-        'std_db': std_db,
-        'mu': mu,
-        'sigma': sigma,
+        'median_db': median_db,
+        'mu_linear': mu_linear,         # Gaussian fit mean (linear power)
+        'sigma_linear': sigma_linear,   # Gaussian fit std dev (linear power)
         'mean_linear': mean_linear,
         'std_linear': std_linear
     }
@@ -345,16 +344,16 @@ def analyze_all_resistors(data_folder="experiment 1 bandwidth 250Hz 14.6[C]",
             results[resistance] = result
 
     # Create summary table
-    print("\n" + "="*70)
-    print("SUMMARY TABLE - ALL RESISTORS")
-    print("="*70)
-    print(f"{'Resistance':>12} | {'Mean V² (dB)':>14} | {'σ (dB)':>10} | {'Mean Power':>14} | {'Points':>7}")
-    print("-" * 70)
+    print("\n" + "="*85)
+    print("SUMMARY TABLE - ALL RESISTORS (Linear Power Scale)")
+    print("="*85)
+    print(f"{'Resistance':>12} | {'μ (Linear)':>14} | {'σ (Linear)':>14} | {'Mean (dB)':>12} | {'Points':>7}")
+    print("-" * 85)
 
     for resistance in sorted(results.keys()):
         r = results[resistance]
         r_label = f"{resistance:.0f} Ω" if resistance < 1000 else f"{resistance/1000:.1f} kΩ"
-        print(f"{r_label:>12} | {r['mu']:>14.4f} | {r['sigma']:>10.4f} | {r['mean_linear']:>14.6e} | {len(r['frequencies']):>7}")
+        print(f"{r_label:>12} | {r['mu_linear']:>14.6e} | {r['sigma_linear']:>14.6e} | {r['mean_db']:>12.4f} | {len(r['frequencies']):>7}")
 
     print("="*70)
 
@@ -381,14 +380,16 @@ def main():
         results_dir.mkdir(parents=True, exist_ok=True)
         results_file = results_dir / "noise_analysis_results.txt"
         with open(results_file, "w") as f:
-            f.write("White Noise Analysis Results\n")
-            f.write("="*70 + "\n\n")
-            f.write(f"{'Resistance':>12} | {'Mean V² (dB)':>14} | {'σ (dB)':>10} | {'±2σ (95% CI)':>12}\n")
-            f.write("-" * 70 + "\n")
+            f.write("White Noise Analysis Results (Linear Power Scale)\n")
+            f.write("="*90 + "\n\n")
+            f.write("Gaussian fit performed on LINEAR power values (correct for thermal noise analysis)\n")
+            f.write("Power = 10^(dB/10)\n\n")
+            f.write(f"{'Resistance':>12} | {'μ (Linear)':>14} | {'σ (Linear)':>14} | {'Mean (dB)':>12}\n")
+            f.write("-" * 90 + "\n")
             for resistance in sorted(results.keys()):
                 r = results[resistance]
                 r_label = f"{resistance:.0f} Ω" if resistance < 1000 else f"{resistance/1000:.1f} kΩ"
-                f.write(f"{r_label:>12} | {r['mu']:>14.4f} | {r['sigma']:>10.4f} | ±{2*r['sigma']:>11.4f}\n")
+                f.write(f"{r_label:>12} | {r['mu_linear']:>14.6e} | {r['sigma_linear']:>14.6e} | {r['mean_db']:>12.4f}\n")
 
         print(f"\nResults saved to: {results_file}")
 
@@ -411,16 +412,17 @@ def main():
             result = analyze_single_resistor(data_file, output_dir=script_dir, show_plots=True)
 
             print(f"\n{'='*70}")
-            print("ANALYSIS COMPLETE - FINAL RESULTS")
+            print("ANALYSIS COMPLETE - FINAL RESULTS (Linear Power Scale)")
             print(f"{'='*70}")
             print(f"Rejection rate: {result['rejection_rate']:.1f}%")
             print(f"White noise points retained: {len(result['frequencies'])}")
-            print(f"\nWhite Noise Value:")
-            print(f"  V² = {result['mu']:.4f} ± {result['sigma']:.4f} dB  (±1σ)")
-            print(f"  V² = {result['mu']:.4f} ± {2*result['sigma']:.4f} dB  (±2σ, 95% confidence)")
-            print(f"\nIn linear scale:")
-            print(f"  Mean power: {result['mean_linear']:.6e}")
-            print(f"  Std Dev: {result['std_linear']:.6e}")
+            print(f"\nGaussian Fit (Linear Power):")
+            print(f"  μ = {result['mu_linear']:.6e}")
+            print(f"  σ = {result['sigma_linear']:.6e}")
+            print(f"  Uncertainty (±1σ): [{result['mu_linear']-result['sigma_linear']:.6e}, {result['mu_linear']+result['sigma_linear']:.6e}]")
+            print(f"  Uncertainty (±2σ): [{result['mu_linear']-2*result['sigma_linear']:.6e}, {result['mu_linear']+2*result['sigma_linear']:.6e}]")
+            print(f"\nIn dB (for reference):")
+            print(f"  Mean: {result['mean_db']:.4f} dB")
             print(f"{'='*70}")
             print(f"\nTo analyze all resistors, run: python3 {sys.argv[0]} --all")
 

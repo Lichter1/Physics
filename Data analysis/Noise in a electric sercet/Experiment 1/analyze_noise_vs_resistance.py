@@ -52,10 +52,18 @@ def apply_corrections(v2_meas, gain, c_win):
     return v2_meas / (gain**2 * c_win)
 
 def parse_results_file(filepath):
-    """Parse the noise analysis results file"""
+    """
+    Parse the noise analysis results file.
+
+    New format (linear power scale):
+    Resistance | μ (Linear) | σ (Linear) | Mean (dB)
+
+    Returns linear power values directly (no dB conversion needed).
+    """
     resistances = []
-    v2_db_mean = []
-    v2_db_sigma = []
+    mu_linear = []
+    sigma_linear = []
+    mean_db = []
 
     with open(filepath, 'r') as f:
         lines = f.readlines()
@@ -72,17 +80,21 @@ def parse_results_file(filepath):
             else:
                 resistance = float(resistance_str)
 
-            # Extract mean V² (dB)
-            mean_db = float(parts[1].strip())
+            # Extract μ (linear power) - Gaussian fit mean
+            mu = float(parts[1].strip())
 
-            # Extract σ (dB)
-            sigma_db = float(parts[2].strip())
+            # Extract σ (linear power) - Gaussian fit sigma
+            sigma = float(parts[2].strip())
+
+            # Extract mean dB (for reference)
+            db_val = float(parts[3].strip())
 
             resistances.append(resistance)
-            v2_db_mean.append(mean_db)
-            v2_db_sigma.append(sigma_db)
+            mu_linear.append(mu)
+            sigma_linear.append(sigma)
+            mean_db.append(db_val)
 
-    return np.array(resistances), np.array(v2_db_mean), np.array(v2_db_sigma)
+    return np.array(resistances), np.array(mu_linear), np.array(sigma_linear), np.array(mean_db)
 
 def propagate_db_uncertainty_to_linear(v2_db, sigma_db, gain, c_win):
     """
@@ -252,17 +264,23 @@ def main():
     print(f"Uncertainty multiplier:          {SIGMA_MULTIPLIER}σ ({confidence_level}% CI)")
     print("="*60 + "\n")
 
-    # Parse data
+    # Parse data (now in linear power scale from Gaussian fit)
     print("Parsing data from results file...")
-    resistances, v2_db_mean, v2_db_sigma = parse_results_file(results_file)
+    resistances, v2_linear, v2_sigma_linear, v2_db_ref = parse_results_file(results_file)
 
-    # Convert to linear scale (V²) and apply corrections
-    print("Converting from dB to V² and applying corrections...")
-    print("  Step 1: Convert dB → V²_meas")
-    print("  Step 2: Apply correction: V²_corr = V²_meas / (G² · C_win)")
-    v2_corr, v2_sigma_corr = propagate_db_uncertainty_to_linear(
-        v2_db_mean, v2_db_sigma, PREAMPLIFIER_GAIN, WINDOW_CORRECTION_FACTOR
-    )
+    print(f"\nData from Gaussian fit (Linear Power Scale):")
+    print(f"  Resistances (Ω): {resistances}")
+    print(f"  μ (linear):      {v2_linear}")
+    print(f"  σ (linear):      {v2_sigma_linear}")
+    print(f"  Mean (dB ref):   {v2_db_ref}")
+
+    # Apply preamplifier gain and window corrections to linear values
+    print("\nApplying corrections to linear power values...")
+    print(f"  V²_corr = V²_meas / (G² · C_win)")
+    print(f"  Correction factor: {PREAMPLIFIER_GAIN**2 * WINDOW_CORRECTION_FACTOR:.2f}")
+
+    v2_corr = apply_corrections(v2_linear, PREAMPLIFIER_GAIN, WINDOW_CORRECTION_FACTOR)
+    v2_sigma_corr = v2_sigma_linear / (PREAMPLIFIER_GAIN**2 * WINDOW_CORRECTION_FACTOR)
 
     print(f"\nData Summary (Corrected Values):")
     print(f"Resistances (Ω): {resistances}")
@@ -306,7 +324,7 @@ def main():
     print(f"  Relative error: {relative_error:.2f}%")
 
     # Perform t-test for Boltzmann constant
-    t_k, agreement_k = perform_t_test(k_measured, 2*k_err_1sigma, BOLTZMANN_EXPECTED)
+    t_k, agreement_k = perform_t_test(k_measured, k_err_1sigma, BOLTZMANN_EXPECTED)
     print(f"  t-statistic: {t_k:.2f}")
     print(f"  Agreement: {agreement_k}")
 
@@ -320,12 +338,12 @@ def main():
     print("="*60)
 
     # Create figure
-    fig, ax = plt.subplots(figsize=(10, 7))
+    fig, ax = plt.subplots(figsize=(11, 6))
 
     # Plot data with error bars (using multiplied uncertainties)
     ax.errorbar(resistances, v2_corr, yerr=v2_sigma_corr * SIGMA_MULTIPLIER,
                 fmt='o', markersize=8, capsize=5, capthick=2,
-                label=f'Measured data (±{SIGMA_MULTIPLIER}σ)', color='blue', ecolor='blue', alpha=0.7)
+                label=f'Measured data)', color='blue', ecolor='blue', alpha=0.7)
 
     # Plot fit line
     x_fit = np.linspace(0, max(resistances) * 1.1, 100)
@@ -335,13 +353,13 @@ def main():
 
     # Add text box with fit parameters
     textstr = '\n'.join([
-        f'Fit Results (±{SIGMA_MULTIPLIER}σ):',
-        f'a = ({a:.4e} ± {a_err_reported:.4e}) V²/Ω',
-        f'b = ({b:.4e} ± {b_err_reported:.4e}) V²',
+        f'Fit Results):',
+        f'a = ({a:.2e} ± {a_err_reported:.2e}) V²/Ω',
+        f'b = ({b:.2e} ± {b_err_reported:.2e}) V²',
         f'χ²/dof = {reduced_chi2:.4f}',
         '',
         'Derived Quantities:',
-        f'k = ({k_measured:.3e} ± {k_err_reported:.3e}) J/K',
+        f'k = ({k_measured:.2e} ± {k_err_reported:.2e}) J/K',
         f'R₀ = ({R0:.1f} ± {R0_err_reported:.1f}) Ω',
         '',
         f'Corrections: G={PREAMPLIFIER_GAIN}, C_win={WINDOW_CORRECTION_FACTOR}'

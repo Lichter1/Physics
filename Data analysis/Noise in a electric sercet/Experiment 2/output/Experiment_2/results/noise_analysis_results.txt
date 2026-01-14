@@ -1,0 +1,16 @@
+White Noise Analysis Results - Experiment 2 (Linear Power Scale)
+Fixed: R = 68.3 kΩ, T = 14.6°C
+Variable: FFT Bandwidth
+==========================================================================================
+
+Gaussian fit performed on LINEAR power values (correct for thermal noise analysis)
+Power = 10^(dB/10)
+
+   Bandwidth |     μ (Linear) |     σ (Linear) |    Mean (dB)
+------------------------------------------------------------------------------------------
+     7.81 Hz |   1.424707e-10 |   9.449969e-12 |     -98.4627
+     15.6 Hz |   2.773242e-10 |   1.371750e-11 |     -95.5701
+     31.2 Hz |   5.377811e-10 |   1.652841e-11 |     -92.6939
+     62.5 Hz |   1.059687e-09 |   3.277631e-11 |     -89.7482
+    125.0 Hz |   2.099394e-09 |   6.839817e-11 |     -86.7791
+    250.0 Hz |   4.209505e-09 |   1.666370e-10 |     -83.7577
