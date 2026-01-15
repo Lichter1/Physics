@@ -1,0 +1,19 @@
+White Noise Analysis Results - Experiment 3 (Linear Power Scale)
+Fixed: R = 1 kΩ, Δf = 250 Hz
+Variable: Temperature
+==========================================================================================
+
+Analysis frequency ranges (clean regions):
+  Range 1: 2500 - 14000 Hz
+  Range 2: 95000 - 100000 Hz
+
+Gaussian fit performed on LINEAR power values (correct for thermal noise analysis)
+Power = 10^(dB/10)
+
+ Temperature |     μ (Linear) |     σ (Linear) |    Mean (dB)
+------------------------------------------------------------------------------------------
+     18.2 °C |   1.542786e-10 |   7.012304e-12 |     -98.1169
+     25.0 °C |   1.532982e-10 |   8.201687e-12 |     -98.1446
+     50.2 °C |   1.545555e-10 |   6.429605e-12 |     -98.1092
+     75.5 °C |   1.486846e-10 |   8.633453e-12 |     -98.2773
+    100.3 °C |   1.492306e-10 |   1.375837e-11 |     -98.2614
