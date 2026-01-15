@@ -155,7 +155,7 @@ def analyze_single_temperature(filepath, output_dir=".", show_plots=True):
     # Define allowed frequency ranges (clean regions without external interference)
     # Range 1: 2500 - 14000 Hz
     # Range 2: 95000 - 100000 Hz
-    FREQ_RANGE_1 = (2000, 14500)
+    FREQ_RANGE_1 = (2000, 2001)
     FREQ_RANGE_2 = (91000, 100000)
 
     # Create mask for allowed frequency ranges
@@ -253,8 +253,8 @@ def analyze_single_temperature(filepath, output_dir=".", show_plots=True):
                        bbox_to_anchor=(0.15, 0.30, 1, 1), bbox_transform=ax.transAxes)
 
     # Focus zoom on the first allowed region (2500-14000 Hz)
-    zoom_freq_min = FREQ_RANGE_1[0]
-    zoom_freq_max = FREQ_RANGE_1[1]
+    zoom_freq_min = FREQ_RANGE_2[0]
+    zoom_freq_max = FREQ_RANGE_2[1]
     zoom_mask_freq = (frequencies >= zoom_freq_min) & (frequencies <= zoom_freq_max)
 
     zoom_accepted = mask & zoom_mask_freq

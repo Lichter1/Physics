@@ -153,16 +153,18 @@ def main():
         axins.plot(frequencies, amplitudes, color=color, alpha=0.7, linewidth=0.8)
 
     # Set zoom limits for inset (focus on noise floor region)
-    axins.set_xlim(0, 20000)
+    axins.set_xlim(80000, 100000)  # 80 kHz to 100 kHz
     axins.set_ylim(-105, -70)
     axins.grid(True, alpha=0.3)
     axins.set_title('Zoomed View: Noise Floor Detail', fontsize=10, fontweight='bold', pad=5)
     axins.tick_params(labelsize=8)
 
-    # Add a rectangle in the main plot to show zoomed region
+    # Add a rectangle in the main plot to show zoomed region (matches inset zoom limits)
     from matplotlib.patches import Rectangle
-    rect = Rectangle((0, -105), 20000, 35, linewidth=1.5, edgecolor='black',
-                     facecolor='none', linestyle='--', alpha=0.5)
+    zoom_x_min, zoom_x_max = 80000, 100000  # Same as axins.set_xlim
+    zoom_y_min, zoom_y_max = -105, -70      # Same as axins.set_ylim
+    rect = Rectangle((zoom_x_min, zoom_y_min), zoom_x_max - zoom_x_min, zoom_y_max - zoom_y_min,
+                     linewidth=1.5, edgecolor='black', facecolor='none', linestyle='--', alpha=0.5)
     ax.add_patch(rect)
 
     # Add colorbar to show temperature gradient (linear scale)

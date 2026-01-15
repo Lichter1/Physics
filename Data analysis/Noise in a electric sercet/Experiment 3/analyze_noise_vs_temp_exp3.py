@@ -371,7 +371,7 @@ def main():
 
     # Add text box with fit parameters
     textstr = '\n'.join([
-        f'Fit Results ({SIGMA_MULTIPLIER}σ):',
+        f'Fit Results):',
         f'a = ({a:.2e} ± {a_err_reported:.2e}) V²/K',
         f'b = ({b:.2e} ± {b_err_reported:.2e}) V²',
         f'χ²/dof = {reduced_chi2:.4f}',
@@ -379,14 +379,13 @@ def main():
         'Derived Quantities:',
         f'k = ({k_measured:.2e} ± {k_err_reported:.2e}) J/K',
         f'k_expected = {BOLTZMANN_EXPECTED:.2e} J/K',
-        f'Relative error: {relative_error:.1f}%',
         '',
         f'Fixed: R={RESISTANCE/1000:.2f}±{RESISTANCE_ERR/1000:.2f}kΩ',
         f'       Δf={BANDWIDTH}Hz',
         f'Corrections: G={PREAMPLIFIER_GAIN}, C_win={WINDOW_CORRECTION_FACTOR}'
     ])
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.8)
-    ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=9,
+    ax.text(0.05, 0.4, textstr, transform=ax.transAxes, fontsize=9,
             verticalalignment='top', bbox=props, family='monospace')
 
     # Labels and formatting
@@ -399,7 +398,7 @@ def main():
 
     # Set axis limits
     ax.set_xlim(min(temperatures_kelvin) * 0.95, max(temperatures_kelvin) * 1.05)
-    ax.set_ylim(bottom=0)
+    ax.set_ylim(min(v2_corr)*0.5, max(v2_corr) * 1.3)
 
     # Save figure
     output_file = output_dir / 'noise_vs_temperature_fit.png'
