@@ -7,6 +7,7 @@ import sys
 import types
 from datetime import datetime
 import os
+import gzip
 
 # ---------------- CONFIGURATION ----------------
 I2C_BUS_NUMBER = 6
@@ -151,8 +152,8 @@ timestamp = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
 csv_files = {}
 
 for sensor in detected_sensors:
-    filename = os.path.join(LOG_DIR, f"{timestamp}_{sensor['name']}.csv")
-    f = open(filename, 'w')
+    filename = os.path.join(LOG_DIR, f"{timestamp}_{sensor['name']}.csv.gz")
+    f = gzip.open(filename, 'wt', compresslevel=4)
     f.write("timestamp_epoch,ax_ms2,ay_ms2,az_ms2,gx_rads,gy_rads,gz_rads\n")
     csv_files[sensor['address']] = {
         'file': f,
@@ -204,7 +205,8 @@ try:
                 gx, gy, gz = gyro
 
                 # Buffer the data instead of writing immediately
-                buffers[addr].append(f"{current_time:.6f},{ax},{ay},{az},{gx},{gy},{gz}\n")
+                # Reduced precision: 4 decimals for accel (m/s²), 5 for gyro (rad/s)
+                buffers[addr].append(f"{current_time:.6f},{ax:.4f},{ay:.4f},{az:.4f},{gx:.5f},{gy:.5f},{gz:.5f}\n")
                 sample_counts[addr] += 1
 
                 # Store for debug display
@@ -257,8 +259,9 @@ except KeyboardInterrupt:
         if buffers[addr]:
             csv_files[addr]['file'].write(''.join(buffers[addr]))
 
-    # Close all CSV files
+    # Close all CSV files (flush ensures gzip stream is finalized properly)
     for addr in csv_files:
+        csv_files[addr]['file'].flush()
         csv_files[addr]['file'].close()
     
     # Print summary
