@@ -1,9 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from pathlib import Path
+
+# Get script directory for relative paths
+script_dir = Path(__file__).parent
 
 # Read data
-df = pd.read_excel('exp4.xlsx')
+df = pd.read_excel(script_dir / 'exp4.xlsx')
 
 # Extract data
 L = df['distance [cm]'].values  # cm
@@ -88,7 +92,7 @@ results_table = pd.DataFrame({
     'ΔSpeed [m/s]': np.round(delta_v_p, 2),
     'Relative Error [%]': np.round(100 * delta_v_p / v_p, 2)
 })
-results_table.to_csv('speed_temperature_table_3param.csv', index=False)
+results_table.to_csv(script_dir / 'speed_temperature_table_3param.csv', index=False)
 print(f"\n✓ Table saved")
 
 print("\n" + "=" * 80)
@@ -165,6 +169,10 @@ T_fit = np.linspace(T.min() - 5, T.max() + 5, 300)
 v_fit_curve = poly(T_fit)
 ax.plot(T_fit, v_fit_curve, 'b-', linewidth=2.5, label='Fit', zorder=2)
 
+# Plot reference curve: v = 1405.03 + 4.624*T - 3.83e-2*T² [m/s]
+v_reference = 1405.03 + 4.624 * T_fit - 3.83e-2 * T_fit**2
+ax.plot(T_fit, v_reference, 'g--', linewidth=2, label='Reference', zorder=2)
+
 # Add grid
 ax.grid(True, alpha=0.3, zorder=1)
 
@@ -177,7 +185,7 @@ ax.set_ylabel('Speed [m/s]', fontsize=13)
 textstr = f'a = {a_coef:.3f}\n'
 textstr += f'b = {b_coef:.3f}\n'
 textstr += f'c = {c_coef:.6f}\n'
-textstr += f'χ²/ndof = {chi_squared_reduced:.4f}({chi_squared:.4f}/{dof})'
+textstr += f'χ²/ndof = {chi_squared_reduced:.4f}'
 
 props = dict(boxstyle='round', facecolor='lightgray', alpha=0.8)
 ax.text(0.03, 0.97, textstr, transform=ax.transAxes, fontsize=11,
@@ -191,11 +199,11 @@ ax.set_ylim(1480, 1640)
 ax.set_xlim(25, 75)
 
 plt.tight_layout()
-plt.savefig('speed_vs_temp_3param.png', dpi=300, bbox_inches='tight')
+plt.savefig(script_dir / 'speed_vs_temp_3param.png', dpi=300, bbox_inches='tight')
 print(f"\n✓ Plot saved")
 
 # Save parameters to file
-with open('fit_params_3param.txt', 'w') as f:
+with open(script_dir / 'fit_params_3param.txt', 'w') as f:
     f.write("=" * 80 + "\n")
     f.write("3-PARAMETER POLYNOMIAL FIT (QUADRATIC)\n")
     f.write("=" * 80 + "\n\n")
