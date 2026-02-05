@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone Motor Control</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <h1>Drone Motor Control</h1>
+        </div>
+        <div class="header-center">
+            <div id="connection-status">
+                <span class="status-indicator disconnected" id="conn-indicator"></span>
+                <span id="conn-text">Disconnected</span>
+                <button id="connect-btn" class="btn btn-primary">Connect</button>
+            </div>
+        </div>
+        <div class="header-right">
+            <button id="emergency-stop" class="btn btn-danger btn-large">EMERGENCY STOP</button>
+        </div>
+    </header>
+
+    <nav>
+        <button class="tab-btn active" data-tab="control">Motor Control</button>
+        <button class="tab-btn" data-tab="logs">Log Management</button>
+        <button class="tab-btn" data-tab="current">Current Control</button>
+    </nav>
+
+    <main>
+        <!-- Motor Control Tab -->
+        <section id="control-tab" class="tab-content active">
+            <div class="panels-container">
+                <!-- Motor Selection Panel -->
+                <div class="panel">
+                    <h3>Motor Selection</h3>
+                    <div class="motor-grid">
+                        <label class="motor-checkbox">
+                            <input type="checkbox" name="motor" value="1" checked>
+                            <span class="motor-label">Motor 1</span>
+                        </label>
+                        <label class="motor-checkbox">
+                            <input type="checkbox" name="motor" value="2" checked>
+                            <span class="motor-label">Motor 2</span>
+                        </label>
+                        <label class="motor-checkbox">
+                            <input type="checkbox" name="motor" value="3" checked>
+                            <span class="motor-label">Motor 3</span>
+                        </label>
+                        <label class="motor-checkbox">
+                            <input type="checkbox" name="motor" value="4" checked>
+                            <span class="motor-label">Motor 4</span>
+                        </label>
+                    </div>
+                    <div class="motor-actions">
+                        <button id="select-all" class="btn btn-secondary btn-small">Select All</button>
+                        <button id="select-none" class="btn btn-secondary btn-small">Select None</button>
+                    </div>
+                </div>
+
+                <!-- Profile Configuration Panel -->
+                <div class="panel">
+                    <h3>Motion Profile</h3>
+                    <div class="form-group">
+                        <label for="profile-select">Profile Type</label>
+                        <select id="profile-select" class="form-control">
+                            <option value="">Loading profiles...</option>
+                        </select>
+                    </div>
+                    <div id="profile-params">
+                        <!-- Dynamically generated based on selected profile -->
+                    </div>
+                    <button id="generate-preview" class="btn btn-primary">Generate Preview</button>
+                </div>
+
+                <!-- Preview Chart Panel -->
+                <div class="panel panel-wide">
+                    <h3>Command Preview</h3>
+                    <div class="chart-container">
+                        <canvas id="preview-chart"></canvas>
+                    </div>
+                    <div id="preview-info">
+                        <span>Duration: <strong id="duration-value">--</strong> sec</span>
+                        <span>Points: <strong id="points-value">--</strong></span>
+                    </div>
+                    <div class="execute-actions">
+                        <button id="execute-btn" class="btn btn-success btn-large" disabled>Execute Profile</button>
+                    </div>
+                </div>
+
+                <!-- Execution Status Panel -->
+                <div class="panel panel-wide" id="execution-panel" style="display:none;">
+                    <h3>Execution Status</h3>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div id="progress-fill"></div>
+                        </div>
+                        <span id="progress-text">0%</span>
+                    </div>
+                    <div class="execution-info">
+                        <span>Elapsed: <strong id="elapsed-value">0.0</strong> sec</span>
+                        <span>Current PWM: <strong id="current-pwm-value">--</strong></span>
+                    </div>
+                    <button id="abort-btn" class="btn btn-danger">Abort Execution</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Log Management Tab -->
+        <section id="logs-tab" class="tab-content">
+            <div class="panels-container">
+                <div class="panel">
+                    <h3>Discover Logs</h3>
+                    <button id="discover-logs" class="btn btn-primary">Scan for Logs</button>
+                    <div id="discovered-logs" class="log-list">
+                        <p class="placeholder">Click "Scan for Logs" to find log files on the SSD</p>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Extract Time Slice</h3>
+                    <div class="form-group">
+                        <label for="extract-start">Start Time</label>
+                        <input type="datetime-local" id="extract-start" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="extract-end">End Time</label>
+                        <input type="datetime-local" id="extract-end" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="extract-margin">Margin (seconds)</label>
+                        <input type="number" id="extract-margin" class="form-control" value="5" min="0" max="60">
+                    </div>
+                    <div class="form-group">
+                        <label>Log Types to Extract</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" name="log-type" value="esc_telemetry" checked> ESC Telemetry</label>
+                            <label><input type="checkbox" name="log-type" value="temps_server" checked> Temps Server</label>
+                            <label><input type="checkbox" name="log-type" value="pdb_server" checked> PDB Server</label>
+                            <label><input type="checkbox" name="log-type" value="general" checked> General</label>
+                        </div>
+                    </div>
+                    <button id="extract-logs" class="btn btn-primary">Extract Logs</button>
+                    <div id="extraction-results"></div>
+                </div>
+
+                <div class="panel">
+                    <h3>Command History</h3>
+                    <button id="load-command-history" class="btn btn-secondary">Load Sessions</button>
+                    <div id="command-sessions" class="session-list">
+                        <p class="placeholder">Click to load command history sessions</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Current Control Tab -->
+        <section id="current-tab" class="tab-content">
+            <div class="panels-container">
+                <div class="panel">
+                    <h3>Calibration</h3>
+                    <p class="help-text">Run a slow linear PWM sweep to map current vs PWM.</p>
+                    <div class="form-group">
+                        <label for="cal-motor">Motor to Calibrate</label>
+                        <select id="cal-motor" class="form-control">
+                            <option value="1">Motor 1</option>
+                            <option value="2">Motor 2</option>
+                            <option value="3">Motor 3</option>
+                            <option value="4">Motor 4</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cal-pwm-min">PWM Min</label>
+                        <input type="number" id="cal-pwm-min" class="form-control" value="1000" min="1000" max="2000">
+                    </div>
+                    <div class="form-group">
+                        <label for="cal-pwm-max">PWM Max</label>
+                        <input type="number" id="cal-pwm-max" class="form-control" value="1800" min="1000" max="2000">
+                    </div>
+                    <div class="form-group">
+                        <label for="cal-rate">Rate (PWM/sec)</label>
+                        <input type="number" id="cal-rate" class="form-control" value="20" min="1" max="100">
+                    </div>
+                    <button id="run-calibration" class="btn btn-primary">Run Calibration Sweep</button>
+                    <div id="calibration-status"></div>
+                </div>
+
+                <div class="panel">
+                    <h3>Process Calibration</h3>
+                    <p class="help-text">After calibration sweep, process the data.</p>
+                    <div class="form-group">
+                        <label for="cal-session">Session ID</label>
+                        <input type="text" id="cal-session" class="form-control" placeholder="YYYY_MM_DD__HH_MM_SS">
+                    </div>
+                    <div class="form-group">
+                        <label for="process-motor">Motor ID</label>
+                        <select id="process-motor" class="form-control">
+                            <option value="1">Motor 1</option>
+                            <option value="2">Motor 2</option>
+                            <option value="3">Motor 3</option>
+                            <option value="4">Motor 4</option>
+                        </select>
+                    </div>
+                    <button id="process-calibration" class="btn btn-primary">Process Calibration</button>
+                </div>
+
+                <div class="panel panel-wide">
+                    <h3>I(PWM) Curve</h3>
+                    <div class="form-group">
+                        <label for="curve-motor">Select Motor</label>
+                        <select id="curve-motor" class="form-control">
+                            <option value="1">Motor 1</option>
+                            <option value="2">Motor 2</option>
+                            <option value="3">Motor 3</option>
+                            <option value="4">Motor 4</option>
+                        </select>
+                        <button id="load-curve" class="btn btn-secondary">Load Curve</button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="current-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Current-Based Control</h3>
+                    <p class="help-text">Set motors by target current instead of PWM.</p>
+                    <div class="form-group">
+                        <label for="target-current">Target Current (A)</label>
+                        <input type="number" id="target-current" class="form-control" value="5" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="current-motor">Motor</label>
+                        <select id="current-motor" class="form-control">
+                            <option value="1">Motor 1</option>
+                            <option value="2">Motor 2</option>
+                            <option value="3">Motor 3</option>
+                            <option value="4">Motor 4</option>
+                        </select>
+                    </div>
+                    <button id="lookup-pwm" class="btn btn-secondary">Lookup PWM</button>
+                    <div id="lookup-result"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <span>Drone Motor Control v1.0</span>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

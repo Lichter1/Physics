@@ -1,0 +1,7 @@
+Test,Frequency_Hz,Error_Freq_Hz,Number_of_Nodes
+Open Tube,1000,10,1
+Open Tube,2000,10,2
+Open Tube,3000,10,3
+Closed Tube,1000,10,2
+Closed Tube,2000,10,3
+Closed Tube,3000,10,4

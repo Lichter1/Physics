@@ -1,0 +1,782 @@
+/**
+ * Drone Motor Control - Main JavaScript Application
+ */
+
+const DroneControl = {
+    socket: null,
+    previewChart: null,
+    currentChart: null,
+    profiles: [],
+    isExecuting: false,
+
+    /**
+     * Initialize the application
+     */
+    init() {
+        this.initSocket();
+        this.initEventListeners();
+        this.loadProfiles();
+        this.initPreviewChart();
+        this.initCurrentChart();
+        this.checkConnectionStatus();
+    },
+
+    /**
+     * Initialize WebSocket connection
+     */
+    initSocket() {
+        this.socket = io();
+
+        this.socket.on('connect', () => {
+            console.log('WebSocket connected');
+        });
+
+        this.socket.on('disconnect', () => {
+            console.log('WebSocket disconnected');
+        });
+
+        this.socket.on('connection_status', (data) => {
+            this.updateConnectionUI(data.connected);
+        });
+
+        this.socket.on('execution_progress', (data) => {
+            this.handleProgress(data);
+        });
+
+        this.socket.on('execution_complete', (data) => {
+            this.handleComplete(data);
+        });
+
+        this.socket.on('execution_error', (data) => {
+            this.handleError(data);
+        });
+    },
+
+    /**
+     * Initialize event listeners
+     */
+    initEventListeners() {
+        // Tab navigation
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
+        });
+
+        // Connection
+        document.getElementById('connect-btn').addEventListener('click', () => this.toggleConnection());
+
+        // Emergency stop
+        document.getElementById('emergency-stop').addEventListener('click', () => this.emergencyStop());
+
+        // Motor selection
+        document.getElementById('select-all').addEventListener('click', () => this.selectAllMotors(true));
+        document.getElementById('select-none').addEventListener('click', () => this.selectAllMotors(false));
+
+        // Profile
+        document.getElementById('profile-select').addEventListener('change', (e) => this.onProfileChange(e.target.value));
+        document.getElementById('generate-preview').addEventListener('click', () => this.generatePreview());
+        document.getElementById('execute-btn').addEventListener('click', () => this.executeProfile());
+        document.getElementById('abort-btn').addEventListener('click', () => this.abortExecution());
+
+        // Logs
+        document.getElementById('discover-logs').addEventListener('click', () => this.discoverLogs());
+        document.getElementById('extract-logs').addEventListener('click', () => this.extractLogs());
+        document.getElementById('load-command-history').addEventListener('click', () => this.loadCommandHistory());
+
+        // Current control
+        document.getElementById('run-calibration').addEventListener('click', () => this.runCalibration());
+        document.getElementById('process-calibration').addEventListener('click', () => this.processCalibration());
+        document.getElementById('load-curve').addEventListener('click', () => this.loadCalibrationCurve());
+        document.getElementById('lookup-pwm').addEventListener('click', () => this.lookupPWM());
+    },
+
+    /**
+     * Initialize preview chart
+     */
+    initPreviewChart() {
+        const ctx = document.getElementById('preview-chart').getContext('2d');
+        this.previewChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'PWM',
+                    data: [],
+                    borderColor: '#2196F3',
+                    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Time (sec)', color: '#888' },
+                        grid: { color: '#333' },
+                        ticks: { color: '#888' }
+                    },
+                    y: {
+                        title: { display: true, text: 'PWM', color: '#888' },
+                        min: 1000,
+                        max: 2000,
+                        grid: { color: '#333' },
+                        ticks: { color: '#888' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    },
+
+    /**
+     * Initialize current chart
+     */
+    initCurrentChart() {
+        const ctx = document.getElementById('current-chart').getContext('2d');
+        this.currentChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Current (A)',
+                    data: [],
+                    borderColor: '#4CAF50',
+                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: { display: true, text: 'PWM', color: '#888' },
+                        grid: { color: '#333' },
+                        ticks: { color: '#888' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Current (A)', color: '#888' },
+                        grid: { color: '#333' },
+                        ticks: { color: '#888' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    },
+
+    /**
+     * Switch between tabs
+     */
+    switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabId);
+        });
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.toggle('active', content.id === `${tabId}-tab`);
+        });
+    },
+
+    /**
+     * Check connection status
+     */
+    async checkConnectionStatus() {
+        try {
+            const response = await fetch('/api/connection/status');
+            const data = await response.json();
+            this.updateConnectionUI(data.connected);
+        } catch (error) {
+            console.error('Error checking connection:', error);
+            this.updateConnectionUI(false);
+        }
+    },
+
+    /**
+     * Update connection UI
+     */
+    updateConnectionUI(connected) {
+        const indicator = document.getElementById('conn-indicator');
+        const text = document.getElementById('conn-text');
+        const btn = document.getElementById('connect-btn');
+
+        indicator.className = `status-indicator ${connected ? 'connected' : 'disconnected'}`;
+        text.textContent = connected ? 'Connected' : 'Disconnected';
+        btn.textContent = connected ? 'Disconnect' : 'Connect';
+    },
+
+    /**
+     * Toggle MAVLink connection
+     */
+    async toggleConnection() {
+        const btn = document.getElementById('connect-btn');
+        const isConnected = btn.textContent === 'Disconnect';
+
+        btn.disabled = true;
+        btn.textContent = isConnected ? 'Disconnecting...' : 'Connecting...';
+
+        try {
+            const endpoint = isConnected ? '/api/connection/disconnect' : '/api/connection/connect';
+            const response = await fetch(endpoint, { method: 'POST' });
+            const data = await response.json();
+            this.updateConnectionUI(data.connected);
+        } catch (error) {
+            console.error('Connection error:', error);
+            alert('Connection error: ' + error.message);
+        } finally {
+            btn.disabled = false;
+        }
+    },
+
+    /**
+     * Emergency stop
+     */
+    async emergencyStop() {
+        try {
+            const response = await fetch('/api/motors/stop', { method: 'POST' });
+            const data = await response.json();
+            alert(data.message || 'Emergency stop executed');
+        } catch (error) {
+            console.error('Emergency stop error:', error);
+            alert('Emergency stop error: ' + error.message);
+        }
+    },
+
+    /**
+     * Select/deselect all motors
+     */
+    selectAllMotors(select) {
+        document.querySelectorAll('input[name="motor"]').forEach(cb => {
+            cb.checked = select;
+        });
+    },
+
+    /**
+     * Get selected motor IDs
+     */
+    getSelectedMotors() {
+        const selected = [];
+        document.querySelectorAll('input[name="motor"]:checked').forEach(cb => {
+            selected.push(parseInt(cb.value));
+        });
+        return selected;
+    },
+
+    /**
+     * Load available profiles
+     */
+    async loadProfiles() {
+        try {
+            const response = await fetch('/api/profiles');
+            this.profiles = await response.json();
+
+            const select = document.getElementById('profile-select');
+            select.innerHTML = this.profiles.map(p =>
+                `<option value="${p.name}">${p.name}</option>`
+            ).join('');
+
+            if (this.profiles.length > 0) {
+                this.onProfileChange(this.profiles[0].name);
+            }
+        } catch (error) {
+            console.error('Error loading profiles:', error);
+        }
+    },
+
+    /**
+     * Handle profile selection change
+     */
+    onProfileChange(profileName) {
+        const profile = this.profiles.find(p => p.name === profileName);
+        if (!profile) return;
+
+        const container = document.getElementById('profile-params');
+        container.innerHTML = '';
+
+        for (const [key, param] of Object.entries(profile.parameters)) {
+            if (param.type === 'array') {
+                // Handle array type (custom steps)
+                container.innerHTML += this.createStepsInput(key, param);
+            } else {
+                container.innerHTML += this.createParamInput(key, param);
+            }
+        }
+
+        // Reset preview
+        document.getElementById('execute-btn').disabled = true;
+    },
+
+    /**
+     * Create parameter input HTML
+     */
+    createParamInput(key, param) {
+        const id = `param-${key}`;
+        let input = '';
+
+        if (param.type === 'bool') {
+            input = `<input type="checkbox" id="${id}" ${param.default ? 'checked' : ''}>`;
+        } else {
+            const inputType = param.type === 'int' ? 'number' : 'number';
+            const step = param.type === 'float' ? '0.1' : '1';
+            input = `<input type="${inputType}" id="${id}" class="form-control"
+                     value="${param.default || ''}"
+                     min="${param.min || ''}" max="${param.max || ''}" step="${step}">`;
+        }
+
+        return `
+            <div class="form-group">
+                <label for="${id}">${param.label || key}</label>
+                ${input}
+            </div>
+        `;
+    },
+
+    /**
+     * Create steps array input for custom steps profile
+     */
+    createStepsInput(key, param) {
+        return `
+            <div class="form-group">
+                <label>Steps</label>
+                <div id="steps-container">
+                    <div class="step-row">
+                        <input type="number" class="form-control step-pwm" placeholder="PWM" value="1500" min="1000" max="2000">
+                        <input type="number" class="form-control step-duration" placeholder="Duration (sec)" value="5" min="0.1" max="60" step="0.1">
+                        <button type="button" class="btn btn-danger btn-small remove-step">X</button>
+                    </div>
+                </div>
+                <button type="button" id="add-step" class="btn btn-secondary btn-small">Add Step</button>
+            </div>
+            <div class="form-group">
+                <label><input type="checkbox" id="param-loop"> Loop Forever</label>
+            </div>
+        `;
+    },
+
+    /**
+     * Collect profile parameters from form
+     */
+    collectParams() {
+        const profileName = document.getElementById('profile-select').value;
+        const profile = this.profiles.find(p => p.name === profileName);
+        if (!profile) return {};
+
+        const params = {};
+
+        for (const [key, param] of Object.entries(profile.parameters)) {
+            if (param.type === 'array') {
+                // Collect steps
+                const steps = [];
+                document.querySelectorAll('.step-row').forEach(row => {
+                    const pwm = parseInt(row.querySelector('.step-pwm').value);
+                    const duration = parseFloat(row.querySelector('.step-duration').value);
+                    if (!isNaN(pwm) && !isNaN(duration)) {
+                        steps.push({ pwm, duration_sec: duration });
+                    }
+                });
+                params[key] = steps;
+            } else if (param.type === 'bool') {
+                params[key] = document.getElementById(`param-${key}`).checked;
+            } else if (param.type === 'int') {
+                params[key] = parseInt(document.getElementById(`param-${key}`).value);
+            } else {
+                params[key] = parseFloat(document.getElementById(`param-${key}`).value);
+            }
+        }
+
+        return params;
+    },
+
+    /**
+     * Generate profile preview
+     */
+    async generatePreview() {
+        const profileName = document.getElementById('profile-select').value;
+        const params = this.collectParams();
+
+        try {
+            const response = await fetch('/api/profiles/preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ profile: profileName, params })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                alert('Error: ' + error.error);
+                return;
+            }
+
+            const data = await response.json();
+            this.updatePreviewChart(data);
+            document.getElementById('execute-btn').disabled = false;
+        } catch (error) {
+            console.error('Preview error:', error);
+            alert('Error generating preview: ' + error.message);
+        }
+    },
+
+    /**
+     * Update preview chart with data
+     */
+    updatePreviewChart(data) {
+        // Sample data points for better performance
+        const maxPoints = 200;
+        let chartData = data.data;
+        if (chartData.length > maxPoints) {
+            const step = Math.ceil(chartData.length / maxPoints);
+            chartData = chartData.filter((_, i) => i % step === 0);
+        }
+
+        this.previewChart.data.labels = chartData.map(p => p.t.toFixed(2));
+        this.previewChart.data.datasets[0].data = chartData.map(p => p.pwm);
+        this.previewChart.update();
+
+        document.getElementById('duration-value').textContent = data.duration.toFixed(1);
+        document.getElementById('points-value').textContent = data.data.length;
+    },
+
+    /**
+     * Execute profile
+     */
+    async executeProfile() {
+        const profileName = document.getElementById('profile-select').value;
+        const params = this.collectParams();
+        const motorIds = this.getSelectedMotors();
+
+        if (motorIds.length === 0) {
+            alert('Please select at least one motor');
+            return;
+        }
+
+        if (!confirm(`Execute ${profileName} on motors ${motorIds.join(', ')}?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/profiles/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ profile: profileName, params, motor_ids: motorIds })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                this.isExecuting = true;
+                document.getElementById('execution-panel').style.display = 'block';
+                document.getElementById('execute-btn').disabled = true;
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Execution error:', error);
+            alert('Error starting execution: ' + error.message);
+        }
+    },
+
+    /**
+     * Handle execution progress
+     */
+    handleProgress(data) {
+        document.getElementById('progress-fill').style.width = `${data.progress_pct}%`;
+        document.getElementById('progress-text').textContent = `${Math.round(data.progress_pct)}%`;
+        document.getElementById('elapsed-value').textContent = data.elapsed_sec.toFixed(1);
+        document.getElementById('current-pwm-value').textContent = data.current_pwm;
+    },
+
+    /**
+     * Handle execution complete
+     */
+    handleComplete(data) {
+        this.isExecuting = false;
+        document.getElementById('execution-panel').style.display = 'none';
+        document.getElementById('execute-btn').disabled = false;
+        alert('Execution complete! Session ID: ' + data.session_id);
+    },
+
+    /**
+     * Handle execution error
+     */
+    handleError(data) {
+        this.isExecuting = false;
+        document.getElementById('execution-panel').style.display = 'none';
+        document.getElementById('execute-btn').disabled = false;
+        alert('Execution error: ' + data.error);
+    },
+
+    /**
+     * Abort execution
+     */
+    async abortExecution() {
+        try {
+            await fetch('/api/profiles/abort', { method: 'POST' });
+        } catch (error) {
+            console.error('Abort error:', error);
+        }
+    },
+
+    /**
+     * Discover log files
+     */
+    async discoverLogs() {
+        try {
+            const response = await fetch('/api/logs/discover');
+            const data = await response.json();
+
+            const container = document.getElementById('discovered-logs');
+            let html = '';
+
+            for (const [type, info] of Object.entries(data)) {
+                if (info) {
+                    const date = new Date(info.timestamp).toLocaleString();
+                    const size = (info.size_bytes / 1024).toFixed(1);
+                    html += `
+                        <div class="log-item">
+                            <div class="log-type">${type}</div>
+                            <div class="log-time">${date}</div>
+                            <div class="log-path">${info.path} (${size} KB)</div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="log-item">
+                            <div class="log-type">${type}</div>
+                            <div class="log-path">Not found</div>
+                        </div>
+                    `;
+                }
+            }
+
+            container.innerHTML = html || '<p class="placeholder">No logs found</p>';
+        } catch (error) {
+            console.error('Error discovering logs:', error);
+            alert('Error discovering logs: ' + error.message);
+        }
+    },
+
+    /**
+     * Extract logs
+     */
+    async extractLogs() {
+        const startTime = document.getElementById('extract-start').value;
+        const endTime = document.getElementById('extract-end').value;
+        const margin = parseInt(document.getElementById('extract-margin').value);
+
+        if (!startTime || !endTime) {
+            alert('Please specify start and end times');
+            return;
+        }
+
+        const logTypes = [];
+        document.querySelectorAll('input[name="log-type"]:checked').forEach(cb => {
+            logTypes.push(cb.value);
+        });
+
+        try {
+            const response = await fetch('/api/logs/extract', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    start_time: new Date(startTime).toISOString(),
+                    end_time: new Date(endTime).toISOString(),
+                    margin_seconds: margin,
+                    log_types: logTypes
+                })
+            });
+
+            const data = await response.json();
+            const container = document.getElementById('extraction-results');
+
+            if (response.ok) {
+                container.className = 'result-success';
+                container.innerHTML = `
+                    <strong>Extracted ${data.extracted_files.length} files:</strong>
+                    <ul>
+                        ${data.extracted_files.map(f => `<li>${f.type}: ${f.path}</li>`).join('')}
+                    </ul>
+                `;
+            } else {
+                container.className = 'result-error';
+                container.innerHTML = `<strong>Error:</strong> ${data.error}`;
+            }
+        } catch (error) {
+            console.error('Extraction error:', error);
+            document.getElementById('extraction-results').innerHTML = `<strong>Error:</strong> ${error.message}`;
+        }
+    },
+
+    /**
+     * Load command history
+     */
+    async loadCommandHistory() {
+        try {
+            const response = await fetch('/api/logs/command-history');
+            const sessions = await response.json();
+
+            const container = document.getElementById('command-sessions');
+
+            if (sessions.length === 0) {
+                container.innerHTML = '<p class="placeholder">No command sessions found</p>';
+                return;
+            }
+
+            container.innerHTML = sessions.map(s => `
+                <div class="session-item">
+                    <div><strong>Session:</strong> ${s.session_id}</div>
+                    <div><strong>Profile:</strong> ${s.profile_name}</div>
+                    <div><strong>Motors:</strong> ${s.motor_ids.join(', ')}</div>
+                    <div><strong>Time:</strong> ${new Date(s.timestamp).toLocaleString()}</div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error loading command history:', error);
+        }
+    },
+
+    /**
+     * Run calibration
+     */
+    async runCalibration() {
+        const motorId = parseInt(document.getElementById('cal-motor').value);
+        const pwmMin = parseInt(document.getElementById('cal-pwm-min').value);
+        const pwmMax = parseInt(document.getElementById('cal-pwm-max').value);
+        const rate = parseFloat(document.getElementById('cal-rate').value);
+
+        // Get calibration profile config
+        const response = await fetch('/api/current-control/calibrate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ motor_ids: [motorId], pwm_min: pwmMin, pwm_max: pwmMax, rate })
+        });
+
+        const data = await response.json();
+
+        // Set up the profile for execution
+        document.getElementById('profile-select').value = data.profile_config.profile;
+        this.onProfileChange(data.profile_config.profile);
+
+        // Fill in parameters
+        for (const [key, value] of Object.entries(data.profile_config.params)) {
+            const input = document.getElementById(`param-${key}`);
+            if (input) input.value = value;
+        }
+
+        // Select only the calibration motor
+        this.selectAllMotors(false);
+        document.querySelector(`input[name="motor"][value="${motorId}"]`).checked = true;
+
+        // Generate preview
+        await this.generatePreview();
+
+        document.getElementById('calibration-status').innerHTML = `
+            <div class="result-success">
+                <p>Calibration profile ready! Click "Execute Profile" to run the sweep.</p>
+                <p>After completion, note the session ID and use "Process Calibration".</p>
+            </div>
+        `;
+
+        // Switch to control tab
+        this.switchTab('control');
+    },
+
+    /**
+     * Process calibration
+     */
+    async processCalibration() {
+        const sessionId = document.getElementById('cal-session').value;
+        const motorId = parseInt(document.getElementById('process-motor').value);
+
+        if (!sessionId) {
+            alert('Please enter the session ID');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/current-control/process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId, motor_id: motorId })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(`Calibration processed! ${data.num_points} points from PWM ${data.pwm_range[0]} to ${data.pwm_range[1]}`);
+                this.loadCalibrationCurve();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Processing error:', error);
+            alert('Error processing calibration: ' + error.message);
+        }
+    },
+
+    /**
+     * Load calibration curve
+     */
+    async loadCalibrationCurve() {
+        const motorId = parseInt(document.getElementById('curve-motor').value);
+
+        try {
+            const response = await fetch(`/api/current-control/calibrations/${motorId}`);
+
+            if (!response.ok) {
+                const data = await response.json();
+                this.currentChart.data.labels = [];
+                this.currentChart.data.datasets[0].data = [];
+                this.currentChart.update();
+                return;
+            }
+
+            const data = await response.json();
+
+            this.currentChart.data.labels = data.pwm;
+            this.currentChart.data.datasets[0].data = data.current;
+            this.currentChart.update();
+        } catch (error) {
+            console.error('Error loading curve:', error);
+        }
+    },
+
+    /**
+     * Look up PWM for target current
+     */
+    async lookupPWM() {
+        const motorId = parseInt(document.getElementById('current-motor').value);
+        const targetCurrent = parseFloat(document.getElementById('target-current').value);
+
+        try {
+            const response = await fetch('/api/current-control/lookup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ motor_id: motorId, target_current: targetCurrent })
+            });
+
+            const data = await response.json();
+            const container = document.getElementById('lookup-result');
+
+            if (response.ok) {
+                container.className = 'result-success';
+                container.innerHTML = `
+                    <p><strong>Target:</strong> ${targetCurrent} A</p>
+                    <p><strong>PWM:</strong> ${data.pwm}</p>
+                    <p><strong>Expected Current:</strong> ${data.expected_current?.toFixed(2) || '--'} A</p>
+                `;
+            } else {
+                container.className = 'result-error';
+                container.innerHTML = `<strong>Error:</strong> ${data.error}`;
+            }
+        } catch (error) {
+            console.error('Lookup error:', error);
+        }
+    }
+};
+
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', () => DroneControl.init());
