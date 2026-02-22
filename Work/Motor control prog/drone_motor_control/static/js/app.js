@@ -19,6 +19,8 @@ const DroneControl = {
         this.initPreviewChart();
         this.initCurrentChart();
         this.checkConnectionStatus();
+        // Initialize SequenceBuilder after DOM is ready
+        SequenceBuilder.init(this);
     },
 
     /**
@@ -49,6 +51,14 @@ const DroneControl = {
 
         this.socket.on('execution_error', (data) => {
             this.handleError(data);
+        });
+
+        this.socket.on('motor_stop_failed', (data) => {
+            this.handleMotorStopFailure(data);
+        });
+
+        this.socket.on('loop_progress', (data) => {
+            this.handleLoopProgress(data);
         });
     },
 
@@ -295,15 +305,37 @@ const DroneControl = {
         const profile = this.profiles.find(p => p.name === profileName);
         if (!profile) return;
 
-        const container = document.getElementById('profile-params');
-        container.innerHTML = '';
+        const isMultiSeq = (profileName === "Multi-Sequence");
 
-        for (const [key, param] of Object.entries(profile.parameters)) {
-            if (param.type === 'array') {
-                // Handle array type (custom steps)
-                container.innerHTML += this.createStepsInput(key, param);
+        // Show/hide appropriate UI
+        const paramsContainer = document.getElementById('profile-params');
+        const multiSeqBuilder = document.getElementById('multi-sequence-builder');
+
+        if (isMultiSeq) {
+            // Show multi-sequence builder, hide single profile params
+            paramsContainer.style.display = 'none';
+            multiSeqBuilder.style.display = 'block';
+
+            // Initialize with one sequence if empty
+            if (SequenceBuilder.sequences.length === 0) {
+                SequenceBuilder.addSequence();
             } else {
-                container.innerHTML += this.createParamInput(key, param);
+                SequenceBuilder.render();
+            }
+        } else {
+            // Show single profile params, hide multi-sequence builder
+            paramsContainer.style.display = 'block';
+            multiSeqBuilder.style.display = 'none';
+
+            // Generate parameter inputs for single profile
+            paramsContainer.innerHTML = '';
+            for (const [key, param] of Object.entries(profile.parameters)) {
+                if (param.type === 'array') {
+                    // Handle array type (custom steps)
+                    paramsContainer.innerHTML += this.createStepsInput(key, param);
+                } else {
+                    paramsContainer.innerHTML += this.createParamInput(key, param);
+                }
             }
         }
 
@@ -363,6 +395,13 @@ const DroneControl = {
      */
     collectParams() {
         const profileName = document.getElementById('profile-select').value;
+
+        // Handle multi-sequence profiles
+        if (profileName === "Multi-Sequence") {
+            return SequenceBuilder.collectParams();
+        }
+
+        // Handle single profiles
         const profile = this.profiles.find(p => p.name === profileName);
         if (!profile) return {};
 
@@ -398,6 +437,13 @@ const DroneControl = {
     async generatePreview() {
         const profileName = document.getElementById('profile-select').value;
         const params = this.collectParams();
+
+        // Warn for infinite loop
+        if (params.loop_count === -1) {
+            if (!confirm('⚠️ This will create an INFINITE loop.\n\nYou must manually abort to stop execution.\n\nContinue with preview?')) {
+                return;
+            }
+        }
 
         try {
             const response = await fetch('/api/profiles/preview', {
@@ -435,9 +481,59 @@ const DroneControl = {
 
         this.previewChart.data.labels = chartData.map(p => p.t.toFixed(2));
         this.previewChart.data.datasets[0].data = chartData.map(p => p.pwm);
+
+        // Add sequence boundary annotations if available (multi-sequence profiles)
+        if (data.sequence_boundaries && data.sequence_labels) {
+            const annotations = {};
+            data.sequence_boundaries.forEach((time, i) => {
+                if (i > 0) {  // Skip first boundary (t=0)
+                    annotations[`boundary${i}`] = {
+                        type: 'line',
+                        xMin: time,
+                        xMax: time,
+                        borderColor: 'rgba(255, 99, 132, 0.6)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        label: {
+                            content: data.sequence_labels[i] || `Seq ${i}`,
+                            enabled: true,
+                            position: 'start',
+                            backgroundColor: 'rgba(255, 99, 132, 0.8)',
+                            color: 'white',
+                            font: {
+                                size: 10
+                            }
+                        }
+                    };
+                }
+            });
+
+            // Update chart options with annotations
+            if (!this.previewChart.options.plugins) {
+                this.previewChart.options.plugins = {};
+            }
+            this.previewChart.options.plugins.annotation = { annotations };
+        } else {
+            // Clear annotations if not multi-sequence
+            if (this.previewChart.options.plugins && this.previewChart.options.plugins.annotation) {
+                this.previewChart.options.plugins.annotation = { annotations: {} };
+            }
+        }
+
         this.previewChart.update();
 
-        document.getElementById('duration-value').textContent = data.duration.toFixed(1);
+        // Update duration and point count info
+        let durationText = data.duration.toFixed(1);
+        const loopCount = document.getElementById('loop-count')?.value;
+        if (loopCount && parseInt(loopCount) !== 0) {
+            if (parseInt(loopCount) === -1) {
+                durationText += ' (per iteration, ∞ loop)';
+            } else {
+                const totalDuration = data.duration * parseInt(loopCount);
+                durationText += ` (per iteration, ${totalDuration.toFixed(1)}s total)`;
+            }
+        }
+        document.getElementById('duration-value').textContent = durationText;
         document.getElementById('points-value').textContent = data.data.length;
     },
 
@@ -487,6 +583,26 @@ const DroneControl = {
         document.getElementById('progress-text').textContent = `${Math.round(data.progress_pct)}%`;
         document.getElementById('elapsed-value').textContent = data.elapsed_sec.toFixed(1);
         document.getElementById('current-pwm-value').textContent = data.current_pwm;
+
+        // Show/hide loop info based on whether we're looping
+        const loopInfoContainer = document.getElementById('loop-info-container');
+        if (data.current_iteration !== null && data.total_iterations !== null) {
+            loopInfoContainer.style.display = 'inline';
+            const loopInfo = data.total_iterations === -1
+                ? `Iteration ${data.current_iteration + 1}`
+                : `Iteration ${data.current_iteration + 1}/${data.total_iterations}`;
+            document.getElementById('loop-info').textContent = loopInfo;
+        } else {
+            loopInfoContainer.style.display = 'none';
+        }
+    },
+
+    /**
+     * Handle loop progress updates
+     */
+    handleLoopProgress(data) {
+        console.log('Loop progress:', data);
+        // Loop info is now handled in handleProgress
     },
 
     /**
@@ -507,6 +623,37 @@ const DroneControl = {
         document.getElementById('execution-panel').style.display = 'none';
         document.getElementById('execute-btn').disabled = false;
         alert('Execution error: ' + data.error);
+    },
+
+    /**
+     * Handle motor stop failure (critical safety issue)
+     */
+    handleMotorStopFailure(data) {
+        // Display persistent critical error banner
+        const banner = document.createElement('div');
+        banner.id = 'motor-stop-error-banner';
+        banner.className = 'error-banner';
+        banner.innerHTML = `
+            <div class="error-content">
+                <strong>⚠️ CRITICAL: Motor Stop Failed!</strong>
+                <p>Motors ${data.failed_motors.join(', ')} failed to stop. ${data.message}</p>
+                <p>Check MAVLink connection and manually verify motors are stopped!</p>
+                <button onclick="this.parentElement.parentElement.remove()">Dismiss</button>
+            </div>
+        `;
+
+        // Insert at top of page
+        const container = document.querySelector('.container');
+        container.insertBefore(banner, container.firstChild);
+
+        // Disable execute button until dismissed
+        document.getElementById('execute-btn').disabled = true;
+
+        // Log to console
+        console.error('[CRITICAL] Motor stop failed:', data);
+
+        // Also show alert for immediate attention
+        alert(`⚠️ CRITICAL: Motors ${data.failed_motors.join(', ')} failed to stop!\n\n${data.message}\n\nCheck MAVLink connection and manually verify motors are stopped!`);
     },
 
     /**
@@ -775,6 +922,230 @@ const DroneControl = {
         } catch (error) {
             console.error('Lookup error:', error);
         }
+    }
+};
+
+/**
+ * Sequence Builder for Multi-Sequence Profiles
+ */
+const SequenceBuilder = {
+    sequences: [],
+    app: null,  // Reference to DroneControl
+
+    init(appRef) {
+        this.app = appRef;
+        this.sequences = [];
+        this.attachEventListeners();
+    },
+
+    attachEventListeners() {
+        const addBtn = document.getElementById('add-sequence-btn');
+        if (addBtn) {
+            addBtn.addEventListener('click', () => this.addSequence());
+        }
+    },
+
+    addSequence() {
+        // Default to first non-multi-sequence profile
+        const defaultProfile = this.app.profiles.find(p => p.name !== "Multi-Sequence");
+        const profileName = defaultProfile ? defaultProfile.name : "Linear Ramp";
+
+        this.sequences.push({
+            profile: profileName,
+            params: this.getDefaultParams(profileName)
+        });
+        this.render();
+    },
+
+    removeSequence(index) {
+        this.sequences.splice(index, 1);
+        this.render();
+    },
+
+    moveSequence(index, direction) {
+        if (direction === 'up' && index > 0) {
+            [this.sequences[index], this.sequences[index - 1]] =
+            [this.sequences[index - 1], this.sequences[index]];
+        } else if (direction === 'down' && index < this.sequences.length - 1) {
+            [this.sequences[index], this.sequences[index + 1]] =
+            [this.sequences[index + 1], this.sequences[index]];
+        }
+        this.render();
+    },
+
+    getDefaultParams(profileName) {
+        const profile = this.app.profiles.find(p => p.name === profileName);
+        if (!profile) return {};
+
+        const params = {};
+        for (const [key, param] of Object.entries(profile.parameters)) {
+            if (param.default !== undefined) {
+                params[key] = param.default;
+            }
+        }
+        return params;
+    },
+
+    getProfileOptions(selectedProfile) {
+        return this.app.profiles
+            .filter(p => p.name !== "Multi-Sequence")  // Don't allow nested multi-sequences
+            .map(p => `<option value="${p.name}" ${p.name === selectedProfile ? 'selected' : ''}>${p.name}</option>`)
+            .join('');
+    },
+
+    onSequenceProfileChange(index, newProfileName) {
+        this.sequences[index].profile = newProfileName;
+        this.sequences[index].params = this.getDefaultParams(newProfileName);
+        this.renderSequenceParams(index);
+    },
+
+    render() {
+        const container = document.getElementById('sequences-container');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        if (this.sequences.length === 0) {
+            container.innerHTML = '<p class="placeholder" style="color: var(--text-muted); font-style: italic;">No sequences added yet. Click "Add Sequence" to start.</p>';
+            return;
+        }
+
+        this.sequences.forEach((seq, index) => {
+            const seqDiv = document.createElement('div');
+            seqDiv.className = 'sequence-item';
+            seqDiv.innerHTML = `
+                <div class="sequence-header">
+                    <h4>Sequence ${index + 1}</h4>
+                    <div class="sequence-actions">
+                        ${index > 0 ? '<button type="button" class="btn-icon" data-action="up" data-index="${index}" title="Move up">↑</button>' : ''}
+                        ${index < this.sequences.length - 1 ? '<button type="button" class="btn-icon" data-action="down" data-index="${index}" title="Move down">↓</button>' : ''}
+                        <button type="button" class="btn-danger btn-small" data-action="remove" data-index="${index}">Remove</button>
+                    </div>
+                </div>
+                <div class="sequence-params">
+                    <div class="form-group">
+                        <label for="seq-${index}-profile">Profile Type</label>
+                        <select id="seq-${index}-profile" class="form-control">
+                            ${this.getProfileOptions(seq.profile)}
+                        </select>
+                    </div>
+                    <div id="seq-${index}-params"></div>
+                </div>
+            `;
+            container.appendChild(seqDiv);
+
+            // Attach event listeners to buttons in this sequence
+            seqDiv.querySelectorAll('[data-action]').forEach(btn => {
+                const action = btn.dataset.action;
+                const idx = parseInt(btn.dataset.index);
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (action === 'remove') {
+                        this.removeSequence(idx);
+                    } else if (action === 'up') {
+                        this.moveSequence(idx, 'up');
+                    } else if (action === 'down') {
+                        this.moveSequence(idx, 'down');
+                    }
+                });
+            });
+
+            // Attach profile change listener
+            const profileSelect = document.getElementById(`seq-${index}-profile`);
+            profileSelect.addEventListener('change', (e) => {
+                this.onSequenceProfileChange(index, e.target.value);
+            });
+
+            // Render parameters for current profile
+            this.renderSequenceParams(index);
+        });
+    },
+
+    renderSequenceParams(index) {
+        const seq = this.sequences[index];
+        const profile = this.app.profiles.find(p => p.name === seq.profile);
+        if (!profile) return;
+
+        const container = document.getElementById(`seq-${index}-params`);
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        for (const [key, param] of Object.entries(profile.parameters)) {
+            if (param.type === 'array') {
+                // Special handling for array types (e.g., custom steps)
+                container.innerHTML += this.app.createStepsInput(`seq-${index}-${key}`, param);
+            } else {
+                container.innerHTML += this.app.createParamInput(`seq-${index}-${key}`, param);
+            }
+        }
+
+        // Set current values
+        for (const [key, value] of Object.entries(seq.params)) {
+            const input = document.getElementById(`seq-${index}-param-${key}`);
+            if (input) {
+                if (input.type === 'checkbox') {
+                    input.checked = value;
+                } else {
+                    input.value = value;
+                }
+            }
+        }
+    },
+
+    collectParams() {
+        const sequences = [];
+
+        this.sequences.forEach((seq, index) => {
+            const profile = this.app.profiles.find(p => p.name === seq.profile);
+            if (!profile) return;
+
+            const params = {};
+
+            // Collect parameters for this sequence
+            for (const key of Object.keys(profile.parameters)) {
+                const param = profile.parameters[key];
+
+                if (param.type === 'array') {
+                    // Special handling for array types (custom steps)
+                    const steps = [];
+                    const stepRows = document.querySelectorAll(`#seq-${index}-params .step-row`);
+                    stepRows.forEach(row => {
+                        const pwm = parseInt(row.querySelector('.step-pwm')?.value);
+                        const duration = parseFloat(row.querySelector('.step-duration')?.value);
+                        if (!isNaN(pwm) && !isNaN(duration)) {
+                            steps.push({ pwm, duration_sec: duration });
+                        }
+                    });
+                    params[key] = steps;
+                } else {
+                    const input = document.getElementById(`seq-${index}-param-${key}`);
+                    if (input) {
+                        if (input.type === 'checkbox') {
+                            params[key] = input.checked;
+                        } else if (param.type === 'int') {
+                            params[key] = parseInt(input.value) || param.default || 0;
+                        } else if (param.type === 'float') {
+                            params[key] = parseFloat(input.value) || param.default || 0.0;
+                        } else {
+                            params[key] = input.value;
+                        }
+                    }
+                }
+            }
+
+            sequences.push({
+                profile: seq.profile,
+                params: params
+            });
+        });
+
+        const loopCount = parseInt(document.getElementById('loop-count')?.value) || 0;
+
+        return {
+            sequences: sequences,
+            loop_count: loopCount
+        };
     }
 };
 

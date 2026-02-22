@@ -264,8 +264,26 @@ def execute_profile():
                 'total_sec': state.total_sec,
                 'current_pwm': state.current_pwm,
                 'progress_pct': state.progress_pct,
-                'session_id': state.session_id
+                'session_id': state.session_id,
+                'current_iteration': state.current_iteration,
+                'total_iterations': state.total_iterations
             })
+
+            # Emit loop progress if looping
+            if state.current_iteration is not None and state.total_iterations is not None:
+                socketio.emit('loop_progress', {
+                    'iteration': state.current_iteration,
+                    'total_iterations': state.total_iterations,
+                    'session_id': state.session_id
+                })
+
+            # Emit error notification if motor stop failed
+            if state.error and state.failed_motors:
+                socketio.emit('motor_stop_failed', {
+                    'failed_motors': state.failed_motors,
+                    'message': state.error,
+                    'session_id': state.session_id
+                })
 
     def run_execution():
         """Run profile execution in background thread."""

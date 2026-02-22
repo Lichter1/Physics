@@ -6,6 +6,7 @@
     <title>Drone Motor Control</title>
     <link rel="stylesheet" href="/static/css/main.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
@@ -74,6 +75,25 @@
                     <div id="profile-params">
                         <!-- Dynamically generated based on selected profile -->
                     </div>
+
+                    <!-- Multi-Sequence Builder (shown when Multi-Sequence profile selected) -->
+                    <div id="multi-sequence-builder" style="display: none;">
+                        <div id="sequences-container">
+                            <!-- Dynamically generated sequence items -->
+                        </div>
+                        <button type="button" id="add-sequence-btn" class="btn btn-secondary">+ Add Sequence</button>
+
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label for="loop-count">Loop Count</label>
+                            <input type="number" id="loop-count" class="form-control"
+                                   value="0" min="0" step="1"
+                                   placeholder="0=no loop, -1=infinite">
+                            <small class="form-text" style="color: var(--text-muted);">
+                                0 = no loop, -1 = infinite loop, N = loop N times
+                            </small>
+                        </div>
+                    </div>
+
                     <button id="generate-preview" class="btn btn-primary">Generate Preview</button>
                 </div>
 
@@ -104,6 +124,7 @@
                     <div class="execution-info">
                         <span>Elapsed: <strong id="elapsed-value">0.0</strong> sec</span>
                         <span>Current PWM: <strong id="current-pwm-value">--</strong></span>
+                        <span id="loop-info-container" style="display:none;">Loop: <strong id="loop-info">--</strong></span>
                     </div>
                     <button id="abort-btn" class="btn btn-danger">Abort Execution</button>
                 </div>

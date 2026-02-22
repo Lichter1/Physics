@@ -12,7 +12,8 @@ from .profiles import (
     ConstantProfile,
     LinearRampProfile,
     SineWaveProfile,
-    CustomStepsProfile
+    CustomStepsProfile,
+    MultiSequenceProfile
 )
 
 
@@ -25,6 +26,10 @@ class ExecutionState:
     current_pwm: int
     progress_pct: float
     session_id: str
+    error: Optional[str] = None
+    failed_motors: Optional[List[int]] = None
+    current_iteration: Optional[int] = None
+    total_iterations: Optional[int] = None
 
 
 class ProfileEngine:
@@ -45,6 +50,8 @@ class ProfileEngine:
         self.register(LinearRampProfile())
         self.register(SineWaveProfile())
         self.register(CustomStepsProfile())
+        # Multi-sequence needs reference to engine for composing other profiles
+        self.register(MultiSequenceProfile(self))
 
     def register(self, profile: BaseProfile):
         """Register a new profile type."""
@@ -83,10 +90,18 @@ class ProfileEngine:
         points = profile.generate(params, resolution_ms)
         duration = profile.get_duration(params)
 
-        return {
+        result = {
             "data": [{"t": p.time_sec, "pwm": p.pwm} for p in points],
             "duration": duration
         }
+
+        # Add sequence boundaries for multi-sequence profiles
+        if isinstance(profile, MultiSequenceProfile):
+            boundaries, labels = profile.get_sequence_boundaries(params)
+            result["sequence_boundaries"] = boundaries
+            result["sequence_labels"] = labels
+
+        return result
 
     @property
     def is_running(self) -> bool:
@@ -142,10 +157,19 @@ class ProfileEngine:
 
         duration = profile.get_duration(params)
 
-        # Check for looping (custom steps only)
+        # Check for looping
+        # Support: loop_count parameter (for multi-sequence) or is_looping method (for custom steps)
+        loop_count_param = params.get('loop_count', 0)  # 0 = no loop, -1 = infinite, N > 0 = loop N times
         is_looping = False
-        if isinstance(profile, CustomStepsProfile):
-            is_looping = profile.is_looping(params)
+
+        # Check if profile has custom looping logic (CustomStepsProfile)
+        if isinstance(profile, CustomStepsProfile) and profile.is_looping(params):
+            is_looping = True
+            loop_count_param = -1  # Infinite loop for backwards compatibility
+
+        # Multi-sequence or explicit loop_count parameter
+        if loop_count_param != 0:
+            is_looping = True
 
         # Start session
         self._running = True
@@ -159,7 +183,7 @@ class ProfileEngine:
 
             start_time = time.time()
             point_index = 0
-            loop_count = 0
+            current_iteration = 0
             last_pwm = None
 
             while self._running and not self._abort_requested:
@@ -167,13 +191,18 @@ class ProfileEngine:
 
                 # For looping, reset when we complete a cycle
                 if is_looping and point_index >= len(points):
+                    current_iteration += 1
+
+                    # Check loop limit (-1 = infinite, 0 = no loop, N > 0 = loop N times)
+                    if loop_count_param > 0 and current_iteration >= loop_count_param:
+                        break  # Finished all iterations
+
+                    # Reset for next iteration
                     point_index = 0
-                    loop_count += 1
-                    # Adjust start time for loop
                     start_time = time.time()
                     elapsed = 0
 
-                # Check if we're done (non-looping)
+                # Check if we're done (non-looping or exceeded iterations)
                 if not is_looping and point_index >= len(points):
                     break
 
@@ -205,7 +234,9 @@ class ProfileEngine:
                         total_sec=duration,
                         current_pwm=pwm,
                         progress_pct=progress_pct,
-                        session_id=session_id
+                        session_id=session_id,
+                        current_iteration=current_iteration if is_looping else None,
+                        total_iterations=loop_count_param if is_looping else None
                     )
                     progress_callback(state)
 
@@ -216,19 +247,29 @@ class ProfileEngine:
             print(f"Execution error: {e}")
             raise
         finally:
-            # Always stop motors when done
+            # Always stop motors when done (with verification)
             self._running = False
-            controller.set_all_motors_pwm(1000)
+
+            # Verified stop with retry
+            success, failed = controller.stop_all_motors_verified(timeout=5.0)
 
             # Final progress update
             if progress_callback:
+                # Include error information if stop failed
+                error_msg = None
+                if not success:
+                    error_msg = f"Failed to stop motors {failed}. Check MAVLink connection."
+                    print(f"[ERROR] {error_msg}")
+
                 state = ExecutionState(
                     running=False,
                     elapsed_sec=duration,
                     total_sec=duration,
                     current_pwm=1000,
                     progress_pct=100,
-                    session_id=session_id
+                    session_id=session_id,
+                    error=error_msg,
+                    failed_motors=failed if not success else None
                 )
                 progress_callback(state)
 
