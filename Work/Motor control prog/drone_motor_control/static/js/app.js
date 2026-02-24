@@ -767,22 +767,58 @@ const DroneControl = {
 
             const container = document.getElementById('command-sessions');
 
-            if (sessions.length === 0) {
+            if (!Array.isArray(sessions) || sessions.length === 0) {
                 container.innerHTML = '<p class="placeholder">No command sessions found</p>';
                 return;
             }
 
-            container.innerHTML = sessions.map(s => `
+            container.innerHTML = sessions.map(s => {
+                const startStr = new Date(s.timestamp).toLocaleString();
+                const endStr = s.end_time ? new Date(s.end_time).toLocaleString() : '—';
+                const dur = s.duration_sec != null ? `${s.duration_sec.toFixed(1)} s` : '—';
+                const cmds = s.total_commands != null ? `${s.total_commands} cmds` : '';
+                return `
                 <div class="session-item">
-                    <div><strong>Session:</strong> ${s.session_id}</div>
-                    <div><strong>Profile:</strong> ${s.profile_name}</div>
-                    <div><strong>Motors:</strong> ${s.motor_ids.join(', ')}</div>
-                    <div><strong>Time:</strong> ${new Date(s.timestamp).toLocaleString()}</div>
-                </div>
-            `).join('');
+                    <div class="session-info">
+                        <div class="session-profile"><strong>${s.profile_name}</strong> &mdash; Motors: ${s.motor_ids.join(', ')}</div>
+                        <div class="session-time">${startStr} &rarr; ${endStr}</div>
+                        <div class="session-meta">${dur}${cmds ? ' &bull; ' + cmds : ''}</div>
+                    </div>
+                    <button class="btn btn-primary btn-small session-export-btn"
+                            onclick="app.exportSessionLogs('${s.session_id}')">
+                        &#8681; Export Logs
+                    </button>
+                </div>`;
+            }).join('');
         } catch (error) {
             console.error('Error loading command history:', error);
         }
+    },
+
+    /**
+     * Export SSD logs for a command session as a zip download.
+     */
+    exportSessionLogs(sessionId) {
+        const margin = parseInt(document.getElementById('history-margin').value) || 5;
+        const logTypes = [];
+        document.querySelectorAll('input[name="history-log-type"]:checked').forEach(cb => {
+            logTypes.push(cb.value);
+        });
+
+        const params = new URLSearchParams({
+            margin_seconds: margin,
+            log_types: logTypes.join(',')
+        });
+
+        const url = `/api/logs/export-session/${sessionId}?${params.toString()}`;
+
+        // Trigger browser download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `session_${sessionId}_logs.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     },
 
     /**

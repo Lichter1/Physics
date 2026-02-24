@@ -197,14 +197,31 @@ class CommandLogger:
     def _read_session_info(self, filepath: str) -> Optional[Dict[str, Any]]:
         """Read session info from a command log file."""
         try:
+            header = None
+            footer = None
             with open(filepath, 'r', encoding='utf-8') as f:
-                first_line = f.readline()
-                if first_line:
-                    data = json.loads(first_line)
-                    if data.get('type') == 'session_start':
-                        data['file_path'] = filepath
-                        return data
-        except (IOError, json.JSONDecodeError):
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        data = json.loads(line)
+                        if data.get('type') == 'session_start' and header is None:
+                            header = data
+                        elif data.get('type') == 'session_end':
+                            footer = data
+                    except json.JSONDecodeError:
+                        continue
+
+            if header:
+                result = dict(header)
+                result['file_path'] = filepath
+                if footer:
+                    result['end_time'] = footer['timestamp']
+                    result['duration_sec'] = footer.get('duration_sec')
+                    result['total_commands'] = footer.get('total_commands')
+                return result
+        except IOError:
             pass
         return None
 

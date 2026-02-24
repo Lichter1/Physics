@@ -1,10 +1,12 @@
 """
 REST API endpoints for drone motor control.
 """
+import io
 import os
 import threading
+import zipfile
 from datetime import datetime
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app, send_file
 
 api_blueprint = Blueprint('api', __name__, url_prefix='/api')
 
@@ -432,6 +434,97 @@ def get_command_session(session_id):
         return jsonify({'error': 'Session not found'}), 404
 
     return jsonify(session)
+
+
+@api_blueprint.route('/logs/export-session/<session_id>', methods=['GET'])
+def export_session_logs(session_id):
+    """
+    Export log files for a command session as a zip download.
+
+    Query params:
+        margin_seconds: seconds to include before/after session (default 5)
+        log_types: comma-separated list of types to include (default all)
+                   e.g. esc_telemetry,temps_server,pdb_server,general
+    """
+    command_logger = get_command_logger()
+    log_manager = get_log_manager()
+
+    if not command_logger:
+        return jsonify({'error': 'Command logger not initialized'}), 500
+    if not log_manager:
+        return jsonify({'error': 'Log manager not initialized'}), 500
+
+    # Load session data
+    session = command_logger.load_session(session_id)
+    if not session:
+        return jsonify({'error': f'Session not found: {session_id}'}), 404
+
+    start_data = session.get('start')
+    end_data = session.get('end')
+
+    if not start_data:
+        return jsonify({'error': 'Session has no start record'}), 400
+
+    start_time = datetime.fromisoformat(start_data['timestamp'])
+
+    if end_data:
+        end_time = datetime.fromisoformat(end_data['timestamp'])
+    elif session.get('commands'):
+        end_time = datetime.fromisoformat(session['commands'][-1]['timestamp'])
+    else:
+        end_time = start_time
+
+    # Parse query parameters
+    try:
+        margin_seconds = float(request.args.get('margin_seconds', 5))
+    except ValueError:
+        margin_seconds = 5.0
+
+    log_types_param = request.args.get('log_types', '')
+    requested_log_types = [lt.strip() for lt in log_types_param.split(',') if lt.strip()]
+    if not requested_log_types:
+        requested_log_types = list(log_manager.PATTERNS.keys())
+
+    # Build zip in memory
+    zip_buffer = io.BytesIO()
+
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+        # Include the command log file itself
+        cmd_log_filename = f"{session_id}_commands.jsonl"
+        cmd_log_path = os.path.join(command_logger.output_dir, cmd_log_filename)
+        if os.path.exists(cmd_log_path):
+            zf.write(cmd_log_path, cmd_log_filename)
+
+        # Find and extract SSD log files for the session time window
+        all_logs_by_type = log_manager.discover_all_logs()
+
+        for log_type in requested_log_types:
+            logs_of_type = all_logs_by_type.get(log_type, [])
+
+            # Find the log file that was active during the session:
+            # pick the most recent file whose start timestamp is <= session end
+            candidate = None
+            for log_file in sorted(logs_of_type, key=lambda x: x.timestamp):
+                if log_file.timestamp <= end_time:
+                    candidate = log_file
+
+            if candidate:
+                content = log_manager.extract_time_slice(
+                    candidate, start_time, end_time, margin_seconds
+                )
+                if content:
+                    extracted_filename = f"{session_id}_extracted_{log_type}.log"
+                    zf.writestr(extracted_filename, content)
+
+    zip_buffer.seek(0)
+    zip_filename = f"session_{session_id}_logs.zip"
+
+    return send_file(
+        zip_buffer,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name=zip_filename
+    )
 
 
 # ============ Current Control ============

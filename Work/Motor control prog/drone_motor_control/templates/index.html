@@ -171,6 +171,21 @@
 
                 <div class="panel">
                     <h3>Command History</h3>
+                    <div class="history-export-options">
+                        <div class="form-group form-group-inline">
+                            <label for="history-margin">Margin (sec)</label>
+                            <input type="number" id="history-margin" class="form-control form-control-small" value="5" min="0" max="300">
+                        </div>
+                        <div class="form-group">
+                            <label>Include log types</label>
+                            <div class="checkbox-group checkbox-group-compact">
+                                <label><input type="checkbox" name="history-log-type" value="esc_telemetry" checked> ESC Telemetry</label>
+                                <label><input type="checkbox" name="history-log-type" value="temps_server" checked> Temps Server</label>
+                                <label><input type="checkbox" name="history-log-type" value="pdb_server" checked> PDB Server</label>
+                                <label><input type="checkbox" name="history-log-type" value="general" checked> General</label>
+                            </div>
+                        </div>
+                    </div>
                     <button id="load-command-history" class="btn btn-secondary">Load Sessions</button>
                     <div id="command-sessions" class="session-list">
                         <p class="placeholder">Click to load command history sessions</p>
