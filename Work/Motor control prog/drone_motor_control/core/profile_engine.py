@@ -189,22 +189,22 @@ class ProfileEngine:
             while self._running and not self._abort_requested:
                 elapsed = time.time() - start_time
 
-                # For looping, reset when we complete a cycle
-                if is_looping and point_index >= len(points):
-                    current_iteration += 1
+                # Check if we're done: elapsed time has reached or passed the duration.
+                # Using elapsed >= duration instead of point_index >= len(points) because
+                # point_index only advances to len(points)-1 and would never trigger.
+                if elapsed >= duration:
+                    if not is_looping:
+                        break  # Single run complete
 
-                    # Check loop limit (-1 = infinite, 0 = no loop, N > 0 = loop N times)
+                    # Looping: start the next iteration
+                    current_iteration += 1
                     if loop_count_param > 0 and current_iteration >= loop_count_param:
-                        break  # Finished all iterations
+                        break  # Finished all requested iterations
 
                     # Reset for next iteration
                     point_index = 0
                     start_time = time.time()
                     elapsed = 0
-
-                # Check if we're done (non-looping or exceeded iterations)
-                if not is_looping and point_index >= len(points):
-                    break
 
                 # Find current point based on elapsed time
                 while point_index < len(points) - 1 and points[point_index + 1].time_sec <= elapsed:
