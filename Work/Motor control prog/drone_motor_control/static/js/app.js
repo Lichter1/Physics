@@ -798,7 +798,7 @@ const DroneControl = {
     /**
      * Export SSD logs for a command session as a zip download.
      */
-    exportSessionLogs(sessionId) {
+    async exportSessionLogs(sessionId) {
         const margin = parseInt(document.getElementById('history-margin').value) || 5;
         const logTypes = [];
         document.querySelectorAll('input[name="history-log-type"]:checked').forEach(cb => {
@@ -812,13 +812,39 @@ const DroneControl = {
 
         const url = `/api/logs/export-session/${sessionId}?${params.toString()}`;
 
-        // Trigger browser download
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `session_${sessionId}_logs.zip`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        // Find the clicked button to show progress feedback
+        const btn = document.querySelector(`.session-export-btn[onclick*="${sessionId}"]`);
+        const origText = btn ? btn.innerHTML : '';
+        if (btn) { btn.textContent = 'Downloading\u2026'; btn.disabled = true; }
+
+        try {
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                let errMsg = response.statusText;
+                try {
+                    const errData = await response.json();
+                    errMsg = errData.error || errMsg;
+                } catch (_) {}
+                alert(`Export failed: ${errMsg}`);
+                return;
+            }
+
+            // Convert response to Blob and trigger browser download
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `session_${sessionId}_logs.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            alert(`Export error: ${error.message}`);
+        } finally {
+            if (btn) { btn.innerHTML = origText; btn.disabled = false; }
+        }
     },
 
     /**

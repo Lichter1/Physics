@@ -6,7 +6,8 @@ import os
 import threading
 import zipfile
 from datetime import datetime
-from flask import Blueprint, jsonify, request, current_app, send_file
+from dateutil.parser import parse as parse_dt
+from flask import Blueprint, jsonify, request, current_app, make_response
 
 api_blueprint = Blueprint('api', __name__, url_prefix='/api')
 
@@ -376,8 +377,9 @@ def extract_logs():
         return jsonify({'error': 'Request body required'}), 400
 
     try:
-        start_time = datetime.fromisoformat(data['start_time'])
-        end_time = datetime.fromisoformat(data['end_time'])
+        # parse_dt handles Z suffix and timezone offsets that fromisoformat rejects on Python<3.11
+        start_time = parse_dt(data['start_time']).replace(tzinfo=None)
+        end_time = parse_dt(data['end_time']).replace(tzinfo=None)
     except (KeyError, ValueError) as e:
         return jsonify({'error': f'Invalid time format: {e}'}), 400
 
@@ -517,14 +519,16 @@ def export_session_logs(session_id):
                     zf.writestr(extracted_filename, content)
 
     zip_buffer.seek(0)
+    zip_data = zip_buffer.read()
     zip_filename = f"session_{session_id}_logs.zip"
 
-    return send_file(
-        zip_buffer,
-        mimetype='application/zip',
-        as_attachment=True,
-        download_name=zip_filename
-    )
+    # Use make_response with raw bytes instead of send_file(BytesIO) to avoid
+    # eventlet monkey-patching incompatibilities with streaming responses.
+    response = make_response(zip_data)
+    response.headers['Content-Type'] = 'application/zip'
+    response.headers['Content-Disposition'] = f'attachment; filename="{zip_filename}"'
+    response.headers['Content-Length'] = len(zip_data)
+    return response
 
 
 # ============ Current Control ============
