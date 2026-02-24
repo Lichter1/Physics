@@ -247,20 +247,23 @@ class ProfileEngine:
             print(f"Execution error: {e}")
             raise
         finally:
-            # Always stop motors when done (with verification)
             self._running = False
 
-            # Verified stop with retry
-            success, failed = controller.stop_all_motors_verified(timeout=5.0)
+            # Send stop command (PWM=1000) multiple times to ensure delivery.
+            # Repeated sends compensate for packet loss without relying on COMMAND_ACK,
+            # which many flight controllers do not send for DO_SET_SERVO.
+            stop_error = None
+            try:
+                for _ in range(3):
+                    controller.set_all_motors_pwm(1000)
+                    time.sleep(0.05)
+                print("[OK] Motors stopped")
+            except Exception as e:
+                stop_error = str(e)
+                print(f"[ERROR] Motor stop failed: {e}")
 
             # Final progress update
             if progress_callback:
-                # Include error information if stop failed
-                error_msg = None
-                if not success:
-                    error_msg = f"Failed to stop motors {failed}. Check MAVLink connection."
-                    print(f"[ERROR] {error_msg}")
-
                 state = ExecutionState(
                     running=False,
                     elapsed_sec=duration,
@@ -268,8 +271,8 @@ class ProfileEngine:
                     current_pwm=1000,
                     progress_pct=100,
                     session_id=session_id,
-                    error=error_msg,
-                    failed_motors=failed if not success else None
+                    error=stop_error,
+                    failed_motors=None
                 )
                 progress_callback(state)
 

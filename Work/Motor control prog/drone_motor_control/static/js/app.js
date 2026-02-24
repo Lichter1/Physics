@@ -1072,23 +1072,30 @@ const SequenceBuilder = {
         container.innerHTML = '';
 
         for (const [key, param] of Object.entries(profile.parameters)) {
-            if (param.type === 'array') {
-                // Special handling for array types (e.g., custom steps)
-                container.innerHTML += this.app.createStepsInput(`seq-${index}-${key}`, param);
-            } else {
-                container.innerHTML += this.app.createParamInput(`seq-${index}-${key}`, param);
-            }
-        }
+            // Use id format "seq-{index}-param-{key}" so collectParams can find it
+            const inputId = `seq-${index}-param-${key}`;
 
-        // Set current values
-        for (const [key, value] of Object.entries(seq.params)) {
-            const input = document.getElementById(`seq-${index}-param-${key}`);
-            if (input) {
-                if (input.type === 'checkbox') {
-                    input.checked = value;
-                } else {
-                    input.value = value;
-                }
+            if (param.type === 'array') {
+                // Skip array (custom steps) inside multi-sequence for now
+                continue;
+            } else if (param.type === 'bool') {
+                container.innerHTML += `
+                    <div class="form-group">
+                        <label for="${inputId}">${param.label || key}</label>
+                        <input type="checkbox" id="${inputId}" ${param.default ? 'checked' : ''}>
+                    </div>`;
+            } else {
+                const step = param.type === 'float' ? '0.1' : '1';
+                const val = seq.params[key] !== undefined ? seq.params[key] : (param.default !== undefined ? param.default : '');
+                container.innerHTML += `
+                    <div class="form-group">
+                        <label for="${inputId}">${param.label || key}</label>
+                        <input type="number" id="${inputId}" class="form-control"
+                               value="${val}"
+                               min="${param.min !== undefined ? param.min : ''}"
+                               max="${param.max !== undefined ? param.max : ''}"
+                               step="${step}">
+                    </div>`;
             }
         }
     },
