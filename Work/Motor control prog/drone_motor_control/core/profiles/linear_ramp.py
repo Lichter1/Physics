@@ -32,31 +32,31 @@ class LinearRampProfile(BaseProfile):
                 "default": 1800,
                 "label": "End PWM"
             },
-            "rate": {
+            "duration_sec": {
                 "type": "float",
-                "min": 1,
-                "max": 500,
-                "default": 50,
-                "label": "Rate (PWM/sec)"
+                "min": 0.1,
+                "max": 3600,
+                "default": 10,
+                "label": "Duration (sec)"
             }
         }
 
     def validate_params(self, params: Dict[str, Any]) -> Tuple[bool, str]:
         pwm_start = params.get("pwm_start")
         pwm_end = params.get("pwm_end")
-        rate = params.get("rate")
+        duration_sec = params.get("duration_sec")
 
         if pwm_start is None:
             return False, "Start PWM is required"
         if pwm_end is None:
             return False, "End PWM is required"
-        if rate is None:
-            return False, "Rate is required"
+        if duration_sec is None:
+            return False, "Duration is required"
 
         try:
             pwm_start = int(pwm_start)
             pwm_end = int(pwm_end)
-            rate = float(rate)
+            duration_sec = float(duration_sec)
         except (ValueError, TypeError) as e:
             return False, f"Invalid parameter type: {e}"
 
@@ -66,8 +66,8 @@ class LinearRampProfile(BaseProfile):
             return False, f"End PWM must be between 1000 and 2000, got {pwm_end}"
         if pwm_start == pwm_end:
             return False, "Start and end PWM must be different"
-        if rate <= 0:
-            return False, f"Rate must be positive, got {rate}"
+        if duration_sec <= 0:
+            return False, f"Duration must be positive, got {duration_sec}"
 
         return True, ""
 
@@ -78,19 +78,16 @@ class LinearRampProfile(BaseProfile):
 
         pwm_start = int(params["pwm_start"])
         pwm_end = int(params["pwm_end"])
-        rate = float(params["rate"])
+        duration = float(params["duration_sec"])
         resolution_sec = resolution_ms / 1000.0
 
-        # Calculate duration
-        duration = abs(pwm_end - pwm_start) / rate
+        rate = abs(pwm_end - pwm_start) / duration
         direction = 1 if pwm_end > pwm_start else -1
 
         points = []
         t = 0.0
         while t <= duration:
-            # Calculate PWM at this time
             pwm = pwm_start + direction * int(rate * t)
-            # Clamp to range
             pwm = max(min(pwm, max(pwm_start, pwm_end)), min(pwm_start, pwm_end))
             points.append(ProfilePoint(time_sec=round(t, 3), pwm=pwm))
             t += resolution_sec
@@ -102,9 +99,4 @@ class LinearRampProfile(BaseProfile):
         return points
 
     def get_duration(self, params: Dict[str, Any]) -> float:
-        pwm_start = int(params.get("pwm_start", 1200))
-        pwm_end = int(params.get("pwm_end", 1800))
-        rate = float(params.get("rate", 50))
-        if rate <= 0:
-            return 0.0
-        return abs(pwm_end - pwm_start) / rate
+        return float(params.get("duration_sec", 10))

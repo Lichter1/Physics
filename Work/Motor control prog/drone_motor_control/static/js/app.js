@@ -945,11 +945,34 @@ const SequenceBuilder = {
         }
     },
 
+    /**
+     * Snapshot all current DOM input values back into this.sequences[i].params
+     * so they survive a re-render.
+     */
+    captureCurrentValues() {
+        this.sequences.forEach((seq, index) => {
+            const profile = this.app.profiles.find(p => p.name === seq.profile);
+            if (!profile) return;
+            for (const [key, param] of Object.entries(profile.parameters)) {
+                if (param.type === 'array') continue;
+                const input = document.getElementById(`seq-${index}-param-${key}`);
+                if (!input) continue;
+                if (input.type === 'checkbox') {
+                    seq.params[key] = input.checked;
+                } else {
+                    const v = param.type === 'int'
+                        ? parseInt(input.value)
+                        : parseFloat(input.value);
+                    seq.params[key] = isNaN(v) ? input.value : v;
+                }
+            }
+        });
+    },
+
     addSequence() {
-        // Default to first non-multi-sequence profile
+        this.captureCurrentValues();
         const defaultProfile = this.app.profiles.find(p => p.name !== "Multi-Sequence");
         const profileName = defaultProfile ? defaultProfile.name : "Linear Ramp";
-
         this.sequences.push({
             profile: profileName,
             params: this.getDefaultParams(profileName)
@@ -958,11 +981,13 @@ const SequenceBuilder = {
     },
 
     removeSequence(index) {
+        this.captureCurrentValues();
         this.sequences.splice(index, 1);
         this.render();
     },
 
     moveSequence(index, direction) {
+        this.captureCurrentValues();
         if (direction === 'up' && index > 0) {
             [this.sequences[index], this.sequences[index - 1]] =
             [this.sequences[index - 1], this.sequences[index]];
