@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
 
 
 class Transaction(BaseModel):
@@ -20,6 +19,7 @@ class Transaction(BaseModel):
     transaction_date: str
     filing_date: str
     delay_days: Optional[int] = None
+    classification: Optional[str] = None
     flags: list[str] = []
 
 
@@ -59,6 +59,8 @@ class FilerLeaderboard(BaseModel):
     total_sell_value: float
     unique_tickers: int
     favorite_sector: Optional[str] = None
+    accuracy_pct: Optional[float] = None
+    avg_return_pct: Optional[float] = None
 
 
 class TickerActivity(BaseModel):
@@ -73,6 +75,10 @@ class TickerActivity(BaseModel):
     buy_sell_ratio: float
     total_buy_value: float
     total_sell_value: float
+    signal_score: Optional[float] = None
+    signal_components: Optional[dict] = None
+    price_data: Optional[dict] = None
+    forward_returns: Optional[dict] = None
 
 
 class WeeklyTrend(BaseModel):
@@ -89,3 +95,48 @@ class RefreshResponse(BaseModel):
     message: str
     transactions_added: int = 0
     alerts_generated: int = 0
+
+
+class TradeIdea(BaseModel):
+    ticker: str
+    company_name: Optional[str] = None
+    sector: Optional[str] = None
+    signal_score: float
+    components: dict
+    thesis: str
+    unique_buyers: int
+    total_buy_value: float
+    current_price: Optional[float] = None
+
+
+class FilerTrackRecord(BaseModel):
+    filer_name: str
+    total_buys: int
+    tracked_buys: int
+    accuracy_pct: Optional[float] = None
+    avg_return_pct: Optional[float] = None
+    accuracy_30d: Optional[float] = None
+    accuracy_60d: Optional[float] = None
+    accuracy_90d: Optional[float] = None
+    avg_return_30d: Optional[float] = None
+    avg_return_60d: Optional[float] = None
+    avg_return_90d: Optional[float] = None
+
+
+class PricePoint(BaseModel):
+    date: str
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: int
+
+
+class BackfillStatus(BaseModel):
+    source: str
+    status: str
+    months_requested: Optional[int] = None
+    transactions_added: int = 0
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+    error_message: Optional[str] = None

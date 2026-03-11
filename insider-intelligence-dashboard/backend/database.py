@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     transaction_date TEXT NOT NULL,
     filing_date TEXT NOT NULL,
     delay_days INTEGER,
+    classification TEXT CHECK(classification IN ('conviction','routine','suspicious')),
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -53,13 +54,51 @@ CREATE TABLE IF NOT EXISTS sector_summary (
     last_updated TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS price_history (
+    ticker TEXT NOT NULL,
+    date TEXT NOT NULL,
+    open REAL,
+    high REAL,
+    low REAL,
+    close REAL,
+    volume INTEGER,
+    PRIMARY KEY (ticker, date)
+);
+
+CREATE TABLE IF NOT EXISTS filer_track_record (
+    filer_name TEXT PRIMARY KEY,
+    total_buys INTEGER DEFAULT 0,
+    tracked_buys INTEGER DEFAULT 0,
+    accuracy_pct REAL,
+    avg_return_pct REAL,
+    accuracy_30d REAL,
+    accuracy_60d REAL,
+    accuracy_90d REAL,
+    avg_return_30d REAL,
+    avg_return_60d REAL,
+    avg_return_90d REAL,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS backfill_status (
+    source TEXT PRIMARY KEY,
+    status TEXT DEFAULT 'pending',
+    months_requested INTEGER,
+    transactions_added INTEGER DEFAULT 0,
+    started_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    completed_at TEXT,
+    error_message TEXT
+);
+
 CREATE INDEX IF NOT EXISTS idx_transactions_ticker ON transactions(ticker);
 CREATE INDEX IF NOT EXISTS idx_transactions_filer ON transactions(filer_name);
 CREATE INDEX IF NOT EXISTS idx_transactions_sector ON transactions(sector);
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date);
 CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(transaction_type);
+CREATE INDEX IF NOT EXISTS idx_transactions_class ON transactions(classification);
 CREATE INDEX IF NOT EXISTS idx_alerts_severity ON alerts(severity);
 CREATE INDEX IF NOT EXISTS idx_alerts_type ON alerts(alert_type);
+CREATE INDEX IF NOT EXISTS idx_price_ticker_date ON price_history(ticker, date);
 """
 
 

@@ -5,7 +5,13 @@ const formatValue = (v) => {
   return '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 })
 }
 
-export default function TransactionTable({ transactions, compact = false, showFilters = false }) {
+const classificationStyles = {
+  conviction: 'bg-green-500/20 text-green-400 border-green-500/30',
+  suspicious: 'bg-red-500/20 text-red-400 border-red-500/30',
+  routine: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+}
+
+export default function TransactionTable({ transactions, compact = false }) {
   const navigate = useNavigate()
 
   if (!transactions || transactions.length === 0) {
@@ -26,6 +32,7 @@ export default function TransactionTable({ transactions, compact = false, showFi
             <th className="text-left py-2 px-2">Action</th>
             <th className="text-right py-2 px-2">Value</th>
             {!compact && <th className="text-right py-2 px-2">Delay</th>}
+            {!compact && <th className="text-left py-2 px-2">Class</th>}
             {!compact && <th className="text-left py-2 px-2">Flags</th>}
           </tr>
         </thead>
@@ -33,11 +40,15 @@ export default function TransactionTable({ transactions, compact = false, showFi
           {transactions.map(tx => {
             const isBuy = tx.transaction_type === 'buy'
             const hasFlags = tx.flags && tx.flags.length > 0
-            const rowColor = hasFlags
-              ? 'bg-yellow-900/10 hover:bg-yellow-900/20'
-              : isBuy
-                ? 'hover:bg-green-900/10'
-                : 'hover:bg-red-900/10'
+            const isConviction = tx.classification === 'conviction'
+            const isSuspicious = tx.classification === 'suspicious'
+            const rowColor = isSuspicious
+              ? 'bg-red-900/5 hover:bg-red-900/10'
+              : isConviction
+                ? 'bg-green-900/5 hover:bg-green-900/10'
+                : isBuy
+                  ? 'hover:bg-green-900/10'
+                  : 'hover:bg-red-900/10'
 
             return (
               <tr key={tx.id} className={`border-b border-dark-border/50 ${rowColor} transition-colors`}>
@@ -95,6 +106,15 @@ export default function TransactionTable({ transactions, compact = false, showFi
                         {tx.delay_days}d
                       </span>
                     ) : '-'}
+                  </td>
+                )}
+                {!compact && (
+                  <td className="py-2 px-2">
+                    {tx.classification && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded border ${classificationStyles[tx.classification] || ''}`}>
+                        {tx.classification}
+                      </span>
+                    )}
                   </td>
                 )}
                 {!compact && (

@@ -17,7 +17,7 @@ async function fetchApi(endpoint, options = {}) {
   }
 }
 
-export async function getTransactions(params = {}) {
+function buildQuery(params) {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== null && value !== undefined && value !== '') {
@@ -25,7 +25,11 @@ export async function getTransactions(params = {}) {
     }
   });
   const qs = query.toString();
-  return fetchApi(`/transactions${qs ? '?' + qs : ''}`);
+  return qs ? '?' + qs : '';
+}
+
+export async function getTransactions(params = {}) {
+  return fetchApi(`/transactions${buildQuery(params)}`);
 }
 
 export async function getSectorSummary() {
@@ -33,21 +37,11 @@ export async function getSectorSummary() {
 }
 
 export async function getAlerts(params = {}) {
-  const query = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) query.set(key, value);
-  });
-  const qs = query.toString();
-  return fetchApi(`/alerts${qs ? '?' + qs : ''}`);
+  return fetchApi(`/alerts${buildQuery(params)}`);
 }
 
 export async function getFilerLeaderboard(params = {}) {
-  const query = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) query.set(key, value);
-  });
-  const qs = query.toString();
-  return fetchApi(`/filers/leaderboard${qs ? '?' + qs : ''}`);
+  return fetchApi(`/filers/leaderboard${buildQuery(params)}`);
 }
 
 export async function getTickerActivity(ticker) {
@@ -60,4 +54,42 @@ export async function getWeeklyTrends() {
 
 export async function triggerRefresh() {
   return fetchApi('/refresh', { method: 'POST' });
+}
+
+// --- New v2 endpoints ---
+
+export async function getTradeIdeas(params = {}) {
+  return fetchApi(`/trade-ideas${buildQuery(params)}`);
+}
+
+export async function getTickerPrices(ticker, period = '6m') {
+  return fetchApi(`/prices/${ticker}?period=${period}`);
+}
+
+export async function getPriceContext(ticker) {
+  return fetchApi(`/prices/${ticker}/context`);
+}
+
+export async function getTradeImpact(ticker, fromDate) {
+  return fetchApi(`/prices/${ticker}/impact?from_date=${fromDate}`);
+}
+
+export async function getFilerTrackRecord(filerName) {
+  return fetchApi(`/filers/${encodeURIComponent(filerName)}/track-record`);
+}
+
+export async function startBackfill(months = 24, source = 'all') {
+  return fetchApi(`/backfill?months=${months}&source=${source}`, { method: 'POST' });
+}
+
+export async function getBackfillStatus() {
+  return fetchApi('/backfill/status');
+}
+
+export async function refreshPrices() {
+  return fetchApi('/prices/refresh', { method: 'POST' });
+}
+
+export async function recomputeTrackRecords() {
+  return fetchApi('/filers/recompute-track-records', { method: 'POST' });
 }

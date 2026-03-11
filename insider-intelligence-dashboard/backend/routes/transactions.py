@@ -15,6 +15,7 @@ async def get_transactions(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     min_value: Optional[float] = None,
+    classification: Optional[str] = None,
     limit: int = Query(default=50, le=500),
     offset: int = Query(default=0, ge=0),
 ):
@@ -44,6 +45,9 @@ async def get_transactions(
         if min_value:
             conditions.append("total_value >= ?")
             params.append(min_value)
+        if classification:
+            conditions.append("classification = ?")
+            params.append(classification)
 
         where = " WHERE " + " AND ".join(conditions) if conditions else ""
 
@@ -58,6 +62,10 @@ async def get_transactions(
         )
         rows = await cursor.fetchall()
 
+        # Detect if classification column exists
+        col_names = [d[0] for d in cursor.description] if cursor.description else []
+        has_classification = "classification" in col_names
+
         transactions = []
         for row in rows:
             tx = Transaction(
@@ -65,7 +73,8 @@ async def get_transactions(
                 party=row[4], committee=row[5], ticker=row[6], company_name=row[7],
                 sector=row[8], transaction_type=row[9], shares=row[10], price=row[11],
                 total_value=row[12], transaction_date=row[13], filing_date=row[14],
-                delay_days=row[15]
+                delay_days=row[15],
+                classification=row[16] if has_classification and len(row) > 16 else None,
             )
 
             # Add flags
@@ -74,6 +83,10 @@ async def get_transactions(
                 flags.append("LATE_FILING")
             if tx.total_value and tx.total_value > 500000 and tx.filer_type != "politician":
                 flags.append("LARGE_TRADE")
+            if tx.classification == "conviction":
+                flags.append("CONVICTION")
+            if tx.classification == "suspicious":
+                flags.append("SUSPICIOUS")
             tx.flags = flags
 
             transactions.append(tx)

@@ -18,7 +18,7 @@ export default function Transactions() {
   const [page, setPage] = useState(0)
   const [filters, setFilters] = useState({
     sector: '', filer_type: '', transaction_type: '', ticker: '',
-    date_from: '', date_to: '', min_value: '',
+    date_from: '', date_to: '', min_value: '', classification: '',
   })
 
   const limit = 50
@@ -135,6 +135,17 @@ export default function Transactions() {
             onChange={e => handleFilter('min_value', e.target.value)}
             className="bg-dark-bg border border-dark-border rounded px-2 py-1.5 text-sm text-gray-300 placeholder-gray-600"
           />
+
+          <select
+            value={filters.classification}
+            onChange={e => handleFilter('classification', e.target.value)}
+            className="bg-dark-bg border border-dark-border rounded px-2 py-1.5 text-sm text-gray-300"
+          >
+            <option value="">All Classes</option>
+            <option value="conviction">Conviction</option>
+            <option value="routine">Routine</option>
+            <option value="suspicious">Suspicious</option>
+          </select>
         </div>
       </div>
 

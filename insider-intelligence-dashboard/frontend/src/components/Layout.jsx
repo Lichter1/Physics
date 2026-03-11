@@ -2,11 +2,13 @@ import { NavLink } from 'react-router-dom'
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: '📊' },
+  { path: '/ideas', label: 'Trade Ideas', icon: '💡' },
   { path: '/transactions', label: 'Transactions', icon: '📋' },
   { path: '/sectors', label: 'Sectors', icon: '📈' },
   { path: '/ticker', label: 'Ticker Dive', icon: '🔍' },
   { path: '/filers', label: 'Filers', icon: '👤' },
   { path: '/alerts', label: 'Alerts', icon: '🔔' },
+  { path: '/watchlist', label: 'Watchlist', icon: '⭐' },
 ]
 
 export default function Layout({ children }) {
