@@ -15,6 +15,8 @@ from routes import api_router
 from routes.refresh import run_scrapers_and_store
 from alerts import generate_all_alerts
 from database import get_db
+from price_service import enrich_companies_from_reference
+from classifier import classify_all_transactions
 
 logging.basicConfig(
     level=logging.INFO,
@@ -41,6 +43,18 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing database...")
     await init_db()
 
+    # Enrich company reference data and fix NULL sectors
+    logger.info("Enriching company reference data...")
+    await enrich_companies_from_reference()
+
+    # Classify all transactions
+    logger.info("Classifying transactions...")
+    db = await get_db()
+    try:
+        await classify_all_transactions(db)
+    finally:
+        await db.close()
+
     # Generate initial alerts from seed data
     db = await get_db()
     try:
@@ -63,7 +77,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Insider Intelligence Dashboard API",
     description="Aggregates and analyzes insider trading and political stock trading data",
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -82,7 +96,16 @@ app.include_router(api_router)
 async def root():
     return {
         "name": "Insider Intelligence Dashboard API",
-        "version": "1.0.0",
+        "version": "2.0.0",
+        "features": [
+            "Insider Signal Score (0-100)",
+            "Trade Ideas Engine",
+            "Price Integration (yfinance)",
+            "Filer Track Records",
+            "Smart Money Classification",
+            "Historical Backfill (up to 2 years)",
+            "Forward Return Analysis",
+        ],
         "disclaimer": "For informational purposes only. Not financial advice.",
     }
 

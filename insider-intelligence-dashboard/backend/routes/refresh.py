@@ -1,8 +1,9 @@
 from fastapi import APIRouter
 from database import get_db
 from models import RefreshResponse
-from scrapers import SECEdgarScraper, HouseDisclosureScraper, SenateDisclosureScraper, OpenInsiderScraper
+from scrapers import SECEdgarScraper, HouseDisclosureScraper, SenateDisclosureScraper, OpenInsiderScraper, SEC13FScraper
 from alerts import generate_all_alerts
+from classifier import classify_all_transactions
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ async def run_scrapers_and_store() -> dict:
         ("House Disclosures", HouseDisclosureScraper()),
         ("Senate Disclosures", SenateDisclosureScraper()),
         ("OpenInsider", OpenInsiderScraper()),
+        ("SEC 13F", SEC13FScraper()),
     ]
 
     try:
@@ -69,6 +71,9 @@ async def run_scrapers_and_store() -> dict:
             except Exception as e:
                 logger.error(f"{name} scraper failed: {e}")
                 continue
+
+        # Classify new transactions
+        await classify_all_transactions(db)
 
         # Update sector summaries
         await _update_sector_summaries(db)
