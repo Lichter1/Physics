@@ -1,0 +1,9 @@
+# Flow-Rate lab figure scripts — Python dependencies
+# Install with:  pip install -r requirements.txt
+openpyxl>=3.1
+numpy>=1.24
+matplotlib>=3.7
+# Evaluates the workbook's own Excel formulas when Excel's cached values are
+# missing (e.g. right after the file is edited programmatically). Optional but
+# recommended; without it the graphs rely on whatever cache the file already has.
+formulas>=1.2

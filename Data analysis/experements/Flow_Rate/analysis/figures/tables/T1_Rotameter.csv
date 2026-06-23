@@ -1,0 +1,13 @@
+﻿Table 1 — Rotameter calibration
+Rotameter calibration at atmospheric pressure (Graph #1). Y-error is the LDN 1009 mass-flow-meter datasheet uncertainty; X-error (reading) = 0.05 cm.
+Point,Rotameter reading [cm],Q [L/min],ΔQ [L/min]
+1.0,1.3,25.0,1.677051
+2.0,2.6,41.0,2.219121
+3.0,3.9,55.0,2.759076
+4.0,5.2,72.5,3.47491
+5.0,6.5,90.5,4.235918
+6.0,7.8,109.5,5.054008
+7.0,9.1,127.5,5.83738
+8.0,10.4,147.0,6.691823
+9.0,11.7,165.0,7.48415
+10.0,13.0,193.5,8.743398

@@ -1,0 +1,36 @@
+Flow-Rate lab — results summary
+Generated: 2026-06-23 08:37:41
+Workbook : מדידת ספיקה ומהירות לוח מדידה copy.xlsx
+============================================================
+
+FILE-INTEGRITY CHECK
+  data present : True
+  Hand-check (Python vs. Excel):
+    - Venturi ΔP row 4: hand=39.24 Pa vs Excel=39.24 Pa -> OK
+    - Pitot u_Bernoulli row 4: hand=5.757 m/s vs Excel=5.757 m/s -> OK
+
+GRAPH #1 — Rotameter calibration (atmospheric)
+  Q = 14.31·reading + 0   (chi2/nu=1.886)
+
+GRAPHS #2-4 — Flow-rate calibration (Q ∝ √ΔP fits)
+  Venturi   : Q_ideal=2.277·√ΔP (chi2/nu=2.401e-29), Q_real=1.909·√ΔP (chi2/nu=1.311)
+  Diaphragm : Q_ideal=2.277·√ΔP (chi2/nu=2.116e-29), Q_real=1.365·√ΔP (chi2/nu=1.442)
+  Nozzle    : Q_ideal=2.277·√ΔP (chi2/nu=7.001e-30), Q_real=1.973·√ΔP (chi2/nu=0.8682)
+
+GRAPH #5 — Pitot velocity (u = a·√ΔP)
+  u_bern  : a=1.3 (chi2/nu=2.797e-28)
+  u_prof  : a=1.213 (chi2/nu=7.121e-28)
+  u_rota  : a=0.9386 (chi2/nu=0.6103)
+
+GRAPHS #6-8 — Discharge coefficient C vs. Re
+  Venturi   : C in [0.8276, 1.049] (mean 0.8746); Re in [6297, 7.411e+04]
+  Diaphragm : C in [0.5783, 1.041] (mean 0.6513); Re in [4453, 7.596e+04]
+  Nozzle    : C in [0.833, 1.052] (mean 0.8927); Re in [6297, 7.556e+04]
+
+GRAPH #9 — Q_real = f(Q_ideal); slope = C
+  Venturi   : C=0.8382 (intercept=0, chi2/nu=1.109, n=10)
+  Diaphragm : C=0.5994 (intercept=0, chi2/nu=1.3, n=10)
+  Nozzle    : C=0.8663 (intercept=0, chi2/nu=0.7154, n=10)
+
+GRAPH #10 — Normalised rotameter flow vs. √(P0/Pi)
+  slope=82.94, intercept=-25.61, chi2/nu=0.1572  [ref_over_p, P_ref=1.0 bar_a]
