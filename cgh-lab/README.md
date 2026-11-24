@@ -18,7 +18,7 @@ W/S effort, A/D steer, E/Q up and down, drag to look, F to look where you are, S
 | **ħ**: your wavelength at walking pace | You are a wavefunction: you spread, reflect, split at two doors; the view overlays every place you might be. |
 | **ħ (light)**: photons per pixel | Light arrives in lumps; the picture turns to grain. |
 
-**Missions.** Eight guided experiments, each in four steps: a brief, a prediction you lock in, an
+**Missions.** Fifteen guided experiments, each in four steps: a brief, a prediction you lock in, an
 exploration with only the needed dial unlocked and a goal the world checks, then the explanation, your
 measured numbers and the real experiment it mirrors.
 
@@ -32,6 +32,26 @@ measured numbers and the real experiment it mirrors.
 | 6 | Two doors | ħ | Electron and molecule double slits |
 | 7 | The bell nobody hears | ħ | Hackermüller et al., 2004; Schwindt, Kwiat and Englert, 1999 |
 | 8 | Look closer | ħ | Radiation-pressure back-action, Purdy et al., 2013 |
+| 9 | Satellite clocks | G | GPS: satellite clocks gain 38 µs a day |
+| 10 | The radar echo | G | Shapiro delay; Cassini, 2002 |
+| 11 | Rosette orbits | G | Mercury’s perihelion; the star S2 |
+| 12 | Hover | ħ, G | Neutrons above a mirror (qBounce) |
+| 13 | A pocket black hole | G | Einstein rings; black-hole shadows |
+| 14 | The colour of atoms | α | Quasar spectra and atomic clocks limit any change in α |
+| 15 | Two staircases | c, G, ħ | Colella–Overhauser–Werner, 1975; Zych et al., 2011; Margalit et al., 2015 |
+
+**More constants.** The fine-structure constant α (shifts every atomic colour as α²; atoms shrink as 1/α)
+and the cosmological constant Λ (slows higher clocks; a height where a ball would float).
+
+**Sky.** A satellite on a circular orbit, drawn where it was when its light left it, with the exact Doppler
+shift of a moving clock in curved spacetime; and a pocket black hole that lenses the street.
+
+**Labs.** *Orbits*: throw a ball round the planet and compare Newton's ellipse with Einstein's rosette.
+*Hover*: your height as a wave above the floor. *Two staircases*: your wave splits by height and rejoins,
+and a ticking watch fades the stripes (D² + V² = 1).
+
+**Check yourself.** Ten questions before and after the missions, with the normalised gain and a summary to
+copy into a study log. [EVALUATION.md](EVALUATION.md) is a guide for running sessions with other people.
 
 **Effect switches** turn off one process at a time: light bending, light delay, aberration, colour shift,
 gravity's shift, brightness shift, clock rates. "Newton's view" turns them all off.
@@ -60,12 +80,13 @@ what it is, when its light left, how much it bent, and each shift factor.
   relativistic dispersion), a second component for the bell's "rang" state, Gaussian position looks,
   rewinding, and the eraser.
 - `src/js/world.js`: walking and flying, the GPU passes, the HUD and the map. `src/js/probe.js`: the probe.
+- `src/js/labs.js`: orbits, hover and two staircases (physics tested in Node). `src/js/quiz.js`: the quiz.
 - `src/js/missions.js`: the missions: each is data (brief, choices, setup, a progress check, the explanation)
   driven by one small controller that locks the other dials and saves which missions you finished.
 
 ```
 node build.mjs           # writes index.html and dist/cgh-lab.html
-node --test test/*.js    # 29 checks
+node --test test/*.js    # 31 checks
 ```
 
 Tests cover light bending, the photon orbit, Shapiro delay, the horizon formula against traced rays,

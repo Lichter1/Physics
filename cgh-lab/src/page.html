@@ -37,6 +37,26 @@
       </div>
     </div>
 
+    <details class="more-dials">
+      <summary>More constants: α and Λ</summary>
+      <div class="dials">
+        <div class="dial" data-k="c">
+          <span class="sym sym-c">α</span><span class="dial-name">fine-structure constant</span>
+          <button class="link-btn" type="button" id="reset-alpha">real value</button>
+          <output class="dial-value" id="val-alpha" for="dial-alpha"></output>
+          <span class="dial-note" id="note-alpha"></span>
+          <input type="range" id="dial-alpha" min="0" max="1000" step="1" aria-label="Fine-structure constant, times today's">
+        </div>
+        <div class="dial" data-k="G">
+          <span class="sym sym-g">Λ</span><span class="dial-name">cosmological constant: its horizon</span>
+          <button class="link-btn" type="button" id="reset-cosmo">real value</button>
+          <output class="dial-value" id="val-cosmo" for="dial-cosmo"></output>
+          <span class="dial-note" id="note-cosmo"></span>
+          <input type="range" id="dial-cosmo" min="0" max="1000" step="1" aria-label="Distance to the cosmological horizon">
+        </div>
+      </div>
+    </details>
+
     <div class="presets" id="presets" role="group" aria-label="Presets"></div>
 
     <div class="regime">
@@ -63,6 +83,10 @@
       <button class="btn quiet" type="button" id="w-turn">Turn around</button>
       <button class="btn quiet" type="button" id="w-tower">Up to the tower clock</button>
       <button class="btn quiet" type="button" id="w-home">Back to start</button>
+      <label class="field"><span>Satellite orbit <output id="sat-out">none</output></span>
+        <input type="range" id="sat-h" min="0" max="400" step="5" value="0"></label>
+      <label class="field"><span>Pocket black hole <output id="bh-out">none</output></span>
+        <input type="range" id="bh-rs" min="0" max="1.2" step="0.05" value="0"></label>
     </div>
     <div class="fxbar" role="group" aria-label="Effects you can switch off one at a time">
       <span class="fx-label">Effects</span>
@@ -136,6 +160,53 @@
         </div>
       </section>
     </div>
+
+    <section class="tool labs" aria-labelledby="labs-h">
+      <div class="labs-head">
+        <h3 id="labs-h">Labs</h3>
+        <div class="seg" role="group" aria-label="Choose a lab">
+          <button type="button" id="labtab-orbits" aria-pressed="true">Orbits</button>
+          <button type="button" id="labtab-hover" aria-pressed="false">Hover</button>
+          <button type="button" id="labtab-stairs" aria-pressed="false">Two staircases</button>
+        </div>
+      </div>
+      <div id="lab-orbits">
+        <p class="note">Throw a ball sideways round the planet. Newton’s ball (dashed) retraces the same ellipse for ever; Einstein’s (solid) turns a little every time round.</p>
+        <div class="m-row">
+          <label class="field"><span>Thrown from <output id="orb-h-out">300 m</output> up</span><input type="range" id="orb-h" min="10" max="600" step="5" value="300"></label>
+          <label class="field"><span>Speed <output id="orb-k-out">×0.92</output> of a circular orbit’s</span><input type="range" id="orb-k" min="0.6" max="1.3" step="0.01" value="0.92"></label>
+          <button class="btn" type="button" id="orb-throw">Throw</button>
+        </div>
+        <canvas id="orb-canvas" aria-label="The orbit seen from above"></canvas>
+        <p class="note" id="orb-note" aria-live="polite"></p>
+      </div>
+      <div id="lab-hover" hidden>
+        <p class="note">When you are a wave, gravity and the floor squeeze your height too. Settle, and your eyes rise by however far your feet hover.</p>
+        <div class="m-row">
+          <button class="btn" type="button" id="hov-settle">Settle to the lowest state</button>
+          <button class="btn quiet" type="button" id="hov-drop">Drop from 2 m</button>
+          <button class="btn quiet" type="button" id="hov-stop">Stop</button>
+        </div>
+        <canvas id="hov-canvas" aria-label="Your height as a wave above the floor"></canvas>
+        <p class="note" id="hov-note" aria-live="polite"></p>
+      </div>
+      <div id="lab-stairs" hidden>
+        <p class="note">Your wave splits at the foot of two staircases. One part climbs and waits at the top, the other waits at the bottom; then they rejoin and make stripes. Higher clocks run faster, so if you carry a ticking watch, its reading records which way you went.</p>
+        <div class="m-row">
+          <label class="field"><span>Upper stair <output id="st-h-out"></output></span><input type="range" id="st-h" min="0" max="50" step="1" value="20"></label>
+          <label class="field"><span>Time apart <output id="st-t-out"></output></span><input type="range" id="st-t" min="0" max="60" step="0.5" value="20"></label>
+          <label class="field"><span>Your watch ticks <output id="st-f-out"></output></span><input type="range" id="st-f" min="0" max="4" step="0.05" value="1"></label>
+        </div>
+        <canvas id="st-canvas" aria-label="Stripes where the two parts rejoin"></canvas>
+        <dl class="m-meter" id="st-read"></dl>
+      </div>
+    </section>
+
+    <section class="tool" id="quiz" aria-labelledby="quiz-h">
+      <h3 id="quiz-h">Check yourself: ten questions, before and after</h3>
+      <p class="note">Take it once before the missions and once after. Your answers stay in this browser; “Copy results” gives a summary to paste into a study log.</p>
+      <div id="quiz-body"></div>
+    </section>
 
     <div class="explain">
       <div>

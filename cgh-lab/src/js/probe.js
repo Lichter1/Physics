@@ -13,6 +13,7 @@
     return 'hsl(' + h.toFixed(0) + ',90%,' + light.toFixed(0) + '%)';
   }
   function name(m) {
+    if (m.kind === 3) return 'the pocket black hole: no light comes out';
     if (m.kind !== 1) return 'the sky: starlight from far away';
     if (m.mat === 0) { var p = G.fromWorld(m.x); return Math.abs(p.l) < 7.7 ? 'the street' : 'the ground'; }
     return G.MATS[m.mat] || 'something';
@@ -24,26 +25,36 @@
     var fx = S.fx, rsRay = fx.bend ? q.rs : 0, rsS = fx.gshift ? q.rs : 0, rsC = fx.rates ? q.rs : 0;
     var nb = G.dot(cam.fwd, cam.beta);
     var ab = fx.aberr ? G.deaberrate(cam.fwd, cam.beta) : { n: cam.fwd, D: 1 / (q.gamma * (1 - nb)) };
-    var re = G.len(cam.eye), m = G.march(cam.eye, ab.n, rsRay, true), r = G.len(m.x), hit = m.kind === 1;
-    var Dg = hit ? Math.sqrt((1 - rsS / r) / (1 - rsS / re)) : 1 / Math.sqrt(1 - rsS / re);
+    var lamR = fx.bend ? q.lam : 0, lamS = fx.gshift ? q.lam : 0, lamC = fx.rates ? q.lam : 0, cd = fx.delay ? q.c : 1e12;
+    var re = G.len(cam.eye), m = G.march(cam.eye, ab.n, rsRay, true, { lam: lamR, sat: q.sat, bh: q.bh, T: S.T, cd: cd });
+    var r = G.len(m.x), hit = m.kind === 1, sat = hit && m.mat === 13;
+    function fS(rr) { return 1 - rsS / rr - lamS * rr * rr; }
+    var Dg = sat ? 1 / (Math.sqrt(fS(re)) * q.sat.ut * (1 - q.sat.w / q.c * -G.cross(m.x, m.v)[0]))
+      : hit ? Math.sqrt(fS(r) / fS(re)) : m.kind === 3 ? 0 : 1 / Math.sqrt(1 - rsS / re);
     var D = fx.doppler ? ab.D * Dg : 1, t = fx.delay ? m.ct / q.c : 0;
     var chord = [m.x[0] - cam.eye[0], m.x[1] - cam.eye[1], m.x[2] - cam.eye[2]], cl = G.len(chord);
-    var ref = hit ? chord.map(function (c) { return c / (cl || 1); }) : m.v.map(function (c) { return c / G.len(m.v); });
-    var bend = Math.acos(Math.max(-1, Math.min(1, G.dot(ab.n, ref)))) * 180 / Math.PI;
-    var lamp = hit && m.mat === 4, nm0 = lamp ? SODIUM : GREEN, nm = nm0 / D;
+    // how much the ray turned between leaving you and arriving: its start and end directions in coordinates
+    var v0 = m.v0.map(function (c) { return c / G.len(m.v0); }), v1 = m.v.map(function (c) { return c / G.len(m.v); });
+    var bend = Math.acos(Math.max(-1, Math.min(1, G.dot(v0, v1)))) * 180 / Math.PI;
+    var lamp = hit && (m.mat === 4 || sat), nm0 = (lamp ? SODIUM : GREEN) / (hit ? q.alpha2 : 1), nm = nm0 / D;
     last = { m: m, n: ab.n, eye: cam.eye, re: re, rs: rsRay, hit: hit };
-    CGH.probe.last = { kind: m.kind, mat: m.mat, s: m.s, D: D, Dg: Dg, h: hit ? r - G.R : null, eyeH: re - G.R };
+    CGH.probe.last = { kind: m.kind, mat: m.mat, s: m.s, D: D, Dg: Dg, h: hit ? r - G.R : null, eyeH: re - G.R, bend: bend, echo: hit ? 2 * m.ct / q.c : 0, flat: 2 * cl / q.c };
 
     var n = A.num, rows = [];
     rows.push(['Looking at', name(m) + (hit ? ', ' + n(m.s, 3) + ' m along the light’s path' + (Math.abs(m.s - cl) > 0.01 * cl + 0.05 ? ' (' + n(cl, 3) + ' m straight)' : '') : '')]);
     rows.push(['Its light left', fx.delay ? A.duration(t, 3) + ' ago, far-away time' : 'just now (light delay switched off)']);
     rows.push(['Bent on the way by', bend < 0.05 ? 'nothing you could see' : n(bend, 3) + '°']);
-    rows.push(['Gravity shifts it', Math.abs(Dg - 1) < 1e-4 ? 'not at all' : '×' + Dg.toFixed(4) + (Dg > 1 ? ' (bluer: the light fell to you)' : ' (redder: the light climbed to you)')]);
+    if (m.kind === 3) rows.push(['Light from there', 'none: it is inside the horizon']);
+    rows.push([sat ? 'Gravity and its orbit shift it' : 'Gravity shifts it', Math.abs(Dg - 1) < 1e-4 ? 'not at all' : '×' + Dg.toFixed(4) + (Dg > 1 ? ' (bluer: the light fell to you)' : ' (redder: the light climbed to you)')]);
     rows.push(['Your motion shifts it', Math.abs(ab.D - 1) < 1e-4 ? 'not at all' : '×' + ab.D.toFixed(4) + (ab.D > 1 ? ' (you move toward where it came from)' : ' (you move away)')]);
     rows.push(['Together', fx.doppler ? '×' + D.toFixed(4) + ' in frequency, ×' + (fx.beam ? (D * D * D).toFixed(3) : '1') + ' in brightness' : 'colour shift switched off']);
-    if (hit && (m.mat === 9 || m.mat === 10 || m.mat === 4)) {
-      var tau = Math.sqrt(1 - rsC / r) * (S.T - (fx.delay ? m.ct / q.c : 0));
+    if (hit && (m.mat === 9 || m.mat === 10 || m.mat === 4 || sat)) {
+      var tau = sat ? m.te / q.sat.ut : Math.sqrt(1 - rsC / r - lamC * r * r) * (S.T - (fx.delay ? m.ct / q.c : 0));
       rows.push(['Its clock read, when the light left', A.clock(tau) + ' (yours now: ' + A.clock(S.tau) + ')']);
+    }
+    if (hit && fx.delay) {
+      var rt = 2 * m.ct / q.c, flat = 2 * cl / q.c;
+      rows.push(['Radar echo, there and back', A.duration(rt, 3) + ' far-away time; a straight line at c: ' + A.duration(flat, 3) + (rt - flat > 1e-3 * flat ? ' (late by ' + A.duration(rt - flat, 2) + ')' : '')]);
     }
     $('probe-info').innerHTML = rows.map(function (rw) { return '<div><dt>' + rw[0] + '</dt><dd>' + rw[1] + '</dd></div>'; }).join('');
     drawPath();
@@ -103,7 +114,7 @@
     [400, 500, 600, 700].forEach(function (v) { ctx.fillText(v + ' nm', X(v), by + bh + 4); });
     ctx.strokeStyle = muted; ctx.lineWidth = 2; ctx.setLineDash([3, 2]);
     ctx.beginPath(); ctx.moveTo(X(nm0), by - 4); ctx.lineTo(X(nm0), by + bh + 2); ctx.stroke(); ctx.setLineDash([]);
-    ctx.textBaseline = 'bottom'; ctx.fillText(lamp ? 'sodium lamp sends 589' : 'green 550 sent', X(nm0), by - 4);
+    ctx.textBaseline = 'bottom'; ctx.fillText((lamp ? 'lamp sends ' : 'green sent ') + A.num(nm0, 3), X(Math.max(lo, Math.min(hi, nm0))), by - 4);
     ctx.fillStyle = ink; ctx.strokeStyle = ink; ctx.lineWidth = 3;
     var xr = X(Math.max(lo, Math.min(hi, nm)));
     ctx.beginPath(); ctx.moveTo(xr, by - 2); ctx.lineTo(xr, by + bh + 2); ctx.stroke();

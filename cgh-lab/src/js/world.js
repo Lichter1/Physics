@@ -3,11 +3,12 @@
   'use strict';
   var G = CGH.geo, P = CGH.physics, A = CGH.app, SH = CGH.shaders, WV = CGH.wave, $ = A.$;
   var EFFORT_MAX = 20, FOV = 1.2, CLOCK_TOP = 46, CLIMB = 3, TOP_EYE = 80;
+  var BH = { a: 20, l: 0, h: 3.5 };                          // where the pocket black hole hovers
   var FX = ['bend', 'delay', 'aberr', 'doppler', 'gshift', 'beam', 'rates'];
   var canvas, gl, prog = {}, fmt, scene = null, acc = [], size = [0, 0], vao, raf = 0, last = 0, ok = false;
   var S = {
     a: G.START.a, l: G.START.l, h: G.EYE, heading: 0, lookYaw: 0, lookPitch: 0.04, effort: 0,
-    T: 0, tau: 0, street: 0, top: 0, exposure: 1, keys: {}, scale: 0.6, fixedScale: 0, ms: 16,
+    T: 0, tau: 0, street: 0, top: 0, satT: 0, satH: 0, bhRs: 0, exposure: 1, keys: {}, scale: 0.6, fixedScale: 0, ms: 16,
     fx: { bend: true, delay: true, aberr: true, doppler: true, gshift: true, beam: true, rates: true },
     view: { a: G.START.a, l: G.START.l }, frame: 0, fresh: true, envRate: 0, envTimer: 0, sharp: 0.5, screen: false, hint: 12, q: null, cam: null
   };
@@ -42,7 +43,7 @@
     if (!gl) return false;
     fmt = gl.getExtension('EXT_color_buffer_float') ? { internal: gl.RGBA16F, type: gl.HALF_FLOAT } : { internal: gl.RGBA8, type: gl.UNSIGNED_BYTE };
     prog.march = program(SH.MARCH, ['uEye', 'uFwd', 'uRight', 'uUp', 'uBeta', 'uTan', 'uRsRay', 'uRsShift', 'uRsClock', 'uCdelay', 'uT',
-      'uExposure', 'uDoppler', 'uBeam', 'uAberr', 'uBell']);
+      'uExposure', 'uDoppler', 'uBeam', 'uAberr', 'uBell', 'uLamRay', 'uLamShift', 'uLamClock', 'uSatUt', 'uAlpha2', 'uSat', 'uBH']);
     prog.accum = program(SH.ACCUM, ['uNew', 'uOld', 'uK']);
     prog.show = program(SH.SHOW, ['uImg', 'uPhotons', 'uSeed']);
     vao = gl.createVertexArray();
@@ -52,10 +53,16 @@
   /* ---------- moving ---------- */
   function dials() {
     var d = A.derived(), st = A.state;
-    return { c: d.c, rs: d.rs, hbar: d.hbar, quantum: st.lam >= 0.5, photons: st.photons };
+    var q = { c: d.c, rs: d.rs, hbar: d.hbar, quantum: st.lam >= 0.5, photons: st.photons, alpha2: d.alpha2, lam: d.lam };
+    q.f = function (r) { return 1 - q.rs / r - q.lam * r * r; };
+    q.sat = S.satH > 0 ? G.orbit(G.R + S.satH, q.rs, q.c, q.lam) : null;
+    if (q.sat) { q.sat.r = G.R + S.satH; q.sat.ph0 = G.START.a / G.R; q.sat.rad = 2; }
+    q.bh = S.bhRs > 0 ? { p: G.toWorld(BH.a, BH.l, BH.h), rs: S.bhRs } : null;
+    return q;
   }
   // Is there room for a body with its eyes at (a, l, h)? Checks at eye and knee height.
   function room(a, l, h) {
+    if (S.bhRs > 0 && G.len(G.sub(G.toWorld(a, l, h), G.toWorld(BH.a, BH.l, BH.h))) < 3 * S.bhRs + 0.5) return false;
     return G.scene(G.toWorld(a, l, h)).d > 0.25 && G.scene(G.toWorld(a, l, Math.max(h - 1.2, 0.5))).d > 0.25;
   }
   function update(dtau) {
@@ -64,11 +71,11 @@
     if (k.slower) { S.effort = Math.max(0, S.effort - 8 * dtau); syncEffort(); }
     if (k.left) S.heading -= 1.3 * dtau;
     if (k.right) S.heading += 1.3 * dtau;
-    if (q.quantum) S.h = G.EYE;                               // the wave lives on the ground
+    if (q.quantum) S.h = G.EYE + (CGH.labs && CGH.labs.step ? CGH.labs.step(dtau) : 0);   // the wave lives on the ground, hovering if the lab says so
     q.vz = q.quantum ? 0 : CLIMB * ((k.up ? 1 : 0) - (k.down ? 1 : 0));
     if ((S.h <= G.EYE && q.vz < 0) || (S.h >= TOP_EYE && q.vz > 0)) q.vz = 0;
     var v = P.speedFromEffort(S.effort, q.c), va = v * Math.cos(S.heading), vl = v * Math.sin(S.heading);
-    q.re = G.R + S.h; q.lapse = Math.sqrt(1 - q.rs / q.re);
+    q.re = G.R + S.h; q.lapse = Math.sqrt(q.f(q.re));
     if (q.quantum) {
       var W = WV.W;
       if (!W.on || W.hbar !== q.hbar || W.c !== q.c) { WV.start(S.a, S.l, va, vl, q.hbar, q.c, 0.6); S.fresh = true; }
@@ -80,8 +87,8 @@
     q.v = sp; q.beta = sp / q.c; q.gamma = 1 / Math.sqrt(1 - q.beta * q.beta); q.vel = vel;
     var dtLocal = q.gamma * dtau, dT = dtLocal / q.lapse;    // time for someone standing here; far-away time
     S.T += dT;
-    if (S.fx.rates) { S.tau += dtau; S.street += dT * Math.sqrt(1 - q.rs / G.R); S.top += dT * Math.sqrt(1 - q.rs / (G.R + CLOCK_TOP)); }
-    else { S.tau += dT; S.street += dT; S.top += dT; }
+    if (S.fx.rates) { S.tau += dtau; S.street += dT * Math.sqrt(q.f(G.R)); S.top += dT * Math.sqrt(q.f(G.R + CLOCK_TOP)); if (q.sat) S.satT += dT / q.sat.ut; }
+    else { S.tau += dT; S.street += dT; S.top += dT; S.satT += dT; }
     if (q.quantum) {
       WV.step(dtLocal, va, vl);
       if (S.envRate) { S.envTimer -= dtau; if (S.envTimer <= 0) { S.envTimer = 1 / S.envRate; WV.look(0.5, Math.random); } }
@@ -129,6 +136,10 @@
     gl.uniform1f(u.uCdelay, fx.delay ? q.c : 1e12); gl.uniform1f(u.uT, S.T % 1e5); gl.uniform1f(u.uExposure, S.exposure);
     gl.uniform1i(u.uDoppler, fx.doppler ? 1 : 0); gl.uniform1i(u.uBeam, fx.beam ? 1 : 0); gl.uniform1i(u.uAberr, fx.aberr ? 1 : 0);
     gl.uniform1f(u.uBell, q.quantum && WV.W.bell > 0 ? 1 : 0);
+    gl.uniform1f(u.uLamRay, fx.bend ? q.lam : 0); gl.uniform1f(u.uLamShift, fx.gshift ? q.lam : 0); gl.uniform1f(u.uLamClock, fx.rates ? q.lam : 0);
+    gl.uniform1f(u.uAlpha2, q.alpha2);
+    gl.uniform4f(u.uSat, q.sat ? q.sat.r : 0, q.sat ? q.sat.w : 0, q.sat ? q.sat.ph0 : 0, 2); gl.uniform1f(u.uSatUt, q.sat ? q.sat.ut : 1);
+    var bp = q.bh ? q.bh.p : [0, 0, 0]; gl.uniform4f(u.uBH, bp[0], bp[1], bp[2], q.bh ? q.bh.rs : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
     var k = S.fresh ? 1 : q.quantum ? (WV.W.spread > 0.12 ? 0.08 : 0.35) : 1;
@@ -198,7 +209,11 @@
       q.quantum ? row('Your spread / top speed here', n(WV.W.spread, 2) + ' m / ' + n(q.top, 2) + ' m/s')
                 : row('Your wavelength now', A.length(2 * Math.PI * q.hbar / (A.MASS * Math.max(q.v, A.WALK) * q.gamma), 2)),
       row('Photons per pixel per frame', n(q.photons, 2))
-    ].join('');
+    ].concat(q.sat ? [row('Satellite clock against yours', '×' + (1 / (q.sat.ut * Math.sqrt(q.f(q.re)))).toFixed(4) + ' · one orbit ' + A.duration(2 * Math.PI / q.sat.w, 2))] : [])
+     .concat(S.satH > 0 && !q.sat ? [row('Satellite', 'no circular orbit this low: below 1.5 rs nothing can orbit')] : [])
+     .concat(q.bh ? [row('Pocket black hole', 'horizon ' + A.length(q.bh.rs, 2) + ' · mass ' + n(q.bh.rs * q.c * q.c / (2 * 6.674e-11), 2) + ' kg')] : []).join('');
+    $('sat-out').textContent = S.satH > 0 ? S.satH + ' m up' : 'none';
+    $('bh-out').textContent = S.bhRs > 0 ? A.length(S.bhRs, 2) + ' horizon' : 'none';
     measurePanel(q);
   }
   function measurePanel(q) {
@@ -233,7 +248,7 @@
 
   /* ---------- input ---------- */
   function syncEffort() { $('effort').value = S.effort; $('effort-out').textContent = S.effort.toFixed(1) + ' m/s'; }
-  function restartClocks() { S.T = 0; S.tau = 0; S.street = 0; S.top = 0; }
+  function restartClocks() { S.T = 0; S.tau = 0; S.street = 0; S.top = 0; S.satT = 0; }
   function place(a, l, heading, h) {
     S.a = a; S.l = l; S.view = { a: a, l: l }; S.h = h || G.EYE; S.heading = heading; S.lookYaw = 0; S.lookPitch = 0.04;
     S.effort = 0; syncEffort(); WV.stop(); WV.W.marks = []; restartClocks(); S.fresh = true;
@@ -263,6 +278,8 @@
     $('m-bell').addEventListener('input', function (e) { WV.W.bell = Number(e.target.value) / 100; $('m-bell-out').textContent = e.target.value + '%'; });
     $('m-erase').addEventListener('click', function () { if (WV.W.on && WV.erase(Math.random)) S.fresh = true; });
     $('m-clear').addEventListener('click', function () { WV.W.marks = []; });
+    $('sat-h').addEventListener('input', function (e) { S.satH = Number(e.target.value); S.fresh = true; });
+    $('bh-rs').addEventListener('input', function (e) { S.bhRs = Number(e.target.value); S.fresh = true; });
 
     var KEYS = { w: 'faster', ArrowUp: 'faster', s: 'slower', ArrowDown: 'slower', a: 'left', ArrowLeft: 'left', d: 'right', ArrowRight: 'right', e: 'up', q: 'down' };
     function key(ev, down) {
@@ -312,6 +329,7 @@
       });
       last = performance.now(); raf = requestAnimationFrame(frame);
     },
-    state: S, place: place, setFx: setFx
+    state: S, place: place, setFx: setFx, BH: BH,
+    setSky: function (satH, bhRs) { S.satH = satH; S.bhRs = bhRs; $('sat-h').value = satH; $('bh-rs').value = bhRs; S.fresh = true; }
   };
 })();

@@ -12,7 +12,7 @@
     WV.W.marks = [];
   }
   function noQuantum() { dom('m-screen', 'checked', false); dom('m-bell', 'value', 0, 'input'); }
-  function world(v) { A.set(Object.assign({ cw: R0.cw, comp: R0.comp, lam: R0.lam, photons: R0.photons }, v)); }
+  function world(v) { A.set(Object.assign({ cw: R0.cw, comp: R0.comp, lam: R0.lam, photons: R0.photons, alpha: 1, cosmo: R0.cosmo }, v)); CGH.world.setSky(0, 0); }
   // Share of the marks that sit straight behind the wall between the doors, where no straight path leads.
   function middleShare() {
     var m = WV.W.marks, n = 0, mid = 0;
@@ -151,6 +151,112 @@
       explain: 'To pin your position to within Δx, the look must leave your momentum uncertain by at least ħ/(2Δx). With ħ this large and Δx = 0.25 m that is a velocity spread of nearly 1 m/s, so afterwards you smear out fast. A blurry look disturbs you gently and teaches you little. You cannot have both.',
       real: 'This back-action has been measured: light bouncing off a tiny drum shakes it (Purdy, Peterson and Regal, 2013), and the same quantum noise limits gravitational-wave detectors.'
     }
+    ,{
+      id: 'satellite', title: 'Satellite clocks', dials: [],
+      brief: 'Same heavy planet. A satellite circles 30 m above the street, blinking once a second by its own clock.',
+      question: 'Compared with your watch on the street, the satellite’s clock runs…',
+      choices: [['faster', 'Faster: it is higher up'], ['same', 'At the same rate'], ['slower', 'Slower: it is moving fast']],
+      answer: 'slower',
+      setup: function () { world({ cw: 7, comp: 0.45 }); CGH.world.place(G.START.a, 0, 0); CGH.world.setSky(30, 0); noQuantum(); },
+      task: 'Drag the view up to find the satellite. Then raise its orbit with the “Satellite orbit” slider until its clock keeps pace with yours: “Satellite clock against yours” reaches ×1.000.',
+      progress: function (st) {
+        var d = A.derived(), H = S().satH, o = G.orbit(G.R + H, d.rs, d.c, d.lam), you = Math.sqrt(1 - d.rs / (G.R + G.EYE) - d.lam * Math.pow(G.R + G.EYE, 2));
+        var ratio = o ? 1 / (o.ut * you) : 0;
+        if (st.r0 === undefined && o) st.r0 = ratio;
+        st.ratio = ratio; st.H = H;
+        return { done: o && Math.abs(ratio - 1) < 0.004, text: o ? 'Orbit ' + H + ' m up: its clock runs ×' + ratio.toFixed(4) + ' of yours' : 'No circular orbit there' };
+      },
+      measured: function (st) { return st.r0 < 0.999 ? 'slower' : st.r0 > 1.001 ? 'faster' : 'same'; },
+      result: function (st) { return 'At 30 m it ran ×' + (st.r0 || 0).toFixed(4) + '. It keeps pace at ' + st.H + ' m up, where its orbit is ' + ((G.R + st.H) / G.R).toFixed(2) + ' times the planet’s radius.'; },
+      explain: 'Height makes a clock run fast; speed makes it run slow. For a circular orbit the clock rate is √(1 − 1.5 rs/r), against √(1 − rs/R) on the ground. They match when r = 1.5 R, for any planet and any mass. Lower satellites lose time; higher ones gain.',
+      real: 'GPS satellites orbit at about 4.2 Earth radii, far above 1.5, so their clocks gain about 38 microseconds a day. They are built to tick slightly slow on the ground to make up for it.'
+    },
+    {
+      id: 'radar', title: 'The radar echo', dials: [],
+      brief: 'A compact planet (0.6) and slow light. You have a radar: it times a pulse to whatever is under the crosshair and back.',
+      question: 'Compared with light going straight there and back at c, the echo comes back…',
+      choices: [['earlier', 'Earlier'], ['same', 'On time'], ['later', 'Later']],
+      answer: 'later',
+      setup: function () { world({ cw: 7, comp: 0.6 }); CGH.world.place(G.START.a, 3, 0); noQuantum(); },
+      task: 'Aim along the street at something more than 100 m away, just below the horizon, and read “Radar echo” in the light probe.',
+      progress: function () { var p = probe(); return { done: p.kind === 1 && p.s > 100 && p.echo > 0, text: p.kind === 1 ? 'Target ' + A.num(p.s, 3) + ' m along the light’s path' : 'Aim lower: the probe sees the sky' }; },
+      measured: function () { var p = probe(); return p.echo > p.flat * 1.001 ? 'later' : p.echo < p.flat * 0.999 ? 'earlier' : 'same'; },
+      result: function () { var p = probe(); return 'Echo: ' + A.duration(p.echo, 3) + '. Straight there and back at c: ' + A.duration(p.flat, 3) + '.'; },
+      explain: 'Two things make the echo late. The path bends, so it is longer; and, timed from far away, light near a mass covers ground more slowly. Anyone standing next to the light measures it passing at exactly c; only the comparison between places shows the delay.',
+      real: 'Irwin Shapiro predicted it in 1964; radar echoes from Venus and Mercury confirmed it. In 2002 signals to the Cassini spacecraft matched Einstein’s prediction to about 20 parts in a million.'
+    },
+    {
+      id: 'rosette', title: 'Rosette orbits', dials: ['comp'],
+      brief: 'A heavy planet. In the Orbits lab below you can throw a ball sideways hard enough to go round.',
+      question: 'You throw the ball into a slightly stretched orbit. Each time round, it…',
+      choices: [['same', 'Retraces exactly the same ellipse'], ['turns', 'Comes round a little further, so the orbit slowly turns'], ['spiral', 'Spirals down to the ground']],
+      answer: 'turns',
+      setup: function () { world({ cw: 7, comp: 0.3 }); CGH.world.place(G.START.a, 0, 0); noQuantum(); CGH.labs.state.show('orbits'); },
+      task: 'In the Orbits lab, press Throw. Then try throwing from lower down, slower, or on a heavier planet: too low or too slow and the ball hits the ground.',
+      progress: function (st) {
+        var O = CGH.labs.state.O;
+        if (st.n0 === undefined) st.n0 = O.thrown;
+        var ok = O.thrown > st.n0 && O.last && !O.last.E.crashed && O.last.E.peri.length >= 3;
+        return { done: ok, text: O.thrown > st.n0 ? (O.last.E.crashed ? 'That one crashed. Throw from higher, or faster.' : 'Orbit drawn') : 'Throw a ball in the Orbits lab' };
+      },
+      measured: function () { var E = CGH.labs.state.O.last.E; return E.precess > 1e-3 ? 'turns' : 'same'; },
+      result: function () { var E = CGH.labs.state.O.last.E; return 'Each time round, the closest point moved on by ' + A.num(E.precess * 180 / Math.PI, 3) + '°.'; },
+      explain: 'Near a mass, gravity pulls slightly harder than Newton’s 1/r²: the extra term grows as 3L²/(c²r²). The ball reaches its closest point a little late each time, so the ellipse rotates and draws a rosette. Closer and more compact means more turning; inside three horizon radii there is no stable orbit at all.',
+      real: 'Mercury’s orbit turns 43 seconds of arc per century more than Newton allows: Einstein’s first success, in 1915. The star S2, circling the black hole at the centre of our galaxy, shows the same turning (GRAVITY collaboration, 2020).'
+    },
+    {
+      id: 'hover', title: 'Hover', dials: [],
+      brief: 'You are a wave (2 m wavelength) on a planet with Earth-like gravity. The Hover lab below treats your height as a wave too.',
+      question: 'You stop jumping and settle down. Where do your feet end up?',
+      choices: [['floor', 'On the floor'], ['hover', 'A little above the floor, and only certain heights are allowed'], ['sink', 'Partly inside the floor']],
+      answer: 'hover',
+      setup: function () { world({ cw: 80, comp: 0.45, lam: 2 }); CGH.world.place(G.START.a, 0, 0); noQuantum(); CGH.labs.state.show('hover'); },
+      task: 'In the Hover lab, press “Settle to the lowest state” and watch for five seconds. Your view rises by however far your feet hover. Then try “Drop from 2 m”.',
+      progress: function () { var H = CGH.labs.state.H; return { done: H.on && H.mode === 'settle' && H.settled > 5, text: H.on && H.mode === 'settle' ? 'Settled for ' + Math.min(5, H.settled).toFixed(1) + ' of 5 s' : 'Press “Settle to the lowest state”' }; },
+      result: function () { var b = CGH.labs.state.H.b; return 'Your feet hover ' + A.length(2 / 3 * b.heights[0], 2) + ' above the floor on average. Allowed levels reach ' + b.heights.slice(0, 3).map(function (z) { return A.length(z, 2); }).join(', ') + '.'; },
+      explain: 'Squeezing your wave flat onto the floor would cost kinetic energy, about ħ²/(2mΔz²); lifting it costs potential energy, mgz. The lowest total is a compromise: a hover height set by z₀ = (ħ²/2m²g)^⅓. Above it only certain energies are allowed, fixed by the zeros of the Airy function.',
+      real: 'Ultracold neutrons above a mirror do exactly this, with levels about ten micrometres apart (Nesvizhevsky et al., 2002; the qBounce experiments).'
+    },
+    {
+      id: 'blackhole', title: 'A pocket black hole', dials: [],
+      brief: 'Slow light, ordinary planet. A tiny black hole, half a metre across its horizon, hovers 3.5 m above the street between you and the tower.',
+      question: 'Looking at the tower through it, you see…',
+      choices: [['disc', 'A black disc in front of the tower, nothing else'], ['ring', 'The tower smeared into a ring around a black disc'], ['none', 'Nothing: it is too small to notice']],
+      answer: 'ring',
+      setup: function () { world({ cw: 7 }); CGH.world.place(G.START.a, 0, 0); CGH.world.setSky(0, 0.5); noQuantum(); },
+      task: 'Look along the street at the black hole, 30 m ahead. Put the crosshair just outside its dark disc: the probe shows how far that light bent.',
+      progress: function () { var p = probe(); return { done: p.kind === 1 && p.bend > 20, text: p.kind === 3 ? 'That is the dark disc: aim just outside it' : 'Light under the crosshair bent by ' + A.num(p.bend || 0, 2) + '°' }; },
+      result: function () { var p = probe(); return 'The light under your crosshair bent by ' + A.num(p.bend, 3) + '° on its way past the black hole, and came from ' + (G.MATS[p.mat] || 'something') + '.'; },
+      explain: 'Light passing a black hole bends more the closer it passes. Light from the tower straight behind can come round any side, so it arrives as a ring: an Einstein ring. Inside it is the shadow, about 2.6 times the horizon radius: light from there would have had to start inside the photon orbit.',
+      real: 'Hubble photographs Einstein rings around distant galaxies. The Event Horizon Telescope imaged the shadows of the black holes in M87 (2019) and at the centre of our galaxy (2022).'
+    },
+    {
+      id: 'alpha', title: 'The colour of atoms', dials: ['alpha'],
+      brief: 'The fine-structure constant α sets how strongly electrons and light interact. It decides the size and colours of atoms. Open “More constants” in the console.',
+      question: 'Make α 15% larger. The yellow street lamps look…',
+      choices: [['bluer', 'Bluer'], ['same', 'The same'], ['redder', 'Redder']],
+      answer: 'bluer',
+      setup: function () { world({ cw: 7 }); CGH.world.place(G.START.a, 3, 0); noQuantum(); var d = document.querySelector('.more-dials'); if (d) d.open = true; },
+      task: 'Raise α to about 1.15 and put the crosshair on a street lamp. Read the spectrometer.',
+      progress: function () { var p = probe(); return { done: p.kind === 1 && p.mat === 4 && A.state.alpha >= 1.1, text: 'α = ' + A.num(A.state.alpha, 3) + ' × today’s · ' + (p.mat === 4 ? 'on a lamp' : 'aim at a lamp') }; },
+      measured: function () { return A.state.alpha > 1 ? 'bluer' : A.state.alpha < 1 ? 'redder' : 'same'; },
+      result: function () { return 'Sodium’s yellow line moves from 589 nm to ' + A.num(589 / (A.state.alpha * A.state.alpha), 3) + ' nm.'; },
+      explain: 'Atomic energy levels scale as α²mₑc², so every spectral line moves together: the lamps, paint and leaves. Atoms also shrink as 1/α. Larger α also means heavy elements cannot hold their innermost electrons once Zα approaches 1, so the periodic table gets shorter.',
+      real: 'Astronomers compare lines in quasar light that is billions of years old with lines measured today; any change in α is at most a few parts per million, and claimed hints of change are disputed. Atomic clocks limit any change now to less than about a part in 10¹⁶ per year.'
+    },
+    {
+      id: 'stairs', title: 'Two staircases', dials: [],
+      brief: 'You are a wave on a heavy planet. In the Two staircases lab below, your wave splits: one part climbs a staircase and waits, the other waits at the bottom. Then they rejoin.',
+      question: 'You carry a ticking watch. Do the stripes survive?',
+      choices: [['yes', 'Yes: nobody measured which way I went'], ['shift', 'They shift, but stay sharp'], ['fade', 'They fade, and come back when the two watch readings differ by a whole tick']],
+      answer: 'fade',
+      setup: function () { world({ cw: 7, comp: 0.45, lam: 2 }); CGH.world.place(G.START.a, 0, 0); noQuantum(); CGH.labs.state.show('stairs'); CGH.labs.state.T2.faded = false; CGH.labs.state.T2.revived = false; },
+      task: 'In the lab, increase “Time apart” until the stripes vanish, then keep going until they come back.',
+      progress: function () { var T2 = CGH.labs.state.T2; return { done: T2.faded && T2.revived, text: 'Stripes vanished: ' + (T2.faded ? 'yes' : 'not yet') + ' · came back: ' + (T2.revived ? 'yes' : 'not yet') }; },
+      result: function () { var s = CGH.labs.state.stairs(); return 'Now the watches differ by ' + A.num(Math.abs(s.r.dtau) * s.tick, 3) + ' ticks and the stripe strength is ' + s.r.V.toFixed(2) + '.'; },
+      explain: 'The upper half of you ages faster, so the two halves carry different watch readings. Different readings are a record of the path, like the bell, so the stripes fade: D² + V² = 1. When the readings differ by exactly one tick they look alike again, the record is gone and the stripes return. With no clock the stripes only shift: that shift is gravity acting on quantum matter, and it has been measured.',
+      real: 'Neutron stripes shift with height in Earth’s gravity (Colella, Overhauser and Werner, 1975). The fading with a clock was proposed by Zych and colleagues in 2011 and imitated with atoms and a magnetic field by Margalit et al. in 2015. With real gravity it has not yet been done.'
+    }
   ];
 
   /* ---------- controller ---------- */
@@ -160,7 +266,7 @@
   function save() { try { localStorage.setItem('cgh-missions', JSON.stringify(done)); } catch (e) { /* optional */ } }
   var STEPS = ['Brief', 'Predict', 'Explore', 'Explain'];
   function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
-  function sym(k) { return '<span class="sym sym-' + ({ cw: 'c', comp: 'g', lam: 'h', photons: 'h' })[k] + '">' + ({ cw: 'c', comp: 'G', lam: 'ħ', photons: 'ħ' })[k] + '</span>'; }
+  function sym(k) { return '<span class="sym sym-' + ({ cw: 'c', comp: 'g', lam: 'h', photons: 'h', alpha: 'c', cosmo: 'g' })[k] + '">' + ({ cw: 'c', comp: 'G', lam: 'ħ', photons: 'ħ', alpha: 'α', cosmo: 'Λ' })[k] + '</span>'; }
 
   function render() {
     var el = $('missions');
@@ -225,11 +331,17 @@
     if (!cur || cur.step !== 2) return;
     var p = cur.m.progress(cur.st), el = $('ms-status');
     if (el) el.textContent = p.text;
-    if (p.done) { cur.finished = true; done[cur.m.id] = true; save(); step(3); }
+    if (p.done) {
+      cur.finished = true;
+      var meas = cur.m.measured ? cur.m.measured(cur.st) : cur.m.answer;
+      done[cur.m.id] = { pick: cur.pick, right: cur.pick === meas };
+      save(); step(3);
+    }
   }
 
   CGH.missions = {
     init: function () { render(); setInterval(tick, 250); },
-    list: M, start: start, leave: leave
+    list: M, start: start, leave: leave,
+    titleOf: function (id) { var m = M.filter(function (x) { return x.id === id; })[0]; return m ? m.title : id; }
   };
 })();

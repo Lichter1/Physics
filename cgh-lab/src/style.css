@@ -324,3 +324,19 @@ dl { margin: 0; }
 .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
 .dial.locked { opacity: 0.55; }
 .chip[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+.more-dials summary { cursor: pointer; font-size: 13.5px; color: var(--muted); padding: 2px 0; }
+.more-dials[open] summary { margin-bottom: 8px; }
+
+/* ---------- labs ---------- */
+.labs-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+#orb-canvas, #hov-canvas, #st-canvas { width: 100%; display: block; background: var(--bg); border-radius: 4px; }
+#orb-canvas { aspect-ratio: 16 / 9; } #hov-canvas { aspect-ratio: 16 / 7; } #st-canvas { aspect-ratio: 16 / 5; }
+.labs .m-row .field input[type="range"] { width: 180px; }
+
+/* ---------- quiz ---------- */
+.qz { border: 0; padding: 0; margin: 0 0 10px; display: grid; gap: 6px; min-width: 0; }
+.qz legend { font-weight: 600; margin-bottom: 6px; padding: 0; }
+.qz-review { display: grid; gap: 8px; padding-left: 20px; margin: 0; }
+.qz-review li.ok { color: var(--ink); } .qz-review li.no { color: var(--warn); }
+.qz-text { width: 100%; min-height: 120px; font-family: var(--font-data); font-size: 12.5px; }

@@ -19,6 +19,9 @@ out vec4 outColor;
 uniform vec3 uEye, uFwd, uRight, uUp, uBeta;
 uniform vec2 uTan;
 uniform float uRsRay, uRsShift, uRsClock, uC, uCdelay, uT, uExposure, uBell;
+uniform float uLamRay, uLamShift, uLamClock, uSatUt, uAlpha2;
+uniform vec4 uSat;      // circular orbit: radius (0 = none), angular speed (rad/s, far-away time), phase at t = 0, ball radius
+uniform vec4 uBH;       // a small black hole: position, Schwarzschild radius (0 = none)
 uniform int uDoppler, uBeam, uAberr;
 const float R = ${F(g.R)};
 const float HMAX = ${F(g.HMAX)};
@@ -116,6 +119,20 @@ vec3 sky(vec3 d, out float ir, out float uv) {
   return col;
 }
 
+// Metric factors: f(r) = 1 - rs/r - r²/rΛ², with each effect switchable.
+float fRay(float r) { return 1.0 - uRsRay / r - uLamRay * r * r; }
+float fRayAt(vec3 x) { float r = length(x), f = fRay(r); if (uBH.w > 0.0) f -= uBH.w / length(x - uBH.xyz); return f; }
+float fShift(float r) { return 1.0 - uRsShift / r - uLamShift * r * r; }
+// x'' = -(3/2) rs |x × x'|² x / r⁵ for each centre. Exact for one centre; for two, a superposition.
+vec3 accel(vec3 x, vec3 v) {
+  float r = length(x); vec3 L = cross(x, v);
+  vec3 a = -1.5 * uRsRay * dot(L, L) * x / pow(r, 5.0);
+  if (uBH.w > 0.0) { vec3 y = x - uBH.xyz; float rb = length(y); vec3 Lb = cross(y, v); a += -1.5 * uBH.w * dot(Lb, Lb) * y / pow(rb, 5.0); }
+  return a;
+}
+// The satellite circles above the street: the street's great circle lies in the plane x = 0.
+vec3 satPos(float t) { float ph = uSat.z + uSat.y * t; return uSat.x * vec3(0.0, cos(ph), sin(ph)); }
+
 void main() {
   // the pixel's direction in your frame, then in the frame of someone standing still where you are
   vec3 np = normalize(uFwd + vUV.x * uTan.x * uRight + vUV.y * uTan.y * uUp);
@@ -130,39 +147,54 @@ void main() {
   // follow the light back along its curved path
   float re = length(uEye), r = re, ct = 0.0, s = 0.0, mat = 0.0;
   vec3 u = uEye / re, x = uEye;
-  vec3 v = dot(n, u) * u + (n - dot(n, u) * u) * inversesqrt(1.0 - uRsRay / re);
-  vec3 Lv = cross(x, v);
-  float k = -1.5 * uRsRay * dot(Lv, Lv);
-  vec3 acc = k * x / pow(r, 5.0);
+  vec3 v = dot(n, u) * u + (n - dot(n, u) * u) * inversesqrt(fRay(re));
+  vec3 acc = accel(x, v);
   int kind = 0;
   for (int i = 0; i < 400; i++) {
     float h = r - R, d;
-    if (h < HMAX) { d = scene(x, mat); if (d < 0.004 + 0.0015 * s) { kind = 1; break; } }
-    else d = h - HMAX + 0.5;
-    if (r > 30.0 * R) { kind = 2; break; }
+    if (h < HMAX) d = scene(x, mat); else { d = h - HMAX + 0.5; mat = 0.0; }
+    if (uSat.x > 0.0) { float e = length(x - satPos(uT - ct / uCdelay)) - uSat.w; if (e < d) { d = e; mat = 13.0; } }
+    float rb = 1e9;
+    if (uBH.w > 0.0) { rb = length(x - uBH.xyz); if (rb < 1.02 * uBH.w) { kind = 3; break; } }
+    if (d < 0.004 + 0.0015 * s) { kind = 1; break; }
+    if (r > 30.0 * R || (uLamRay > 0.0 && r * r * uLamRay > 0.8)) { kind = 2; break; }
     float dl = max(min(0.8 * d, (h > 2.0 * HMAX ? 0.15 : 0.05) * r), 0.003 * s + 0.01);
+    if (uBH.w > 0.0) dl = min(dl, max(0.08 * (rb - uBH.w), 0.01));
     float hs = dl / length(v);
     vec3 xn = x + v * hs + 0.5 * acc * hs * hs;
     float rn = length(xn);
-    vec3 accn = k * xn / pow(rn, 5.0);
+    vec3 accn = accel(xn, v + acc * hs);
     v += 0.5 * (acc + accn) * hs;
-    ct += 0.5 * hs * (1.0 / (1.0 - uRsRay / r) + 1.0 / (1.0 - uRsRay / rn));
+    ct += 0.5 * hs * (1.0 / fRayAt(x) + 1.0 / fRayAt(xn));
     if (rn < R) {
       float f = (r - R) / max(r - rn, 1e-6);
-      ct -= (1.0 - f) * hs / (1.0 - uRsRay / R);
+      ct -= (1.0 - f) * hs / fRayAt(xn);
       x = mix(x, xn, f); s += f * dl; r = R; mat = 0.0; kind = 1; break;
     }
     x = xn; r = rn; acc = accn; s += dl;
   }
 
   vec3 col; float ir = -1.0, uvl = -1.0, Dg;
-  if (kind != 1) {
+  if (kind == 3) {
+    col = vec3(0.0); ir = 0.0; uvl = 0.0; Dg = 1.0;                // fell into the small black hole
+  } else if (kind == 1 && mat == 13.0) {
+    // the satellite: a moving clock. f_seen/f_sent = 1 / (√f(you) · uᵗ · (1 − Ω L_x / c)), L of the forward-going light
+    float te = uT - ct / uCdelay;
+    vec3 sp = satPos(te), nr = normalize(x - sp);
+    float Lx = -cross(x, v).x;                                   // the light's angular momentum about the orbit axis (E = 1)
+    Dg = 1.0 / (sqrt(fShift(re)) * uSatUt * (1.0 - uSat.y / uC * Lx));
+    float tau = te / uSatUt;
+    bool on = fract(tau) < 0.25;
+    col = on ? vec3(2.2, 1.2, 0.5) : vec3(0.78, 0.80, 0.84);
+    if (!on) { float sh = 0.30 + 0.75 * max(dot(nr, SUN), 0.0); col *= sh; }
+    ir = dot(col, vec3(0.33)); uvl = ir * 0.5;
+  } else if (kind != 1) {
     col = kind == 2 ? sky(normalize(v), ir, uvl) : vec3(0.05, 0.06, 0.08);
     Dg = inversesqrt(1.0 - uRsShift / re);                    // starlight falling in is blueshifted
   } else {
     r = length(x);
-    Dg = sqrt((1.0 - uRsShift / r) / (1.0 - uRsShift / re));
-    float tau = sqrt(1.0 - uRsClock / r) * (uT - ct / uCdelay);    // the emitter's own clock when this light left it
+    Dg = sqrt(fShift(r) / fShift(re));
+    float tau = sqrt(1.0 - uRsClock / r - uLamClock * r * r) * (uT - ct / uCdelay);    // the emitter's own clock when this light left it
     float ti; vec3 p = street(x, ti);
     float l = p.x, h = p.y, a = p.z, ag = a + 120.0 * ti;
     vec3 up = x / r, along = normalize(vec3(0.0, -x.z, x.y)), across = cross(along, up);
@@ -219,7 +251,9 @@ void main() {
   }
   float D = Ddop * Dg;
   vec3 c = col;
-  if (uDoppler == 1) c = shifted(col, ir, uvl, D);
+  // atoms set the colours of surfaces and lamps: their spectra scale with α² (Rydberg energy ∝ α² mₑc²)
+  float Dc = D * (kind == 1 ? uAlpha2 : 1.0);
+  if (uDoppler == 1) c = shifted(col, ir, uvl, Dc); else if (kind == 1 && uAlpha2 != 1.0) c = shifted(col, ir, uvl, uAlpha2);
   if (uBeam == 1) c *= D * D * D;
   c *= uExposure;
   outColor = vec4(c, 1.0);

@@ -32,7 +32,18 @@ and "Look closer" (mission 8 there), brought forward because of the focus on mea
 how far you can see rather than for a flag behind you: a ray at exactly 2/3 is unstable and drifts off
 within a few hundred metres, so "see the back of your head" would be unreliable.
 
-Next: Phase 3, moving objects (thrown balls, orbits, satellites with lamps) and the radar mission.
+Phase 3 is built: a satellite drawn at its retarded position with the exact Doppler factor of an orbiting
+clock, a radar echo in the probe, the Orbits and Hover labs, and missions 9–12 (satellite clocks, radar
+echo, rosette orbits, hover). Thrown balls live in the Orbits lab rather than in the 3-D street.
+
+Phase 4 is built: α and Λ dials, the Two staircases lab, a pocket black hole (exact when the planet's own
+gravity is negligible; a superposition otherwise), and missions 13–15.
+
+Phase 5 is ready to run: a ten-question quiz before and after, mission predictions recorded, and
+[EVALUATION.md](EVALUATION.md). Running it with people is up to you.
+
+Still open: a detector screen that records arrivals by itself; a bomb-tester room; moving objects in the
+street besides the satellite; testing on real graphics cards and phones; and the sessions themselves.
 
 ## 1. What research says about teaching with simulations
 

@@ -334,6 +334,22 @@ dl { margin: 0; }
 .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
 .dial.locked { opacity: 0.55; }
 .chip[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+.more-dials summary { cursor: pointer; font-size: 13.5px; color: var(--muted); padding: 2px 0; }
+.more-dials[open] summary { margin-bottom: 8px; }
+
+/* ---------- labs ---------- */
+.labs-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+#orb-canvas, #hov-canvas, #st-canvas { width: 100%; display: block; background: var(--bg); border-radius: 4px; }
+#orb-canvas { aspect-ratio: 16 / 9; } #hov-canvas { aspect-ratio: 16 / 7; } #st-canvas { aspect-ratio: 16 / 5; }
+.labs .m-row .field input[type="range"] { width: 180px; }
+
+/* ---------- quiz ---------- */
+.qz { border: 0; padding: 0; margin: 0 0 10px; display: grid; gap: 6px; min-width: 0; }
+.qz legend { font-weight: 600; margin-bottom: 6px; padding: 0; }
+.qz-review { display: grid; gap: 8px; padding-left: 20px; margin: 0; }
+.qz-review li.ok { color: var(--ink); } .qz-review li.no { color: var(--warn); }
+.qz-text { width: 100%; min-height: 120px; font-family: var(--font-data); font-size: 12.5px; }
 </style>
 </head>
 <body>
@@ -376,6 +392,26 @@ dl { margin: 0; }
       </div>
     </div>
 
+    <details class="more-dials">
+      <summary>More constants: α and Λ</summary>
+      <div class="dials">
+        <div class="dial" data-k="c">
+          <span class="sym sym-c">α</span><span class="dial-name">fine-structure constant</span>
+          <button class="link-btn" type="button" id="reset-alpha">real value</button>
+          <output class="dial-value" id="val-alpha" for="dial-alpha"></output>
+          <span class="dial-note" id="note-alpha"></span>
+          <input type="range" id="dial-alpha" min="0" max="1000" step="1" aria-label="Fine-structure constant, times today's">
+        </div>
+        <div class="dial" data-k="G">
+          <span class="sym sym-g">Λ</span><span class="dial-name">cosmological constant: its horizon</span>
+          <button class="link-btn" type="button" id="reset-cosmo">real value</button>
+          <output class="dial-value" id="val-cosmo" for="dial-cosmo"></output>
+          <span class="dial-note" id="note-cosmo"></span>
+          <input type="range" id="dial-cosmo" min="0" max="1000" step="1" aria-label="Distance to the cosmological horizon">
+        </div>
+      </div>
+    </details>
+
     <div class="presets" id="presets" role="group" aria-label="Presets"></div>
 
     <div class="regime">
@@ -402,6 +438,10 @@ dl { margin: 0; }
       <button class="btn quiet" type="button" id="w-turn">Turn around</button>
       <button class="btn quiet" type="button" id="w-tower">Up to the tower clock</button>
       <button class="btn quiet" type="button" id="w-home">Back to start</button>
+      <label class="field"><span>Satellite orbit <output id="sat-out">none</output></span>
+        <input type="range" id="sat-h" min="0" max="400" step="5" value="0"></label>
+      <label class="field"><span>Pocket black hole <output id="bh-out">none</output></span>
+        <input type="range" id="bh-rs" min="0" max="1.2" step="0.05" value="0"></label>
     </div>
     <div class="fxbar" role="group" aria-label="Effects you can switch off one at a time">
       <span class="fx-label">Effects</span>
@@ -475,6 +515,53 @@ dl { margin: 0; }
         </div>
       </section>
     </div>
+
+    <section class="tool labs" aria-labelledby="labs-h">
+      <div class="labs-head">
+        <h3 id="labs-h">Labs</h3>
+        <div class="seg" role="group" aria-label="Choose a lab">
+          <button type="button" id="labtab-orbits" aria-pressed="true">Orbits</button>
+          <button type="button" id="labtab-hover" aria-pressed="false">Hover</button>
+          <button type="button" id="labtab-stairs" aria-pressed="false">Two staircases</button>
+        </div>
+      </div>
+      <div id="lab-orbits">
+        <p class="note">Throw a ball sideways round the planet. Newton’s ball (dashed) retraces the same ellipse for ever; Einstein’s (solid) turns a little every time round.</p>
+        <div class="m-row">
+          <label class="field"><span>Thrown from <output id="orb-h-out">300 m</output> up</span><input type="range" id="orb-h" min="10" max="600" step="5" value="300"></label>
+          <label class="field"><span>Speed <output id="orb-k-out">×0.92</output> of a circular orbit’s</span><input type="range" id="orb-k" min="0.6" max="1.3" step="0.01" value="0.92"></label>
+          <button class="btn" type="button" id="orb-throw">Throw</button>
+        </div>
+        <canvas id="orb-canvas" aria-label="The orbit seen from above"></canvas>
+        <p class="note" id="orb-note" aria-live="polite"></p>
+      </div>
+      <div id="lab-hover" hidden>
+        <p class="note">When you are a wave, gravity and the floor squeeze your height too. Settle, and your eyes rise by however far your feet hover.</p>
+        <div class="m-row">
+          <button class="btn" type="button" id="hov-settle">Settle to the lowest state</button>
+          <button class="btn quiet" type="button" id="hov-drop">Drop from 2 m</button>
+          <button class="btn quiet" type="button" id="hov-stop">Stop</button>
+        </div>
+        <canvas id="hov-canvas" aria-label="Your height as a wave above the floor"></canvas>
+        <p class="note" id="hov-note" aria-live="polite"></p>
+      </div>
+      <div id="lab-stairs" hidden>
+        <p class="note">Your wave splits at the foot of two staircases. One part climbs and waits at the top, the other waits at the bottom; then they rejoin and make stripes. Higher clocks run faster, so if you carry a ticking watch, its reading records which way you went.</p>
+        <div class="m-row">
+          <label class="field"><span>Upper stair <output id="st-h-out"></output></span><input type="range" id="st-h" min="0" max="50" step="1" value="20"></label>
+          <label class="field"><span>Time apart <output id="st-t-out"></output></span><input type="range" id="st-t" min="0" max="60" step="0.5" value="20"></label>
+          <label class="field"><span>Your watch ticks <output id="st-f-out"></output></span><input type="range" id="st-f" min="0" max="4" step="0.05" value="1"></label>
+        </div>
+        <canvas id="st-canvas" aria-label="Stripes where the two parts rejoin"></canvas>
+        <dl class="m-meter" id="st-read"></dl>
+      </div>
+    </section>
+
+    <section class="tool" id="quiz" aria-labelledby="quiz-h">
+      <h3 id="quiz-h">Check yourself: ten questions, before and after</h3>
+      <p class="note">Take it once before the missions and once after. Your answers stay in this browser; “Copy results” gives a summary to paste into a study log.</p>
+      <div id="quiz-body"></div>
+    </section>
 
     <div class="explain">
       <div>
@@ -1260,7 +1347,7 @@ dl { margin: 0; }
     return Math.hypot(Math.max(qx, 0), Math.max(qy, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, Math.max(qy, qz)), 0);
   }
   var MATS = ['the street', 'a house', '', 'a post', 'a lamp', 'a crate', '', 'a tree trunk', 'a tree', 'the street clock',
-              'the clock tower', 'the wall with two doors', 'the bell over the left door'];
+              'the clock tower', 'the wall with two doors', 'the bell over the left door', 'the satellite'];
   // Distance to the nearest surface from a planet-frame point, and its material (same numbering as the shader).
   function scene(x) {
     var r = len(x), a = R * Math.atan2(x[2], x[1]), ti = Math.floor((a + 60) / 120);
@@ -1301,41 +1388,64 @@ dl { margin: 0; }
     return { n: [(np[0] + k * beta[0]) / den, (np[1] + k * beta[1]) / den, (np[2] + k * beta[2]) / den], D: 1 / den };
   }
 
-  /* The shader's light-ray march, step for step, keeping the path. Returns what the ray hit (kind 1),
-   * or the sky (kind 2), with c × travel time ct and the path points. */
-  function march(eye, n, rs, keep) {
+  /* The shader's light-ray march, step for step, keeping the path. opts (all optional): lam (1/rΛ²),
+   * sat {r, w (rad/s), ph0, rad}, bh {p: [x,y,z], rs}, T (s), cd (c for light delay).
+   * Returns kind 1 (hit), 2 (sky), 3 (fell into the small black hole), with c × travel time ct. */
+  function march(eye, n, rs, keep, opts) {
+    opts = opts || {};
+    var lam = opts.lam || 0, sat = opts.sat, bh = opts.bh && opts.bh.rs > 0 ? opts.bh : null, T = opts.T || 0, cd = opts.cd || 1e12;
+    function fAt(p) { var r = len(p), f = 1 - rs / r - lam * r * r; if (bh) f -= bh.rs / len(sub(p, bh.p)); return f; }
+    function accel(p, w) {
+      var r = len(p), Lv = cross(p, w), k = -1.5 * rs * dot(Lv, Lv) / Math.pow(r, 5), out = [k * p[0], k * p[1], k * p[2]];
+      if (bh) { var y = sub(p, bh.p), rb = len(y), Lb = cross(y, w), kb = -1.5 * bh.rs * dot(Lb, Lb) / Math.pow(rb, 5); for (var j = 0; j < 3; j++) out[j] += kb * y[j]; }
+      return out;
+    }
+    function satAt(t) { var ph = sat.ph0 + sat.w * t; return [0, sat.r * Math.cos(ph), sat.r * Math.sin(ph)]; }
     var re = len(eye), u = [eye[0] / re, eye[1] / re, eye[2] / re], x = eye.slice(), r = re, ct = 0, s = 0, mat = 0, kind = 0;
-    var nu = dot(n, u), f = 1 / Math.sqrt(1 - rs / re), v = [0, 1, 2].map(function (i) { return nu * u[i] + (n[i] - nu * u[i]) * f; });
-    var Lv = cross(x, v), k = -1.5 * rs * dot(Lv, Lv), acc = x.map(function (c) { return k * c / Math.pow(r, 5); });
-    var path = keep ? [x.slice()] : null;
+    var nu = dot(n, u), f0 = 1 / Math.sqrt(1 - rs / re - lam * re * re);
+    var v = [0, 1, 2].map(function (i) { return nu * u[i] + (n[i] - nu * u[i]) * f0; });
+    var acc = accel(x, v), path = keep ? [x.slice()] : null, v0 = v.slice();
     for (var i = 0; i < 400; i++) {
-      var h = r - R, d;
-      if (h < HMAX) { var sc = scene(x); d = sc.d; mat = sc.mat; if (d < 0.004 + 0.0015 * s) { kind = 1; break; } }
-      else d = h - HMAX + 0.5;
-      if (r > 30 * R) { kind = 2; break; }
-      var dl = Math.max(Math.min(0.8 * d, (h > 2 * HMAX ? 0.15 : 0.05) * r), 0.003 * s + 0.01), hs = dl / len(v);
+      var h = r - R, d, rb = 1e9;
+      if (h < HMAX) { var sc = scene(x); d = sc.d; mat = sc.mat; } else { d = h - HMAX + 0.5; mat = 0; }
+      if (sat && sat.r > 0) { var e = len(sub(x, satAt(T - ct / cd))) - sat.rad; if (e < d) { d = e; mat = 13; } }
+      if (bh) { rb = len(sub(x, bh.p)); if (rb < 1.02 * bh.rs) { kind = 3; break; } }
+      if (d < 0.004 + 0.0015 * s) { kind = 1; break; }
+      if (r > 30 * R || (lam > 0 && r * r * lam > 0.8)) { kind = 2; break; }
+      var dl = Math.max(Math.min(0.8 * d, (h > 2 * HMAX ? 0.15 : 0.05) * r), 0.003 * s + 0.01);
+      if (bh) dl = Math.min(dl, Math.max(0.08 * (rb - bh.rs), 0.01));
+      var hs = dl / len(v);
       var xn = [0, 1, 2].map(function (j) { return x[j] + v[j] * hs + 0.5 * acc[j] * hs * hs; });
-      var rn = len(xn), accn = xn.map(function (c) { return k * c / Math.pow(rn, 5); });
+      var rn = len(xn), accn = accel(xn, [v[0] + acc[0] * hs, v[1] + acc[1] * hs, v[2] + acc[2] * hs]);
       for (var j = 0; j < 3; j++) v[j] += 0.5 * (acc[j] + accn[j]) * hs;
-      ct += 0.5 * hs * (1 / (1 - rs / r) + 1 / (1 - rs / rn));
+      ct += 0.5 * hs * (1 / fAt(x) + 1 / fAt(xn));
       if (rn < R) {
         var fr = (r - R) / Math.max(r - rn, 1e-6);
-        ct -= (1 - fr) * hs / (1 - rs / R);
-        x = [0, 1, 2].map(function (j) { return x[j] + (xn[j] - x[j]) * fr; }); s += fr * dl; mat = 0; kind = 1;
+        ct -= (1 - fr) * hs / fAt(xn);
+        x = [0, 1, 2].map(function (k2) { return x[k2] + (xn[k2] - x[k2]) * fr; }); s += fr * dl; mat = 0; kind = 1;
         if (keep) path.push(x.slice());
         break;
       }
       x = xn; r = rn; acc = accn; s += dl;
       if (keep) path.push(x.slice());
     }
-    return { kind: kind, mat: mat, x: x, v: v, ct: ct, s: s, path: path, n0: n };
+    return { kind: kind, mat: mat, x: x, v: v, v0: v0, ct: ct, s: s, path: path, n0: n, te: T - ct / cd, sat: sat && mat === 13 ? satAt(T - ct / cd) : null };
+  }
+  function sub(p, q) { return [p[0] - q[0], p[1] - q[1], p[2] - q[2]]; }
+
+  /* Circular orbit of radius r (m) in the Schwarzschild–de Sitter field: far-away angular speed (rad/s) and
+   * uᵗ = dt/dτ. Λ cancels from uᵗ. Returns null where no circular orbit exists (r ≤ 1.5 rs). */
+  function orbit(r, rs, c, lam) {
+    var w2 = c * c * (rs / (2 * r * r * r) - (lam || 0));
+    if (r <= 1.5 * rs || w2 <= 0) return null;
+    return { w: Math.sqrt(w2), ut: 1 / Math.sqrt(1 - 1.5 * rs / r) };
   }
 
   var api = {
     R: R, NT: NT, LT: LT, EYE: EYE, HMAX: HMAX, START: START, DOORS: DOORS, TOWER: TOWER, WALL: WALL,
     mod: mod, wrapA: wrapA, toWorld: toWorld, fromWorld: fromWorld, frame: frame, footprint: footprint,
     launch: launch, trace: trace, horizon: horizon, clockRate: clockRate, dot: dot, cross: cross, len: len,
-    houseHeight: houseHeight, scene: scene, MATS: MATS, deaberrate: deaberrate, march: march
+    houseHeight: houseHeight, scene: scene, MATS: MATS, deaberrate: deaberrate, march: march, orbit: orbit, sub: sub
   };
   root.CGH = root.CGH || {};
   root.CGH.geo = api;
@@ -1363,6 +1473,9 @@ out vec4 outColor;
 uniform vec3 uEye, uFwd, uRight, uUp, uBeta;
 uniform vec2 uTan;
 uniform float uRsRay, uRsShift, uRsClock, uC, uCdelay, uT, uExposure, uBell;
+uniform float uLamRay, uLamShift, uLamClock, uSatUt, uAlpha2;
+uniform vec4 uSat;      // circular orbit: radius (0 = none), angular speed (rad/s, far-away time), phase at t = 0, ball radius
+uniform vec4 uBH;       // a small black hole: position, Schwarzschild radius (0 = none)
 uniform int uDoppler, uBeam, uAberr;
 const float R = ${F(g.R)};
 const float HMAX = ${F(g.HMAX)};
@@ -1460,6 +1573,20 @@ vec3 sky(vec3 d, out float ir, out float uv) {
   return col;
 }
 
+// Metric factors: f(r) = 1 - rs/r - r²/rΛ², with each effect switchable.
+float fRay(float r) { return 1.0 - uRsRay / r - uLamRay * r * r; }
+float fRayAt(vec3 x) { float r = length(x), f = fRay(r); if (uBH.w > 0.0) f -= uBH.w / length(x - uBH.xyz); return f; }
+float fShift(float r) { return 1.0 - uRsShift / r - uLamShift * r * r; }
+// x'' = -(3/2) rs |x × x'|² x / r⁵ for each centre. Exact for one centre; for two, a superposition.
+vec3 accel(vec3 x, vec3 v) {
+  float r = length(x); vec3 L = cross(x, v);
+  vec3 a = -1.5 * uRsRay * dot(L, L) * x / pow(r, 5.0);
+  if (uBH.w > 0.0) { vec3 y = x - uBH.xyz; float rb = length(y); vec3 Lb = cross(y, v); a += -1.5 * uBH.w * dot(Lb, Lb) * y / pow(rb, 5.0); }
+  return a;
+}
+// The satellite circles above the street: the street's great circle lies in the plane x = 0.
+vec3 satPos(float t) { float ph = uSat.z + uSat.y * t; return uSat.x * vec3(0.0, cos(ph), sin(ph)); }
+
 void main() {
   // the pixel's direction in your frame, then in the frame of someone standing still where you are
   vec3 np = normalize(uFwd + vUV.x * uTan.x * uRight + vUV.y * uTan.y * uUp);
@@ -1474,39 +1601,54 @@ void main() {
   // follow the light back along its curved path
   float re = length(uEye), r = re, ct = 0.0, s = 0.0, mat = 0.0;
   vec3 u = uEye / re, x = uEye;
-  vec3 v = dot(n, u) * u + (n - dot(n, u) * u) * inversesqrt(1.0 - uRsRay / re);
-  vec3 Lv = cross(x, v);
-  float k = -1.5 * uRsRay * dot(Lv, Lv);
-  vec3 acc = k * x / pow(r, 5.0);
+  vec3 v = dot(n, u) * u + (n - dot(n, u) * u) * inversesqrt(fRay(re));
+  vec3 acc = accel(x, v);
   int kind = 0;
   for (int i = 0; i < 400; i++) {
     float h = r - R, d;
-    if (h < HMAX) { d = scene(x, mat); if (d < 0.004 + 0.0015 * s) { kind = 1; break; } }
-    else d = h - HMAX + 0.5;
-    if (r > 30.0 * R) { kind = 2; break; }
+    if (h < HMAX) d = scene(x, mat); else { d = h - HMAX + 0.5; mat = 0.0; }
+    if (uSat.x > 0.0) { float e = length(x - satPos(uT - ct / uCdelay)) - uSat.w; if (e < d) { d = e; mat = 13.0; } }
+    float rb = 1e9;
+    if (uBH.w > 0.0) { rb = length(x - uBH.xyz); if (rb < 1.02 * uBH.w) { kind = 3; break; } }
+    if (d < 0.004 + 0.0015 * s) { kind = 1; break; }
+    if (r > 30.0 * R || (uLamRay > 0.0 && r * r * uLamRay > 0.8)) { kind = 2; break; }
     float dl = max(min(0.8 * d, (h > 2.0 * HMAX ? 0.15 : 0.05) * r), 0.003 * s + 0.01);
+    if (uBH.w > 0.0) dl = min(dl, max(0.08 * (rb - uBH.w), 0.01));
     float hs = dl / length(v);
     vec3 xn = x + v * hs + 0.5 * acc * hs * hs;
     float rn = length(xn);
-    vec3 accn = k * xn / pow(rn, 5.0);
+    vec3 accn = accel(xn, v + acc * hs);
     v += 0.5 * (acc + accn) * hs;
-    ct += 0.5 * hs * (1.0 / (1.0 - uRsRay / r) + 1.0 / (1.0 - uRsRay / rn));
+    ct += 0.5 * hs * (1.0 / fRayAt(x) + 1.0 / fRayAt(xn));
     if (rn < R) {
       float f = (r - R) / max(r - rn, 1e-6);
-      ct -= (1.0 - f) * hs / (1.0 - uRsRay / R);
+      ct -= (1.0 - f) * hs / fRayAt(xn);
       x = mix(x, xn, f); s += f * dl; r = R; mat = 0.0; kind = 1; break;
     }
     x = xn; r = rn; acc = accn; s += dl;
   }
 
   vec3 col; float ir = -1.0, uvl = -1.0, Dg;
-  if (kind != 1) {
+  if (kind == 3) {
+    col = vec3(0.0); ir = 0.0; uvl = 0.0; Dg = 1.0;                // fell into the small black hole
+  } else if (kind == 1 && mat == 13.0) {
+    // the satellite: a moving clock. f_seen/f_sent = 1 / (√f(you) · uᵗ · (1 − Ω L_x / c)), L of the forward-going light
+    float te = uT - ct / uCdelay;
+    vec3 sp = satPos(te), nr = normalize(x - sp);
+    float Lx = -cross(x, v).x;                                   // the light's angular momentum about the orbit axis (E = 1)
+    Dg = 1.0 / (sqrt(fShift(re)) * uSatUt * (1.0 - uSat.y / uC * Lx));
+    float tau = te / uSatUt;
+    bool on = fract(tau) < 0.25;
+    col = on ? vec3(2.2, 1.2, 0.5) : vec3(0.78, 0.80, 0.84);
+    if (!on) { float sh = 0.30 + 0.75 * max(dot(nr, SUN), 0.0); col *= sh; }
+    ir = dot(col, vec3(0.33)); uvl = ir * 0.5;
+  } else if (kind != 1) {
     col = kind == 2 ? sky(normalize(v), ir, uvl) : vec3(0.05, 0.06, 0.08);
     Dg = inversesqrt(1.0 - uRsShift / re);                    // starlight falling in is blueshifted
   } else {
     r = length(x);
-    Dg = sqrt((1.0 - uRsShift / r) / (1.0 - uRsShift / re));
-    float tau = sqrt(1.0 - uRsClock / r) * (uT - ct / uCdelay);    // the emitter's own clock when this light left it
+    Dg = sqrt(fShift(r) / fShift(re));
+    float tau = sqrt(1.0 - uRsClock / r - uLamClock * r * r) * (uT - ct / uCdelay);    // the emitter's own clock when this light left it
     float ti; vec3 p = street(x, ti);
     float l = p.x, h = p.y, a = p.z, ag = a + 120.0 * ti;
     vec3 up = x / r, along = normalize(vec3(0.0, -x.z, x.y)), across = cross(along, up);
@@ -1563,7 +1705,9 @@ void main() {
   }
   float D = Ddop * Dg;
   vec3 c = col;
-  if (uDoppler == 1) c = shifted(col, ir, uvl, D);
+  // atoms set the colours of surfaces and lamps: their spectra scale with α² (Rydberg energy ∝ α² mₑc²)
+  float Dc = D * (kind == 1 ? uAlpha2 : 1.0);
+  if (uDoppler == 1) c = shifted(col, ir, uvl, Dc); else if (kind == 1 && uAlpha2 != 1.0) c = shifted(col, ir, uvl, uAlpha2);
   if (uBeam == 1) c *= D * D * D;
   c *= uExposure;
   outColor = vec4(c, 1.0);
@@ -1639,13 +1783,16 @@ void main() {
   /* ---------- the four dials ---------- */
   // cw: light speed in walking speeds · comp: rs/R of the planet · lam: your wavelength at walking pace (m)
   // photons: photons a mid-grey pixel collects per frame
-  var REALV = { cw: REAL.c / WALK, comp: 2 * REAL.G * ROCK / (REAL.c * REAL.c * G.R), lam: 2 * Math.PI * REAL.hbar / (MASS * WALK), photons: 3e5 };
-  var state = { cw: REALV.cw, comp: REALV.comp, lam: REALV.lam, photons: REALV.photons };
+  var KEYS = ['cw', 'comp', 'lam', 'photons', 'alpha', 'cosmo'];
+  var REALV = { cw: REAL.c / WALK, comp: 2 * REAL.G * ROCK / (REAL.c * REAL.c * G.R), lam: 2 * Math.PI * REAL.hbar / (MASS * WALK), photons: 3e5, alpha: 1, cosmo: 1.65e26 };
+  var state = { cw: REALV.cw, comp: REALV.comp, lam: REALV.lam, photons: REALV.photons, alpha: 1, cosmo: REALV.cosmo };
   var DIAL = {
     cw: { lo: Math.log10(1.2), hi: Math.log10(REALV.cw) },
     comp: { cube: true },
     lam: { lo: -2, hi: Math.log10(8) },
-    photons: { lo: Math.log10(0.3), hi: Math.log10(REALV.photons) }
+    photons: { lo: Math.log10(0.3), hi: Math.log10(REALV.photons) },
+    alpha: { lo: Math.log10(0.25), hi: Math.log10(4) },
+    cosmo: { lo: 3, hi: Math.log10(REALV.cosmo) }
   };
   function toSlider(k, v) {
     if (k === 'comp') return v < 1e-9 ? 0 : Math.round(1000 * Math.cbrt(v / 0.95));
@@ -1655,7 +1802,8 @@ void main() {
   function fromSlider(k, s) {
     if (k === 'comp') return s <= 2 ? REALV.comp : 0.95 * Math.pow(s / 1000, 3);
     if (k === 'lam' && s <= 2) return REALV.lam;
-    if ((k === 'cw' || k === 'photons') && s >= 995) return REALV[k];
+    if ((k === 'cw' || k === 'photons' || k === 'cosmo') && s >= 995) return REALV[k];
+    if (k === 'alpha' && Math.abs(s - 500) <= 6) return 1;
     var d = DIAL[k]; return Number(Math.pow(10, d.lo + (d.hi - d.lo) * s / 1000).toPrecision(3));
   }
   var listeners = [];
@@ -1674,7 +1822,8 @@ void main() {
     var c = state.cw * WALK, rs = state.comp * G.R, GM = rs * c * c / 2;
     return {
       c: c, rs: rs, GM: GM, g: GM / (G.R * G.R * Math.sqrt(1 - state.comp)), Gratio: GM / (REAL.G * ROCK),
-      hbar: state.lam * MASS * WALK / (2 * Math.PI), hbarLight: REAL.hbar * REALV.photons / state.photons
+      hbar: state.lam * MASS * WALK / (2 * Math.PI), hbarLight: REAL.hbar * REALV.photons / state.photons,
+      alpha2: state.alpha * state.alpha, lam: 1 / (state.cosmo * state.cosmo)
     };
   }
 
@@ -1686,15 +1835,22 @@ void main() {
       return v < 0.5 ? 'GM = ' + num(d.GM) + ' m³/s² at this c; a neutron star is 0.4–0.5' : v < 0.66 ? 'near 2/3, light orbits at your eye' : v < 0.68 ? 'light orbits at your eye' : 'inside the photon orbit: the sky shrinks overhead';
     }
     if (k === 'lam') return isReal(k) ? 'our universe: ħ = 1.05×10⁻³⁴ J·s' : 'ħ = ' + num(d.hbar) + ' J·s' + (v < 0.5 ? '; too fine to show here' : '');
+    if (k === 'alpha') return isReal(k) ? 'our universe: α = 1/137.036' : 'atomic colours shift ×' + num(v * v, 3) + ' in frequency; atoms ' + num(1 / v, 2) + '× as wide; no element beyond Z ≈ ' + Math.floor(137 / v);
+    if (k === 'cosmo') {
+      if (isReal(k)) return 'our universe: about 17 billion light-years';
+      var d = derived(), rf = Math.cbrt(d.rs * v * v / 2);
+      return 'higher clocks slowed by Λ; ' + (d.rs > 0 && rf - G.R < 5000 ? 'a ball would float ' + length(rf - G.R, 2) + ' up' : 'its push is too weak here');
+    }
     return isReal(k) ? 'roughly what an eye gets in daylight' : 'as if ħ were ' + num(d.hbarLight / REAL.hbar, 2) + '× larger, light kept as bright';
   }
   function show(k) {
     var v = state[k];
-    return k === 'cw' ? num(v) + ' walking speeds' : k === 'comp' ? 'rs/R = ' + num(v) : k === 'lam' ? 'λ = ' + length(v) : num(v) + ' per pixel';
+    return k === 'cw' ? num(v) + ' walking speeds' : k === 'comp' ? 'rs/R = ' + num(v) : k === 'lam' ? 'λ = ' + length(v) :
+      k === 'alpha' ? num(v, 3) + ' × today’s α' : k === 'cosmo' ? 'horizon at ' + length(v, 3) : num(v) + ' per pixel';
   }
   var locked = null;                 // during a mission: the only dials you may turn
   function renderDials() {
-    ['cw', 'comp', 'lam', 'photons'].forEach(function (k) {
+    KEYS.forEach(function (k) {
       var off = !!locked && locked.indexOf(k) < 0;
       $('dial-' + k).value = toSlider(k, state[k]);
       $('dial-' + k).disabled = off;
@@ -1715,9 +1871,10 @@ void main() {
     { name: 'You are a wave', v: { cw: REALV.cw, comp: REALV.comp, lam: 2, photons: REALV.photons }, pose: 'doors' },
     { name: 'Everything', v: { cw: 7, comp: 0.45, lam: 1.2, photons: 150 } }
   ];
+  PRESETS.forEach(function (p) { p.v = Object.assign({ alpha: 1, cosmo: REALV.cosmo }, p.v); });
   function renderPresets() {
     Array.prototype.forEach.call($('presets').children, function (b, i) {
-      var v = PRESETS[i].v, on = ['cw', 'comp', 'lam', 'photons'].every(function (k) { return Math.abs(state[k] / v[k] - 1) < 1e-3; });
+      var v = PRESETS[i].v, on = KEYS.every(function (k) { return Math.abs(state[k] / v[k] - 1) < 1e-3; });
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
   }
@@ -1759,7 +1916,7 @@ void main() {
       if (s && ['cw', 'comp', 'lam', 'photons'].every(function (k) { return s[k] > 0; })) state = Object.assign(state, s);
       CGH.app.state = state;
     } catch (e) { /* start from our universe */ }
-    ['cw', 'comp', 'lam', 'photons'].forEach(function (k) {
+    KEYS.forEach(function (k) {
       $('dial-' + k).addEventListener('input', function (ev) { var p = {}; p[k] = fromSlider(k, Number(ev.target.value)); set(p); });
       $('reset-' + k).addEventListener('click', function () { var p = {}; p[k] = REALV[k]; set(p); });
     });
@@ -1778,7 +1935,7 @@ void main() {
   }
 
   CGH.app = {
-    state: state, REAL: REALV, WALK: WALK, MASS: MASS, set: set, lock: lock, onChange: onChange, isReal: isReal, derived: derived, regime: regime,
+    state: state, KEYS: KEYS, REAL: REALV, WALK: WALK, MASS: MASS, set: set, lock: lock, onChange: onChange, isReal: isReal, derived: derived, regime: regime,
     num: num, length: length, duration: duration, clock: clock, css: css, fit: fit, init: init, $: $
   };
 })();
@@ -2002,11 +2159,12 @@ void main() {
   'use strict';
   var G = CGH.geo, P = CGH.physics, A = CGH.app, SH = CGH.shaders, WV = CGH.wave, $ = A.$;
   var EFFORT_MAX = 20, FOV = 1.2, CLOCK_TOP = 46, CLIMB = 3, TOP_EYE = 80;
+  var BH = { a: 20, l: 0, h: 3.5 };                          // where the pocket black hole hovers
   var FX = ['bend', 'delay', 'aberr', 'doppler', 'gshift', 'beam', 'rates'];
   var canvas, gl, prog = {}, fmt, scene = null, acc = [], size = [0, 0], vao, raf = 0, last = 0, ok = false;
   var S = {
     a: G.START.a, l: G.START.l, h: G.EYE, heading: 0, lookYaw: 0, lookPitch: 0.04, effort: 0,
-    T: 0, tau: 0, street: 0, top: 0, exposure: 1, keys: {}, scale: 0.6, fixedScale: 0, ms: 16,
+    T: 0, tau: 0, street: 0, top: 0, satT: 0, satH: 0, bhRs: 0, exposure: 1, keys: {}, scale: 0.6, fixedScale: 0, ms: 16,
     fx: { bend: true, delay: true, aberr: true, doppler: true, gshift: true, beam: true, rates: true },
     view: { a: G.START.a, l: G.START.l }, frame: 0, fresh: true, envRate: 0, envTimer: 0, sharp: 0.5, screen: false, hint: 12, q: null, cam: null
   };
@@ -2041,7 +2199,7 @@ void main() {
     if (!gl) return false;
     fmt = gl.getExtension('EXT_color_buffer_float') ? { internal: gl.RGBA16F, type: gl.HALF_FLOAT } : { internal: gl.RGBA8, type: gl.UNSIGNED_BYTE };
     prog.march = program(SH.MARCH, ['uEye', 'uFwd', 'uRight', 'uUp', 'uBeta', 'uTan', 'uRsRay', 'uRsShift', 'uRsClock', 'uCdelay', 'uT',
-      'uExposure', 'uDoppler', 'uBeam', 'uAberr', 'uBell']);
+      'uExposure', 'uDoppler', 'uBeam', 'uAberr', 'uBell', 'uLamRay', 'uLamShift', 'uLamClock', 'uSatUt', 'uAlpha2', 'uSat', 'uBH']);
     prog.accum = program(SH.ACCUM, ['uNew', 'uOld', 'uK']);
     prog.show = program(SH.SHOW, ['uImg', 'uPhotons', 'uSeed']);
     vao = gl.createVertexArray();
@@ -2051,10 +2209,16 @@ void main() {
   /* ---------- moving ---------- */
   function dials() {
     var d = A.derived(), st = A.state;
-    return { c: d.c, rs: d.rs, hbar: d.hbar, quantum: st.lam >= 0.5, photons: st.photons };
+    var q = { c: d.c, rs: d.rs, hbar: d.hbar, quantum: st.lam >= 0.5, photons: st.photons, alpha2: d.alpha2, lam: d.lam };
+    q.f = function (r) { return 1 - q.rs / r - q.lam * r * r; };
+    q.sat = S.satH > 0 ? G.orbit(G.R + S.satH, q.rs, q.c, q.lam) : null;
+    if (q.sat) { q.sat.r = G.R + S.satH; q.sat.ph0 = G.START.a / G.R; q.sat.rad = 2; }
+    q.bh = S.bhRs > 0 ? { p: G.toWorld(BH.a, BH.l, BH.h), rs: S.bhRs } : null;
+    return q;
   }
   // Is there room for a body with its eyes at (a, l, h)? Checks at eye and knee height.
   function room(a, l, h) {
+    if (S.bhRs > 0 && G.len(G.sub(G.toWorld(a, l, h), G.toWorld(BH.a, BH.l, BH.h))) < 3 * S.bhRs + 0.5) return false;
     return G.scene(G.toWorld(a, l, h)).d > 0.25 && G.scene(G.toWorld(a, l, Math.max(h - 1.2, 0.5))).d > 0.25;
   }
   function update(dtau) {
@@ -2063,11 +2227,11 @@ void main() {
     if (k.slower) { S.effort = Math.max(0, S.effort - 8 * dtau); syncEffort(); }
     if (k.left) S.heading -= 1.3 * dtau;
     if (k.right) S.heading += 1.3 * dtau;
-    if (q.quantum) S.h = G.EYE;                               // the wave lives on the ground
+    if (q.quantum) S.h = G.EYE + (CGH.labs && CGH.labs.step ? CGH.labs.step(dtau) : 0);   // the wave lives on the ground, hovering if the lab says so
     q.vz = q.quantum ? 0 : CLIMB * ((k.up ? 1 : 0) - (k.down ? 1 : 0));
     if ((S.h <= G.EYE && q.vz < 0) || (S.h >= TOP_EYE && q.vz > 0)) q.vz = 0;
     var v = P.speedFromEffort(S.effort, q.c), va = v * Math.cos(S.heading), vl = v * Math.sin(S.heading);
-    q.re = G.R + S.h; q.lapse = Math.sqrt(1 - q.rs / q.re);
+    q.re = G.R + S.h; q.lapse = Math.sqrt(q.f(q.re));
     if (q.quantum) {
       var W = WV.W;
       if (!W.on || W.hbar !== q.hbar || W.c !== q.c) { WV.start(S.a, S.l, va, vl, q.hbar, q.c, 0.6); S.fresh = true; }
@@ -2079,8 +2243,8 @@ void main() {
     q.v = sp; q.beta = sp / q.c; q.gamma = 1 / Math.sqrt(1 - q.beta * q.beta); q.vel = vel;
     var dtLocal = q.gamma * dtau, dT = dtLocal / q.lapse;    // time for someone standing here; far-away time
     S.T += dT;
-    if (S.fx.rates) { S.tau += dtau; S.street += dT * Math.sqrt(1 - q.rs / G.R); S.top += dT * Math.sqrt(1 - q.rs / (G.R + CLOCK_TOP)); }
-    else { S.tau += dT; S.street += dT; S.top += dT; }
+    if (S.fx.rates) { S.tau += dtau; S.street += dT * Math.sqrt(q.f(G.R)); S.top += dT * Math.sqrt(q.f(G.R + CLOCK_TOP)); if (q.sat) S.satT += dT / q.sat.ut; }
+    else { S.tau += dT; S.street += dT; S.top += dT; S.satT += dT; }
     if (q.quantum) {
       WV.step(dtLocal, va, vl);
       if (S.envRate) { S.envTimer -= dtau; if (S.envTimer <= 0) { S.envTimer = 1 / S.envRate; WV.look(0.5, Math.random); } }
@@ -2128,6 +2292,10 @@ void main() {
     gl.uniform1f(u.uCdelay, fx.delay ? q.c : 1e12); gl.uniform1f(u.uT, S.T % 1e5); gl.uniform1f(u.uExposure, S.exposure);
     gl.uniform1i(u.uDoppler, fx.doppler ? 1 : 0); gl.uniform1i(u.uBeam, fx.beam ? 1 : 0); gl.uniform1i(u.uAberr, fx.aberr ? 1 : 0);
     gl.uniform1f(u.uBell, q.quantum && WV.W.bell > 0 ? 1 : 0);
+    gl.uniform1f(u.uLamRay, fx.bend ? q.lam : 0); gl.uniform1f(u.uLamShift, fx.gshift ? q.lam : 0); gl.uniform1f(u.uLamClock, fx.rates ? q.lam : 0);
+    gl.uniform1f(u.uAlpha2, q.alpha2);
+    gl.uniform4f(u.uSat, q.sat ? q.sat.r : 0, q.sat ? q.sat.w : 0, q.sat ? q.sat.ph0 : 0, 2); gl.uniform1f(u.uSatUt, q.sat ? q.sat.ut : 1);
+    var bp = q.bh ? q.bh.p : [0, 0, 0]; gl.uniform4f(u.uBH, bp[0], bp[1], bp[2], q.bh ? q.bh.rs : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
     var k = S.fresh ? 1 : q.quantum ? (WV.W.spread > 0.12 ? 0.08 : 0.35) : 1;
@@ -2197,7 +2365,11 @@ void main() {
       q.quantum ? row('Your spread / top speed here', n(WV.W.spread, 2) + ' m / ' + n(q.top, 2) + ' m/s')
                 : row('Your wavelength now', A.length(2 * Math.PI * q.hbar / (A.MASS * Math.max(q.v, A.WALK) * q.gamma), 2)),
       row('Photons per pixel per frame', n(q.photons, 2))
-    ].join('');
+    ].concat(q.sat ? [row('Satellite clock against yours', '×' + (1 / (q.sat.ut * Math.sqrt(q.f(q.re)))).toFixed(4) + ' · one orbit ' + A.duration(2 * Math.PI / q.sat.w, 2))] : [])
+     .concat(S.satH > 0 && !q.sat ? [row('Satellite', 'no circular orbit this low: below 1.5 rs nothing can orbit')] : [])
+     .concat(q.bh ? [row('Pocket black hole', 'horizon ' + A.length(q.bh.rs, 2) + ' · mass ' + n(q.bh.rs * q.c * q.c / (2 * 6.674e-11), 2) + ' kg')] : []).join('');
+    $('sat-out').textContent = S.satH > 0 ? S.satH + ' m up' : 'none';
+    $('bh-out').textContent = S.bhRs > 0 ? A.length(S.bhRs, 2) + ' horizon' : 'none';
     measurePanel(q);
   }
   function measurePanel(q) {
@@ -2232,7 +2404,7 @@ void main() {
 
   /* ---------- input ---------- */
   function syncEffort() { $('effort').value = S.effort; $('effort-out').textContent = S.effort.toFixed(1) + ' m/s'; }
-  function restartClocks() { S.T = 0; S.tau = 0; S.street = 0; S.top = 0; }
+  function restartClocks() { S.T = 0; S.tau = 0; S.street = 0; S.top = 0; S.satT = 0; }
   function place(a, l, heading, h) {
     S.a = a; S.l = l; S.view = { a: a, l: l }; S.h = h || G.EYE; S.heading = heading; S.lookYaw = 0; S.lookPitch = 0.04;
     S.effort = 0; syncEffort(); WV.stop(); WV.W.marks = []; restartClocks(); S.fresh = true;
@@ -2262,6 +2434,8 @@ void main() {
     $('m-bell').addEventListener('input', function (e) { WV.W.bell = Number(e.target.value) / 100; $('m-bell-out').textContent = e.target.value + '%'; });
     $('m-erase').addEventListener('click', function () { if (WV.W.on && WV.erase(Math.random)) S.fresh = true; });
     $('m-clear').addEventListener('click', function () { WV.W.marks = []; });
+    $('sat-h').addEventListener('input', function (e) { S.satH = Number(e.target.value); S.fresh = true; });
+    $('bh-rs').addEventListener('input', function (e) { S.bhRs = Number(e.target.value); S.fresh = true; });
 
     var KEYS = { w: 'faster', ArrowUp: 'faster', s: 'slower', ArrowDown: 'slower', a: 'left', ArrowLeft: 'left', d: 'right', ArrowRight: 'right', e: 'up', q: 'down' };
     function key(ev, down) {
@@ -2311,7 +2485,8 @@ void main() {
       });
       last = performance.now(); raf = requestAnimationFrame(frame);
     },
-    state: S, place: place, setFx: setFx
+    state: S, place: place, setFx: setFx, BH: BH,
+    setSky: function (satH, bhRs) { S.satH = satH; S.bhRs = bhRs; $('sat-h').value = satH; $('bh-rs').value = bhRs; S.fresh = true; }
   };
 })();
 
@@ -2330,6 +2505,7 @@ void main() {
     return 'hsl(' + h.toFixed(0) + ',90%,' + light.toFixed(0) + '%)';
   }
   function name(m) {
+    if (m.kind === 3) return 'the pocket black hole: no light comes out';
     if (m.kind !== 1) return 'the sky: starlight from far away';
     if (m.mat === 0) { var p = G.fromWorld(m.x); return Math.abs(p.l) < 7.7 ? 'the street' : 'the ground'; }
     return G.MATS[m.mat] || 'something';
@@ -2341,26 +2517,36 @@ void main() {
     var fx = S.fx, rsRay = fx.bend ? q.rs : 0, rsS = fx.gshift ? q.rs : 0, rsC = fx.rates ? q.rs : 0;
     var nb = G.dot(cam.fwd, cam.beta);
     var ab = fx.aberr ? G.deaberrate(cam.fwd, cam.beta) : { n: cam.fwd, D: 1 / (q.gamma * (1 - nb)) };
-    var re = G.len(cam.eye), m = G.march(cam.eye, ab.n, rsRay, true), r = G.len(m.x), hit = m.kind === 1;
-    var Dg = hit ? Math.sqrt((1 - rsS / r) / (1 - rsS / re)) : 1 / Math.sqrt(1 - rsS / re);
+    var lamR = fx.bend ? q.lam : 0, lamS = fx.gshift ? q.lam : 0, lamC = fx.rates ? q.lam : 0, cd = fx.delay ? q.c : 1e12;
+    var re = G.len(cam.eye), m = G.march(cam.eye, ab.n, rsRay, true, { lam: lamR, sat: q.sat, bh: q.bh, T: S.T, cd: cd });
+    var r = G.len(m.x), hit = m.kind === 1, sat = hit && m.mat === 13;
+    function fS(rr) { return 1 - rsS / rr - lamS * rr * rr; }
+    var Dg = sat ? 1 / (Math.sqrt(fS(re)) * q.sat.ut * (1 - q.sat.w / q.c * -G.cross(m.x, m.v)[0]))
+      : hit ? Math.sqrt(fS(r) / fS(re)) : m.kind === 3 ? 0 : 1 / Math.sqrt(1 - rsS / re);
     var D = fx.doppler ? ab.D * Dg : 1, t = fx.delay ? m.ct / q.c : 0;
     var chord = [m.x[0] - cam.eye[0], m.x[1] - cam.eye[1], m.x[2] - cam.eye[2]], cl = G.len(chord);
-    var ref = hit ? chord.map(function (c) { return c / (cl || 1); }) : m.v.map(function (c) { return c / G.len(m.v); });
-    var bend = Math.acos(Math.max(-1, Math.min(1, G.dot(ab.n, ref)))) * 180 / Math.PI;
-    var lamp = hit && m.mat === 4, nm0 = lamp ? SODIUM : GREEN, nm = nm0 / D;
+    // how much the ray turned between leaving you and arriving: its start and end directions in coordinates
+    var v0 = m.v0.map(function (c) { return c / G.len(m.v0); }), v1 = m.v.map(function (c) { return c / G.len(m.v); });
+    var bend = Math.acos(Math.max(-1, Math.min(1, G.dot(v0, v1)))) * 180 / Math.PI;
+    var lamp = hit && (m.mat === 4 || sat), nm0 = (lamp ? SODIUM : GREEN) / (hit ? q.alpha2 : 1), nm = nm0 / D;
     last = { m: m, n: ab.n, eye: cam.eye, re: re, rs: rsRay, hit: hit };
-    CGH.probe.last = { kind: m.kind, mat: m.mat, s: m.s, D: D, Dg: Dg, h: hit ? r - G.R : null, eyeH: re - G.R };
+    CGH.probe.last = { kind: m.kind, mat: m.mat, s: m.s, D: D, Dg: Dg, h: hit ? r - G.R : null, eyeH: re - G.R, bend: bend, echo: hit ? 2 * m.ct / q.c : 0, flat: 2 * cl / q.c };
 
     var n = A.num, rows = [];
     rows.push(['Looking at', name(m) + (hit ? ', ' + n(m.s, 3) + ' m along the light’s path' + (Math.abs(m.s - cl) > 0.01 * cl + 0.05 ? ' (' + n(cl, 3) + ' m straight)' : '') : '')]);
     rows.push(['Its light left', fx.delay ? A.duration(t, 3) + ' ago, far-away time' : 'just now (light delay switched off)']);
     rows.push(['Bent on the way by', bend < 0.05 ? 'nothing you could see' : n(bend, 3) + '°']);
-    rows.push(['Gravity shifts it', Math.abs(Dg - 1) < 1e-4 ? 'not at all' : '×' + Dg.toFixed(4) + (Dg > 1 ? ' (bluer: the light fell to you)' : ' (redder: the light climbed to you)')]);
+    if (m.kind === 3) rows.push(['Light from there', 'none: it is inside the horizon']);
+    rows.push([sat ? 'Gravity and its orbit shift it' : 'Gravity shifts it', Math.abs(Dg - 1) < 1e-4 ? 'not at all' : '×' + Dg.toFixed(4) + (Dg > 1 ? ' (bluer: the light fell to you)' : ' (redder: the light climbed to you)')]);
     rows.push(['Your motion shifts it', Math.abs(ab.D - 1) < 1e-4 ? 'not at all' : '×' + ab.D.toFixed(4) + (ab.D > 1 ? ' (you move toward where it came from)' : ' (you move away)')]);
     rows.push(['Together', fx.doppler ? '×' + D.toFixed(4) + ' in frequency, ×' + (fx.beam ? (D * D * D).toFixed(3) : '1') + ' in brightness' : 'colour shift switched off']);
-    if (hit && (m.mat === 9 || m.mat === 10 || m.mat === 4)) {
-      var tau = Math.sqrt(1 - rsC / r) * (S.T - (fx.delay ? m.ct / q.c : 0));
+    if (hit && (m.mat === 9 || m.mat === 10 || m.mat === 4 || sat)) {
+      var tau = sat ? m.te / q.sat.ut : Math.sqrt(1 - rsC / r - lamC * r * r) * (S.T - (fx.delay ? m.ct / q.c : 0));
       rows.push(['Its clock read, when the light left', A.clock(tau) + ' (yours now: ' + A.clock(S.tau) + ')']);
+    }
+    if (hit && fx.delay) {
+      var rt = 2 * m.ct / q.c, flat = 2 * cl / q.c;
+      rows.push(['Radar echo, there and back', A.duration(rt, 3) + ' far-away time; a straight line at c: ' + A.duration(flat, 3) + (rt - flat > 1e-3 * flat ? ' (late by ' + A.duration(rt - flat, 2) + ')' : '')]);
     }
     $('probe-info').innerHTML = rows.map(function (rw) { return '<div><dt>' + rw[0] + '</dt><dd>' + rw[1] + '</dd></div>'; }).join('');
     drawPath();
@@ -2420,7 +2606,7 @@ void main() {
     [400, 500, 600, 700].forEach(function (v) { ctx.fillText(v + ' nm', X(v), by + bh + 4); });
     ctx.strokeStyle = muted; ctx.lineWidth = 2; ctx.setLineDash([3, 2]);
     ctx.beginPath(); ctx.moveTo(X(nm0), by - 4); ctx.lineTo(X(nm0), by + bh + 2); ctx.stroke(); ctx.setLineDash([]);
-    ctx.textBaseline = 'bottom'; ctx.fillText(lamp ? 'sodium lamp sends 589' : 'green 550 sent', X(nm0), by - 4);
+    ctx.textBaseline = 'bottom'; ctx.fillText((lamp ? 'lamp sends ' : 'green sent ') + A.num(nm0, 3), X(Math.max(lo, Math.min(hi, nm0))), by - 4);
     ctx.fillStyle = ink; ctx.strokeStyle = ink; ctx.lineWidth = 3;
     var xr = X(Math.max(lo, Math.min(hi, nm)));
     ctx.beginPath(); ctx.moveTo(xr, by - 2); ctx.lineTo(xr, by + bh + 2); ctx.stroke();
@@ -2432,6 +2618,209 @@ void main() {
 
   CGH.probe = { update: update };
 })();
+
+/* cGħ World — three small labs beside the world.
+ *   Orbits      a ball thrown round the planet: Newton's ellipse against Schwarzschild's rosette
+ *   Hover       your height as a quantum wave above the floor, under the planet's gravity
+ *   Staircases  your wave climbs two staircases and rejoins; your watch records which way you went
+ * The physics functions have no DOM and are tested in Node; the drawing below them uses the page.
+ */
+(function (root) {
+  'use strict';
+
+  /* ---------- physics ---------- */
+  // Timelike orbit in the Schwarzschild field, by proper time:  x'' = -(GM/r³)(1 + 3L²/(c²r²)) x,  L = |x × x'|.
+  // With rel = false it is Newton's  x'' = -GM x / r³. Returns the path and the angles of each closest approach.
+  function orbit(GM, c, r0, v0, rel, opts) {
+    opts = opts || {};
+    var x = [r0, 0], v = [0, v0], L = r0 * v0, rmin = opts.floor || 0, path = [x.slice()], peri = [], turns = opts.turns || 4;
+    var k3 = rel ? 3 * L * L / (c * c) : 0, dt = opts.dt || 2e-3 * Math.pow(r0, 1.5) / Math.sqrt(GM), phi = 0, lastPhi = 0, prevR = r0, prev2 = r0;
+    function acc(p) { var r = Math.hypot(p[0], p[1]), f = -GM / (r * r * r) * (1 + k3 / (r * r)); return [f * p[0], f * p[1]]; }
+    var a = acc(x), crashed = false;
+    for (var i = 0; i < (opts.steps || 400000); i++) {
+      x = [x[0] + v[0] * dt + 0.5 * a[0] * dt * dt, x[1] + v[1] * dt + 0.5 * a[1] * dt * dt];
+      var an = acc(x);
+      v = [v[0] + 0.5 * (a[0] + an[0]) * dt, v[1] + 0.5 * (a[1] + an[1]) * dt]; a = an;
+      var r = Math.hypot(x[0], x[1]), ang = Math.atan2(x[1], x[0]);
+      var d = ang - lastPhi; if (d < -Math.PI) d += 2 * Math.PI; if (d > Math.PI) d -= 2 * Math.PI;
+      phi += d; lastPhi = ang;
+      if (i % 20 === 0) path.push(x.slice());
+      if (prevR < prev2 && prevR <= r) peri.push(phi - d / 2);         // passed a closest approach
+      prev2 = prevR; prevR = r;
+      if (r < rmin) { crashed = true; break; }
+      if (phi > 2 * Math.PI * turns + 0.5) break;
+    }
+    var precess = peri.length > 1 ? (peri[peri.length - 1] - peri[0]) / (peri.length - 1) - 2 * Math.PI : 0;
+    return { path: path, peri: peri, precess: precess, crashed: crashed };
+  }
+  // Speed of a circular orbit (proper speed dx/dτ for the Schwarzschild case).
+  function circularSpeed(GM, c, r, rel) { return rel ? Math.sqrt(GM / (r * (1 - 3 * GM / (c * c * r)))) : Math.sqrt(GM / r); }
+
+  // Two staircases: proper-time difference, the phase that shifts the stripes, and what survives of them.
+  // fTop, fBottom: g_tt factors at the two heights; T: far-away time spent apart; m, hbar, c; tick: clock frequency (Hz).
+  function staircases(fTop, fBottom, T, m, hbar, c, tick) {
+    var dtau = T * (Math.sqrt(fTop) - Math.sqrt(fBottom));
+    var w = 2 * Math.PI * tick;
+    return {
+      dtau: dtau,
+      phase: (m * c * c * dtau / hbar) % (2 * Math.PI),        // rest energy × proper-time difference
+      V: Math.abs(Math.cos(w * dtau / 2)),                     // overlap of the two clock readings
+      D: Math.abs(Math.sin(w * dtau / 2))                      // how well the clock tells the paths apart
+    };
+  }
+
+  var api = { orbit: orbit, circularSpeed: circularSpeed, staircases: staircases };
+  root.CGH = root.CGH || {};
+  root.CGH.labs = api;
+  if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
+
+  /* ---------- the page ---------- */
+  var G = CGH.geo, A = CGH.app, QC = CGH.qcore, $ = A.$;
+  var tab = 'orbits', O = { last: null, thrown: 0 }, H = { sim: null, on: false, settled: 0, z: 0, key: '' }, T2 = { revived: false, faded: false };
+
+  function dial() { var d = A.derived(); return { GM: d.rs * d.c * d.c / 2, c: d.c, rs: d.rs, hbar: d.hbar, lam: d.lam }; }
+  function surfaceG() { var q = dial(); return q.GM / (G.R * G.R * Math.sqrt(Math.max(1e-9, 1 - q.rs / G.R))); }
+
+  function show(name) {
+    tab = name;
+    ['orbits', 'hover', 'stairs'].forEach(function (t) {
+      $('lab-' + t).hidden = t !== name;
+      $('labtab-' + t).setAttribute('aria-pressed', t === name ? 'true' : 'false');
+    });
+    draw();
+  }
+
+  /* Orbits */
+  function throwBall() {
+    var q = dial(), r0 = G.R + Number($('orb-h').value), k = Number($('orb-k').value);
+    if (q.GM <= 0) { $('orb-note').textContent = 'Turn the G dial up: with no gravity nothing orbits.'; return; }
+    var vE = k * circularSpeed(q.GM, q.c, r0, true), vN = k * circularSpeed(q.GM, q.c, r0, false);
+    var per = 2 * Math.PI * Math.pow(r0, 1.5) / Math.sqrt(q.GM);
+    O.last = { E: orbit(q.GM, q.c, r0, vE, true, { floor: G.R, turns: 5, dt: per / 4000 }), N: orbit(q.GM, q.c, r0, vN, false, { floor: G.R, turns: 5, dt: per / 4000 }), rs: q.rs, r0: r0 };
+    O.thrown++;
+    var E = O.last.E, p = E.path, rp = Infinity, ra = 0;
+    p.forEach(function (pt) { var r = Math.hypot(pt[0], pt[1]); rp = Math.min(rp, r); ra = Math.max(ra, r); });
+    var semi = 2 * rp * ra / (rp + ra), formula = 3 * Math.PI * q.rs / semi;
+    $('orb-note').textContent = E.crashed ? 'Einstein’s ball spiralled into the ground: close to a compact planet, orbits need more than Newton’s speed.' :
+      'Einstein’s orbit turns by ' + A.num(E.precess * 180 / Math.PI, 3) + '° each time round (weak-field formula 3π rs / p: ' + A.num(formula * 180 / Math.PI, 3) + '°). Newton’s returns to the same place.';
+    draw();
+  }
+  function drawOrbits() {
+    var cv = $('orb-canvas'), f = A.fit(cv, 2), ctx = cv.getContext('2d'), w = f.w, h = f.h;
+    ctx.setTransform(f.dpr, 0, 0, f.dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    var span = O.last ? Math.max.apply(null, O.last.E.path.concat(O.last.N.path).map(function (p) { return Math.hypot(p[0], p[1]); })) : 2 * G.R;
+    var sc = 0.46 * Math.min(w, h) / Math.max(span, G.R * 1.1), cx = w / 2, cy = h / 2;
+    ctx.beginPath(); ctx.arc(cx, cy, G.R * sc, 0, 6.2832); ctx.fillStyle = A.css('--sunk'); ctx.fill(); ctx.strokeStyle = A.css('--muted'); ctx.stroke();
+    if (!O.last) { ctx.fillStyle = A.css('--muted'); ctx.font = '13px ' + A.css('--font-text'); ctx.textAlign = 'center'; ctx.fillText('Throw a ball to see its orbit', cx, cy); return; }
+    function line(path, color, dash) {
+      ctx.strokeStyle = color; ctx.lineWidth = 1.6; ctx.setLineDash(dash || []); ctx.beginPath();
+      path.forEach(function (p, i) { var X = cx + p[0] * sc, Y = cy - p[1] * sc; if (i) ctx.lineTo(X, Y); else ctx.moveTo(X, Y); });
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    line(O.last.N.path, A.css('--muted'), [4, 4]);
+    line(O.last.E.path, A.css('--g'));
+    ctx.fillStyle = A.css('--muted'); ctx.font = '12px ' + A.css('--font-text'); ctx.textAlign = 'left';
+    ctx.fillText('dashed: Newton · solid: Einstein · seen from above the orbit', 8, h - 8);
+  }
+
+  /* Hover */
+  function hoverStart(mode) {
+    var q = dial(), g = surfaceG(), m = A.MASS;
+    if (!(A.state.lam >= 0.5) || g < 0.05) { $('hov-note').textContent = 'Needs you to be a wave (third dial at 0.5 m or more) and real gravity (try the Hover mission).'; return; }
+    var b = CGH.physics.bouncer(m, g, q.hbar), L = Math.max(4, 3 * b.heights[5] + (mode === 'drop' ? 2.6 : 0)), N = 512;
+    H.sim = new QC.Sim1D({ N: N, L: L, m: m, hbar: q.hbar });
+    H.sim.build(function (z) { return { V: m * g * z, wall: z < 0.02 }; });
+    if (mode === 'drop') H.sim.set(function (z) { return [Math.exp(-(z - 2) * (z - 2) / (4 * 0.15 * 0.15)), 0]; });
+    else {
+      var zs = []; for (var i = 0; i < N; i++) zs.push(H.sim.z(i) / b.z0 - CGH.physics.AIRY_ZEROS[0]);
+      var ai = CGH.qcore.airyShape(zs);
+      H.sim.set(function (z) { var k = Math.round(z / H.sim.dz - 0.5); return [z > 0.02 ? ai[k] : 0, 0]; });
+    }
+    H.b = b; H.g = g; H.on = true; H.mode = mode; H.settled = 0; H.dt = Math.min(0.02 * q.hbar / (m * g * Math.max(2, b.heights[0])), 2e-3);
+    $('hov-note').textContent = mode === 'drop' ? 'Dropped from 2 m: watch it bounce and smear.' : 'The lowest state: ' + A.length(2 / 3 * b.heights[0], 2) + ' above the floor on average, and it stays there.';
+  }
+  function hoverStep(dt) {
+    if (!H.on || !H.sim) return 0;
+    var n = Math.min(400, Math.ceil(dt / H.dt));
+    for (var i = 0; i < n; i++) H.sim.step(dt / n);
+    if (H.mode === 'settle') H.settled += dt;
+    // where your feet are, drawn from |ψ(z)|²
+    var re = H.sim.re, im = H.sim.im, tot = 0, q;
+    for (q = 0; q < re.length; q++) tot += re[q] * re[q] + im[q] * im[q];
+    var t = Math.random() * tot, acc = 0;
+    for (q = 0; q < re.length; q++) { acc += re[q] * re[q] + im[q] * im[q]; if (acc >= t) break; }
+    H.z = H.sim.z(Math.min(q, re.length - 1));
+    return H.z;
+  }
+  function drawHover() {
+    var cv = $('hov-canvas'), f = A.fit(cv, 2), ctx = cv.getContext('2d'), w = f.w, h = f.h;
+    ctx.setTransform(f.dpr, 0, 0, f.dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    var floorY = h - 22, top = 10, ink = A.css('--ink'), muted = A.css('--muted');
+    ctx.fillStyle = A.css('--sunk'); ctx.fillRect(0, floorY, w, h - floorY);
+    if (!H.sim) { ctx.fillStyle = muted; ctx.font = '13px ' + A.css('--font-text'); ctx.textAlign = 'center'; ctx.fillText('Drop yourself, or settle into the lowest state', w / 2, h / 2); return; }
+    var L = H.sim.L, sc = (floorY - top) / L, re = H.sim.re, im = H.sim.im, mx = 0, i;
+    for (i = 0; i < re.length; i++) mx = Math.max(mx, re[i] * re[i] + im[i] * im[i]);
+    ctx.fillStyle = A.css('--h');
+    for (i = 0; i < re.length; i++) { var p = (re[i] * re[i] + im[i] * im[i]) / (mx || 1), y = floorY - H.sim.z(i) * sc; ctx.fillRect(w * 0.18, y - Math.max(1, sc * H.sim.dz), w * 0.5 * p, Math.max(1, sc * H.sim.dz) + 0.5); }
+    ctx.font = '12px ' + A.css('--font-text'); ctx.textAlign = 'left';
+    H.b.heights.forEach(function (z, k) {
+      var y = floorY - z * sc; if (y < top) return;
+      ctx.strokeStyle = muted; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(w * 0.15, y); ctx.lineTo(w * 0.75, y); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = muted; ctx.fillText('level ' + (k + 1) + ': ' + A.length(z, 2), w * 0.76, y + 4);
+    });
+    ctx.fillStyle = ink; ctx.fillText('your feet, as a wave (g = ' + A.num(H.g, 3) + ' m/s²)', 8, top + 4);
+    ctx.fillStyle = muted; ctx.fillText('floor', 8, floorY + 15);
+  }
+
+  /* Staircases */
+  function stairs() {
+    var q = dial(), dh = Number($('st-h').value), Tup = Number($('st-t').value), tick = Number($('st-f').value);
+    var f = function (r) { return 1 - q.rs / r - q.lam * r * r; };
+    return { r: staircases(f(G.R + dh), f(G.R), Tup, A.MASS, q.hbar, q.c, tick), dh: dh, T: Tup, tick: tick };
+  }
+  function drawStairs() {
+    var s = stairs(), cv = $('st-canvas'), f = A.fit(cv, 2), ctx = cv.getContext('2d'), w = f.w, h = f.h;
+    ctx.setTransform(f.dpr, 0, 0, f.dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    var muted = A.css('--muted'), base = h - 24, amp = (h - 50) / 2, mid = base - amp;
+    function curve(V, ph, color, dash) {
+      ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.setLineDash(dash || []); ctx.beginPath();
+      for (var x = 0; x <= w; x += 2) { var I = 1 + V * Math.cos(2 * Math.PI * 3 * x / w + ph); var y = base - I * amp; if (x) ctx.lineTo(x, y); else ctx.moveTo(x, y); }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    curve(1, 0, muted, [4, 4]);
+    curve(1, s.r.phase, A.css('--g'), [2, 3]);
+    curve(s.r.V, s.r.phase + Math.PI * s.tick * s.r.dtau, A.css('--h'));
+    ctx.fillStyle = muted; ctx.font = '12px ' + A.css('--font-text'); ctx.textAlign = 'left';
+    ctx.fillText('dashed grey: no height difference · dotted: no clock · solid: carrying your watch', 8, h - 6);
+    void mid;
+    if (s.r.V < 0.1 && Math.abs(s.r.dtau) > 0) T2.faded = true;
+    if (T2.faded && s.r.V > 0.9 && Math.abs(s.r.dtau) * s.tick > 0.5) T2.revived = true;
+    $('st-read').innerHTML = '<div><dt>Your watches differ by</dt><dd>' + A.duration(Math.abs(s.r.dtau), 3) + ' (' + A.num(Math.abs(s.r.dtau) * s.tick, 3) + ' ticks)</dd></div>' +
+      '<div><dt>Stripes shift by</dt><dd>' + A.num(s.r.phase, 3) + ' rad</dd></div>' +
+      '<div><dt>Stripe strength V</dt><dd>' + s.r.V.toFixed(3) + '</dd></div>' +
+      '<div><dt>Which-path record D</dt><dd>' + s.r.D.toFixed(3) + ' (D² + V² = ' + (s.r.D * s.r.D + s.r.V * s.r.V).toFixed(3) + ')</dd></div>';
+    $('st-h-out').textContent = s.dh + ' m'; $('st-t-out').textContent = s.T + ' s'; $('st-f-out').textContent = s.tick + ' per s';
+  }
+
+  function draw() {
+    if (tab === 'orbits') drawOrbits(); else if (tab === 'hover') drawHover(); else drawStairs();
+  }
+  CGH.labs.init = function () {
+    ['orbits', 'hover', 'stairs'].forEach(function (t) { $('labtab-' + t).addEventListener('click', function () { show(t); }); });
+    $('orb-throw').addEventListener('click', throwBall);
+    ['orb-h', 'orb-k'].forEach(function (id) { $(id).addEventListener('input', function () { $(id + '-out').textContent = id === 'orb-h' ? $(id).value + ' m' : '×' + Number($(id).value).toFixed(2); }); });
+    $('hov-drop').addEventListener('click', function () { hoverStart('drop'); });
+    $('hov-settle').addEventListener('click', function () { hoverStart('settle'); });
+    $('hov-stop').addEventListener('click', function () { H.on = false; H.z = 0; $('hov-note').textContent = 'Stopped: you stand on the floor again.'; });
+    ['st-h', 'st-t', 'st-f'].forEach(function (id) { $(id).addEventListener('input', drawStairs); });
+    A.onChange(function () { H.on = false; H.z = 0; draw(); });
+    show('orbits');
+    setInterval(function () { if (tab === 'hover' && H.on) drawHover(); }, 120);
+  };
+  CGH.labs.hoverZ = function () { return H.on ? H.z : 0; };
+  CGH.labs.step = hoverStep;
+  CGH.labs.state = { O: O, H: H, T2: T2, show: show, throwBall: throwBall, hoverStart: hoverStart, stairs: stairs };
+})(typeof window !== 'undefined' ? window : globalThis);
 
 /* cGħ World — missions. Each one: a brief, a prediction you commit to, an exploration with only the needed
  * dials unlocked and a goal the world checks for you, then the explanation and the real experiment. */
@@ -2447,7 +2836,7 @@ void main() {
     WV.W.marks = [];
   }
   function noQuantum() { dom('m-screen', 'checked', false); dom('m-bell', 'value', 0, 'input'); }
-  function world(v) { A.set(Object.assign({ cw: R0.cw, comp: R0.comp, lam: R0.lam, photons: R0.photons }, v)); }
+  function world(v) { A.set(Object.assign({ cw: R0.cw, comp: R0.comp, lam: R0.lam, photons: R0.photons, alpha: 1, cosmo: R0.cosmo }, v)); CGH.world.setSky(0, 0); }
   // Share of the marks that sit straight behind the wall between the doors, where no straight path leads.
   function middleShare() {
     var m = WV.W.marks, n = 0, mid = 0;
@@ -2586,6 +2975,112 @@ void main() {
       explain: 'To pin your position to within Δx, the look must leave your momentum uncertain by at least ħ/(2Δx). With ħ this large and Δx = 0.25 m that is a velocity spread of nearly 1 m/s, so afterwards you smear out fast. A blurry look disturbs you gently and teaches you little. You cannot have both.',
       real: 'This back-action has been measured: light bouncing off a tiny drum shakes it (Purdy, Peterson and Regal, 2013), and the same quantum noise limits gravitational-wave detectors.'
     }
+    ,{
+      id: 'satellite', title: 'Satellite clocks', dials: [],
+      brief: 'Same heavy planet. A satellite circles 30 m above the street, blinking once a second by its own clock.',
+      question: 'Compared with your watch on the street, the satellite’s clock runs…',
+      choices: [['faster', 'Faster: it is higher up'], ['same', 'At the same rate'], ['slower', 'Slower: it is moving fast']],
+      answer: 'slower',
+      setup: function () { world({ cw: 7, comp: 0.45 }); CGH.world.place(G.START.a, 0, 0); CGH.world.setSky(30, 0); noQuantum(); },
+      task: 'Drag the view up to find the satellite. Then raise its orbit with the “Satellite orbit” slider until its clock keeps pace with yours: “Satellite clock against yours” reaches ×1.000.',
+      progress: function (st) {
+        var d = A.derived(), H = S().satH, o = G.orbit(G.R + H, d.rs, d.c, d.lam), you = Math.sqrt(1 - d.rs / (G.R + G.EYE) - d.lam * Math.pow(G.R + G.EYE, 2));
+        var ratio = o ? 1 / (o.ut * you) : 0;
+        if (st.r0 === undefined && o) st.r0 = ratio;
+        st.ratio = ratio; st.H = H;
+        return { done: o && Math.abs(ratio - 1) < 0.004, text: o ? 'Orbit ' + H + ' m up: its clock runs ×' + ratio.toFixed(4) + ' of yours' : 'No circular orbit there' };
+      },
+      measured: function (st) { return st.r0 < 0.999 ? 'slower' : st.r0 > 1.001 ? 'faster' : 'same'; },
+      result: function (st) { return 'At 30 m it ran ×' + (st.r0 || 0).toFixed(4) + '. It keeps pace at ' + st.H + ' m up, where its orbit is ' + ((G.R + st.H) / G.R).toFixed(2) + ' times the planet’s radius.'; },
+      explain: 'Height makes a clock run fast; speed makes it run slow. For a circular orbit the clock rate is √(1 − 1.5 rs/r), against √(1 − rs/R) on the ground. They match when r = 1.5 R, for any planet and any mass. Lower satellites lose time; higher ones gain.',
+      real: 'GPS satellites orbit at about 4.2 Earth radii, far above 1.5, so their clocks gain about 38 microseconds a day. They are built to tick slightly slow on the ground to make up for it.'
+    },
+    {
+      id: 'radar', title: 'The radar echo', dials: [],
+      brief: 'A compact planet (0.6) and slow light. You have a radar: it times a pulse to whatever is under the crosshair and back.',
+      question: 'Compared with light going straight there and back at c, the echo comes back…',
+      choices: [['earlier', 'Earlier'], ['same', 'On time'], ['later', 'Later']],
+      answer: 'later',
+      setup: function () { world({ cw: 7, comp: 0.6 }); CGH.world.place(G.START.a, 3, 0); noQuantum(); },
+      task: 'Aim along the street at something more than 100 m away, just below the horizon, and read “Radar echo” in the light probe.',
+      progress: function () { var p = probe(); return { done: p.kind === 1 && p.s > 100 && p.echo > 0, text: p.kind === 1 ? 'Target ' + A.num(p.s, 3) + ' m along the light’s path' : 'Aim lower: the probe sees the sky' }; },
+      measured: function () { var p = probe(); return p.echo > p.flat * 1.001 ? 'later' : p.echo < p.flat * 0.999 ? 'earlier' : 'same'; },
+      result: function () { var p = probe(); return 'Echo: ' + A.duration(p.echo, 3) + '. Straight there and back at c: ' + A.duration(p.flat, 3) + '.'; },
+      explain: 'Two things make the echo late. The path bends, so it is longer; and, timed from far away, light near a mass covers ground more slowly. Anyone standing next to the light measures it passing at exactly c; only the comparison between places shows the delay.',
+      real: 'Irwin Shapiro predicted it in 1964; radar echoes from Venus and Mercury confirmed it. In 2002 signals to the Cassini spacecraft matched Einstein’s prediction to about 20 parts in a million.'
+    },
+    {
+      id: 'rosette', title: 'Rosette orbits', dials: ['comp'],
+      brief: 'A heavy planet. In the Orbits lab below you can throw a ball sideways hard enough to go round.',
+      question: 'You throw the ball into a slightly stretched orbit. Each time round, it…',
+      choices: [['same', 'Retraces exactly the same ellipse'], ['turns', 'Comes round a little further, so the orbit slowly turns'], ['spiral', 'Spirals down to the ground']],
+      answer: 'turns',
+      setup: function () { world({ cw: 7, comp: 0.3 }); CGH.world.place(G.START.a, 0, 0); noQuantum(); CGH.labs.state.show('orbits'); },
+      task: 'In the Orbits lab, press Throw. Then try throwing from lower down, slower, or on a heavier planet: too low or too slow and the ball hits the ground.',
+      progress: function (st) {
+        var O = CGH.labs.state.O;
+        if (st.n0 === undefined) st.n0 = O.thrown;
+        var ok = O.thrown > st.n0 && O.last && !O.last.E.crashed && O.last.E.peri.length >= 3;
+        return { done: ok, text: O.thrown > st.n0 ? (O.last.E.crashed ? 'That one crashed. Throw from higher, or faster.' : 'Orbit drawn') : 'Throw a ball in the Orbits lab' };
+      },
+      measured: function () { var E = CGH.labs.state.O.last.E; return E.precess > 1e-3 ? 'turns' : 'same'; },
+      result: function () { var E = CGH.labs.state.O.last.E; return 'Each time round, the closest point moved on by ' + A.num(E.precess * 180 / Math.PI, 3) + '°.'; },
+      explain: 'Near a mass, gravity pulls slightly harder than Newton’s 1/r²: the extra term grows as 3L²/(c²r²). The ball reaches its closest point a little late each time, so the ellipse rotates and draws a rosette. Closer and more compact means more turning; inside three horizon radii there is no stable orbit at all.',
+      real: 'Mercury’s orbit turns 43 seconds of arc per century more than Newton allows: Einstein’s first success, in 1915. The star S2, circling the black hole at the centre of our galaxy, shows the same turning (GRAVITY collaboration, 2020).'
+    },
+    {
+      id: 'hover', title: 'Hover', dials: [],
+      brief: 'You are a wave (2 m wavelength) on a planet with Earth-like gravity. The Hover lab below treats your height as a wave too.',
+      question: 'You stop jumping and settle down. Where do your feet end up?',
+      choices: [['floor', 'On the floor'], ['hover', 'A little above the floor, and only certain heights are allowed'], ['sink', 'Partly inside the floor']],
+      answer: 'hover',
+      setup: function () { world({ cw: 80, comp: 0.45, lam: 2 }); CGH.world.place(G.START.a, 0, 0); noQuantum(); CGH.labs.state.show('hover'); },
+      task: 'In the Hover lab, press “Settle to the lowest state” and watch for five seconds. Your view rises by however far your feet hover. Then try “Drop from 2 m”.',
+      progress: function () { var H = CGH.labs.state.H; return { done: H.on && H.mode === 'settle' && H.settled > 5, text: H.on && H.mode === 'settle' ? 'Settled for ' + Math.min(5, H.settled).toFixed(1) + ' of 5 s' : 'Press “Settle to the lowest state”' }; },
+      result: function () { var b = CGH.labs.state.H.b; return 'Your feet hover ' + A.length(2 / 3 * b.heights[0], 2) + ' above the floor on average. Allowed levels reach ' + b.heights.slice(0, 3).map(function (z) { return A.length(z, 2); }).join(', ') + '.'; },
+      explain: 'Squeezing your wave flat onto the floor would cost kinetic energy, about ħ²/(2mΔz²); lifting it costs potential energy, mgz. The lowest total is a compromise: a hover height set by z₀ = (ħ²/2m²g)^⅓. Above it only certain energies are allowed, fixed by the zeros of the Airy function.',
+      real: 'Ultracold neutrons above a mirror do exactly this, with levels about ten micrometres apart (Nesvizhevsky et al., 2002; the qBounce experiments).'
+    },
+    {
+      id: 'blackhole', title: 'A pocket black hole', dials: [],
+      brief: 'Slow light, ordinary planet. A tiny black hole, half a metre across its horizon, hovers 3.5 m above the street between you and the tower.',
+      question: 'Looking at the tower through it, you see…',
+      choices: [['disc', 'A black disc in front of the tower, nothing else'], ['ring', 'The tower smeared into a ring around a black disc'], ['none', 'Nothing: it is too small to notice']],
+      answer: 'ring',
+      setup: function () { world({ cw: 7 }); CGH.world.place(G.START.a, 0, 0); CGH.world.setSky(0, 0.5); noQuantum(); },
+      task: 'Look along the street at the black hole, 30 m ahead. Put the crosshair just outside its dark disc: the probe shows how far that light bent.',
+      progress: function () { var p = probe(); return { done: p.kind === 1 && p.bend > 20, text: p.kind === 3 ? 'That is the dark disc: aim just outside it' : 'Light under the crosshair bent by ' + A.num(p.bend || 0, 2) + '°' }; },
+      result: function () { var p = probe(); return 'The light under your crosshair bent by ' + A.num(p.bend, 3) + '° on its way past the black hole, and came from ' + (G.MATS[p.mat] || 'something') + '.'; },
+      explain: 'Light passing a black hole bends more the closer it passes. Light from the tower straight behind can come round any side, so it arrives as a ring: an Einstein ring. Inside it is the shadow, about 2.6 times the horizon radius: light from there would have had to start inside the photon orbit.',
+      real: 'Hubble photographs Einstein rings around distant galaxies. The Event Horizon Telescope imaged the shadows of the black holes in M87 (2019) and at the centre of our galaxy (2022).'
+    },
+    {
+      id: 'alpha', title: 'The colour of atoms', dials: ['alpha'],
+      brief: 'The fine-structure constant α sets how strongly electrons and light interact. It decides the size and colours of atoms. Open “More constants” in the console.',
+      question: 'Make α 15% larger. The yellow street lamps look…',
+      choices: [['bluer', 'Bluer'], ['same', 'The same'], ['redder', 'Redder']],
+      answer: 'bluer',
+      setup: function () { world({ cw: 7 }); CGH.world.place(G.START.a, 3, 0); noQuantum(); var d = document.querySelector('.more-dials'); if (d) d.open = true; },
+      task: 'Raise α to about 1.15 and put the crosshair on a street lamp. Read the spectrometer.',
+      progress: function () { var p = probe(); return { done: p.kind === 1 && p.mat === 4 && A.state.alpha >= 1.1, text: 'α = ' + A.num(A.state.alpha, 3) + ' × today’s · ' + (p.mat === 4 ? 'on a lamp' : 'aim at a lamp') }; },
+      measured: function () { return A.state.alpha > 1 ? 'bluer' : A.state.alpha < 1 ? 'redder' : 'same'; },
+      result: function () { return 'Sodium’s yellow line moves from 589 nm to ' + A.num(589 / (A.state.alpha * A.state.alpha), 3) + ' nm.'; },
+      explain: 'Atomic energy levels scale as α²mₑc², so every spectral line moves together: the lamps, paint and leaves. Atoms also shrink as 1/α. Larger α also means heavy elements cannot hold their innermost electrons once Zα approaches 1, so the periodic table gets shorter.',
+      real: 'Astronomers compare lines in quasar light that is billions of years old with lines measured today; any change in α is at most a few parts per million, and claimed hints of change are disputed. Atomic clocks limit any change now to less than about a part in 10¹⁶ per year.'
+    },
+    {
+      id: 'stairs', title: 'Two staircases', dials: [],
+      brief: 'You are a wave on a heavy planet. In the Two staircases lab below, your wave splits: one part climbs a staircase and waits, the other waits at the bottom. Then they rejoin.',
+      question: 'You carry a ticking watch. Do the stripes survive?',
+      choices: [['yes', 'Yes: nobody measured which way I went'], ['shift', 'They shift, but stay sharp'], ['fade', 'They fade, and come back when the two watch readings differ by a whole tick']],
+      answer: 'fade',
+      setup: function () { world({ cw: 7, comp: 0.45, lam: 2 }); CGH.world.place(G.START.a, 0, 0); noQuantum(); CGH.labs.state.show('stairs'); CGH.labs.state.T2.faded = false; CGH.labs.state.T2.revived = false; },
+      task: 'In the lab, increase “Time apart” until the stripes vanish, then keep going until they come back.',
+      progress: function () { var T2 = CGH.labs.state.T2; return { done: T2.faded && T2.revived, text: 'Stripes vanished: ' + (T2.faded ? 'yes' : 'not yet') + ' · came back: ' + (T2.revived ? 'yes' : 'not yet') }; },
+      result: function () { var s = CGH.labs.state.stairs(); return 'Now the watches differ by ' + A.num(Math.abs(s.r.dtau) * s.tick, 3) + ' ticks and the stripe strength is ' + s.r.V.toFixed(2) + '.'; },
+      explain: 'The upper half of you ages faster, so the two halves carry different watch readings. Different readings are a record of the path, like the bell, so the stripes fade: D² + V² = 1. When the readings differ by exactly one tick they look alike again, the record is gone and the stripes return. With no clock the stripes only shift: that shift is gravity acting on quantum matter, and it has been measured.',
+      real: 'Neutron stripes shift with height in Earth’s gravity (Colella, Overhauser and Werner, 1975). The fading with a clock was proposed by Zych and colleagues in 2011 and imitated with atoms and a magnetic field by Margalit et al. in 2015. With real gravity it has not yet been done.'
+    }
   ];
 
   /* ---------- controller ---------- */
@@ -2595,7 +3090,7 @@ void main() {
   function save() { try { localStorage.setItem('cgh-missions', JSON.stringify(done)); } catch (e) { /* optional */ } }
   var STEPS = ['Brief', 'Predict', 'Explore', 'Explain'];
   function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
-  function sym(k) { return '<span class="sym sym-' + ({ cw: 'c', comp: 'g', lam: 'h', photons: 'h' })[k] + '">' + ({ cw: 'c', comp: 'G', lam: 'ħ', photons: 'ħ' })[k] + '</span>'; }
+  function sym(k) { return '<span class="sym sym-' + ({ cw: 'c', comp: 'g', lam: 'h', photons: 'h', alpha: 'c', cosmo: 'g' })[k] + '">' + ({ cw: 'c', comp: 'G', lam: 'ħ', photons: 'ħ', alpha: 'α', cosmo: 'Λ' })[k] + '</span>'; }
 
   function render() {
     var el = $('missions');
@@ -2660,19 +3155,118 @@ void main() {
     if (!cur || cur.step !== 2) return;
     var p = cur.m.progress(cur.st), el = $('ms-status');
     if (el) el.textContent = p.text;
-    if (p.done) { cur.finished = true; done[cur.m.id] = true; save(); step(3); }
+    if (p.done) {
+      cur.finished = true;
+      var meas = cur.m.measured ? cur.m.measured(cur.st) : cur.m.answer;
+      done[cur.m.id] = { pick: cur.pick, right: cur.pick === meas };
+      save(); step(3);
+    }
   }
 
   CGH.missions = {
     init: function () { render(); setInterval(tick, 250); },
-    list: M, start: start, leave: leave
+    list: M, start: start, leave: leave,
+    titleOf: function (id) { var m = M.filter(function (x) { return x.id === id; })[0]; return m ? m.title : id; }
   };
+})();
+
+/* cGħ World — a short concept quiz, taken before and after the missions, to see what changed.
+ * Answers stay in this browser. Distractors follow misconceptions reported in physics-education research
+ * (for measurement: Zhu and Singh 2012). Answers are revealed only after the "after" attempt. */
+(function () {
+  'use strict';
+  var A = CGH.app, $ = A.$;
+  var Q = [
+    { m: 'lamps', q: 'Light is slow. Two lamps flash at the same moment, one 10 m from you and one 40 m away. What do you see?',
+      o: ['Both flashes at once', 'The near flash first', 'The far flash first'], a: 1 },
+    { m: 'twins', q: 'One twin sprints away and back while the other waits. When they meet, whose watch shows less time?',
+      o: ['The one who waited', 'The one who ran', 'Neither: motion is relative, so they agree'], a: 1 },
+    { m: 'upstairs', q: 'Compared with an identical clock at the foot of a tower, a clock at the top runs…',
+      o: ['Slower', 'At the same rate', 'Faster'], a: 2 },
+    { m: 'tower', q: 'Seen from the top of the tower, the light of a lamp on the ground is…',
+      o: ['Shifted to the blue', 'Unchanged', 'Shifted to the red'], a: 2 },
+    { m: 'horizon', q: 'On a more compact planet of the same size you can see further round it, because…',
+      o: ['The planet’s surface flattens', 'Light bends down, following the curve of the ground', 'Your eyes are effectively higher'], a: 1 },
+    { m: 'satellite', q: 'Compared with a clock on the ground, the clock of a satellite in a very low orbit runs…',
+      o: ['Faster, because it is higher', 'Slower, because its speed matters more than its height', 'At the same rate, because it is in free fall'], a: 1 },
+    { m: 'doors', q: 'Particles are sent one at a time through two doors and detected on a screen behind. The stripes…',
+      o: ['Appear faintly in every single run', 'Build up only from many runs; each run gives one spot', 'Never appear with one particle at a time'], a: 1 },
+    { m: 'bell', q: 'A detector at one door records which way each particle went, but nobody ever looks at its record. The stripes…',
+      o: ['Stay, because nobody looked', 'Fade, because the record exists', 'Fade only after someone reads the record'], a: 1 },
+    { m: 'microscope', q: 'You measure a particle’s position more precisely. Afterwards its momentum is…',
+      o: ['More uncertain', 'Unaffected', 'Less uncertain'], a: 0 },
+    { m: 'doors', q: 'You measure a particle’s position, then measure it again immediately, then again a while later. Which is right?',
+      o: ['Each result is unrelated to the previous one', 'The second agrees with the first; the third may not, as the wave spreads again',
+          'All three agree, because the wave stays collapsed'], a: 1 }
+  ];
+  var store = { pre: null, post: null };
+  try { store = Object.assign(store, JSON.parse(localStorage.getItem('cgh-quiz') || '{}')); } catch (e) { /* fresh */ }
+  function save() { try { localStorage.setItem('cgh-quiz', JSON.stringify(store)); } catch (e) { /* optional */ } }
+  function score(ans) { return ans ? ans.filter(function (x, i) { return x === Q[i].a; }).length : null; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function form(which) {
+    var el = $('quiz-body');
+    el.innerHTML = '<p class="note">' + (which === 'pre' ? 'Answer before trying the missions. You will see your score, but not the answers.' : 'Answer after the missions. Then you will see what changed.') + '</p>' +
+      Q.map(function (q, i) {
+        return '<fieldset class="qz"><legend>' + (i + 1) + '. ' + esc(q.q) + '</legend>' + q.o.map(function (o, j) {
+          return '<label class="ms-choice"><input type="radio" name="qz' + i + '" value="' + j + '"> ' + esc(o) + '</label>';
+        }).join('') + '</fieldset>';
+      }).join('') + '<div class="ms-actions"><button class="btn" type="button" id="qz-submit" disabled>Submit</button><button class="btn quiet" type="button" id="qz-cancel">Cancel</button></div>';
+    function picks() { return Q.map(function (_, i) { var c = el.querySelector('input[name="qz' + i + '"]:checked'); return c ? Number(c.value) : null; }); }
+    el.addEventListener('change', function () { $('qz-submit').disabled = picks().some(function (x) { return x === null; }); });
+    $('qz-submit').addEventListener('click', function () { store[which] = picks(); store[which + 'At'] = new Date().toISOString(); save(); render(); });
+    $('qz-cancel').addEventListener('click', render);
+  }
+
+  function summary() {
+    var n = Q.length, pre = score(store.pre), post = score(store.post), lines = ['cGħ World concept quiz (' + n + ' questions)'];
+    if (pre !== null) lines.push('Before: ' + pre + '/' + n + '  answers ' + store.pre.join(',') + '  at ' + store.preAt);
+    if (post !== null) lines.push('After:  ' + post + '/' + n + '  answers ' + store.post.join(',') + '  at ' + store.postAt);
+    if (pre !== null && post !== null && pre < n) lines.push('Normalised gain (after − before) / (' + n + ' − before): ' + ((post - pre) / (n - pre)).toFixed(2));
+    var done = {}; try { done = JSON.parse(localStorage.getItem('cgh-missions') || '{}') || {}; } catch (e) { /* none */ }
+    var ids = Object.keys(done);
+    lines.push('Missions finished (prediction right?): ' + (ids.map(function (k) { var d = done[k]; return k + (d && d.pick ? (d.right ? ' ✓' : ' ✗') : ''); }).join(', ') || 'none'));
+    return lines.join('\n');
+  }
+
+  function render() {
+    var el = $('quiz-body'), n = Q.length, pre = score(store.pre), post = score(store.post), html = '';
+    html += '<div class="ms-actions">' +
+      '<button class="btn' + (pre === null ? '' : ' quiet') + '" type="button" id="qz-pre">' + (pre === null ? 'Take the “before” quiz' : 'Retake “before”') + '</button>' +
+      '<button class="btn' + (pre !== null && post === null ? '' : ' quiet') + '" type="button" id="qz-post">' + (post === null ? 'Take the “after” quiz' : 'Retake “after”') + '</button>' +
+      '<button class="btn quiet" type="button" id="qz-copy"' + (pre === null && post === null ? ' disabled' : '') + '>Copy results</button>' +
+      '<button class="btn quiet" type="button" id="qz-clear"' + (pre === null && post === null ? ' disabled' : '') + '>Clear</button></div>';
+    if (pre !== null || post !== null) {
+      html += '<dl class="m-meter"><div><dt>Before</dt><dd>' + (pre === null ? '—' : pre + ' of ' + n) + '</dd></div><div><dt>After</dt><dd>' + (post === null ? '—' : post + ' of ' + n) + '</dd></div>' +
+        (pre !== null && post !== null && pre < n ? '<div><dt>Normalised gain</dt><dd>' + ((post - pre) / (n - pre)).toFixed(2) + ' (of the questions you missed before, the share you now get right)</dd></div>' : '') + '</dl>';
+    }
+    if (post !== null) {
+      html += '<ol class="qz-review">' + Q.map(function (q, i) {
+        var ok = store.post[i] === q.a, was = store.pre ? store.pre[i] === q.a : null;
+        return '<li class="' + (ok ? 'ok' : 'no') + '"><strong>' + esc(q.q) + '</strong><br>' + (ok ? '✓ ' : '✗ ') + 'Answer: ' + esc(q.o[q.a]) +
+          (was === false && ok ? ' · newly right' : was === true && !ok ? ' · was right before' : '') + ' · mission: ' + esc(CGH.missions.titleOf(q.m)) + '</li>';
+      }).join('') + '</ol>';
+    }
+    html += '<textarea id="qz-text" class="qz-text" readonly hidden></textarea>';
+    el.innerHTML = html;
+    $('qz-pre').addEventListener('click', function () { form('pre'); });
+    $('qz-post').addEventListener('click', function () { form('post'); });
+    $('qz-clear').addEventListener('click', function () { store = { pre: null, post: null }; save(); render(); });
+    $('qz-copy').addEventListener('click', function () {
+      var text = summary(), ta = $('qz-text');
+      function fallback() { ta.hidden = false; ta.value = text; ta.focus(); ta.select(); $('qz-copy').textContent = 'Select and copy the text below'; }
+      try { navigator.clipboard.writeText(text).then(function () { $('qz-copy').textContent = 'Copied'; }, fallback); } catch (e) { fallback(); }
+    });
+  }
+
+  CGH.quiz = { init: render, Q: Q, summary: summary };
 })();
 
 /* cGħ World — start-up. */
 (function () {
   'use strict';
-  function go() { CGH.app.init(); CGH.world.init(); CGH.missions.init(); }
+  function go() { CGH.app.init(); CGH.world.init(); CGH.labs.init(); CGH.missions.init(); CGH.quiz.init(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
 })();
 </script>

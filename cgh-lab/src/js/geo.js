@@ -118,7 +118,7 @@
     return Math.hypot(Math.max(qx, 0), Math.max(qy, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, Math.max(qy, qz)), 0);
   }
   var MATS = ['the street', 'a house', '', 'a post', 'a lamp', 'a crate', '', 'a tree trunk', 'a tree', 'the street clock',
-              'the clock tower', 'the wall with two doors', 'the bell over the left door'];
+              'the clock tower', 'the wall with two doors', 'the bell over the left door', 'the satellite'];
   // Distance to the nearest surface from a planet-frame point, and its material (same numbering as the shader).
   function scene(x) {
     var r = len(x), a = R * Math.atan2(x[2], x[1]), ti = Math.floor((a + 60) / 120);
@@ -159,41 +159,64 @@
     return { n: [(np[0] + k * beta[0]) / den, (np[1] + k * beta[1]) / den, (np[2] + k * beta[2]) / den], D: 1 / den };
   }
 
-  /* The shader's light-ray march, step for step, keeping the path. Returns what the ray hit (kind 1),
-   * or the sky (kind 2), with c × travel time ct and the path points. */
-  function march(eye, n, rs, keep) {
+  /* The shader's light-ray march, step for step, keeping the path. opts (all optional): lam (1/rΛ²),
+   * sat {r, w (rad/s), ph0, rad}, bh {p: [x,y,z], rs}, T (s), cd (c for light delay).
+   * Returns kind 1 (hit), 2 (sky), 3 (fell into the small black hole), with c × travel time ct. */
+  function march(eye, n, rs, keep, opts) {
+    opts = opts || {};
+    var lam = opts.lam || 0, sat = opts.sat, bh = opts.bh && opts.bh.rs > 0 ? opts.bh : null, T = opts.T || 0, cd = opts.cd || 1e12;
+    function fAt(p) { var r = len(p), f = 1 - rs / r - lam * r * r; if (bh) f -= bh.rs / len(sub(p, bh.p)); return f; }
+    function accel(p, w) {
+      var r = len(p), Lv = cross(p, w), k = -1.5 * rs * dot(Lv, Lv) / Math.pow(r, 5), out = [k * p[0], k * p[1], k * p[2]];
+      if (bh) { var y = sub(p, bh.p), rb = len(y), Lb = cross(y, w), kb = -1.5 * bh.rs * dot(Lb, Lb) / Math.pow(rb, 5); for (var j = 0; j < 3; j++) out[j] += kb * y[j]; }
+      return out;
+    }
+    function satAt(t) { var ph = sat.ph0 + sat.w * t; return [0, sat.r * Math.cos(ph), sat.r * Math.sin(ph)]; }
     var re = len(eye), u = [eye[0] / re, eye[1] / re, eye[2] / re], x = eye.slice(), r = re, ct = 0, s = 0, mat = 0, kind = 0;
-    var nu = dot(n, u), f = 1 / Math.sqrt(1 - rs / re), v = [0, 1, 2].map(function (i) { return nu * u[i] + (n[i] - nu * u[i]) * f; });
-    var Lv = cross(x, v), k = -1.5 * rs * dot(Lv, Lv), acc = x.map(function (c) { return k * c / Math.pow(r, 5); });
-    var path = keep ? [x.slice()] : null;
+    var nu = dot(n, u), f0 = 1 / Math.sqrt(1 - rs / re - lam * re * re);
+    var v = [0, 1, 2].map(function (i) { return nu * u[i] + (n[i] - nu * u[i]) * f0; });
+    var acc = accel(x, v), path = keep ? [x.slice()] : null, v0 = v.slice();
     for (var i = 0; i < 400; i++) {
-      var h = r - R, d;
-      if (h < HMAX) { var sc = scene(x); d = sc.d; mat = sc.mat; if (d < 0.004 + 0.0015 * s) { kind = 1; break; } }
-      else d = h - HMAX + 0.5;
-      if (r > 30 * R) { kind = 2; break; }
-      var dl = Math.max(Math.min(0.8 * d, (h > 2 * HMAX ? 0.15 : 0.05) * r), 0.003 * s + 0.01), hs = dl / len(v);
+      var h = r - R, d, rb = 1e9;
+      if (h < HMAX) { var sc = scene(x); d = sc.d; mat = sc.mat; } else { d = h - HMAX + 0.5; mat = 0; }
+      if (sat && sat.r > 0) { var e = len(sub(x, satAt(T - ct / cd))) - sat.rad; if (e < d) { d = e; mat = 13; } }
+      if (bh) { rb = len(sub(x, bh.p)); if (rb < 1.02 * bh.rs) { kind = 3; break; } }
+      if (d < 0.004 + 0.0015 * s) { kind = 1; break; }
+      if (r > 30 * R || (lam > 0 && r * r * lam > 0.8)) { kind = 2; break; }
+      var dl = Math.max(Math.min(0.8 * d, (h > 2 * HMAX ? 0.15 : 0.05) * r), 0.003 * s + 0.01);
+      if (bh) dl = Math.min(dl, Math.max(0.08 * (rb - bh.rs), 0.01));
+      var hs = dl / len(v);
       var xn = [0, 1, 2].map(function (j) { return x[j] + v[j] * hs + 0.5 * acc[j] * hs * hs; });
-      var rn = len(xn), accn = xn.map(function (c) { return k * c / Math.pow(rn, 5); });
+      var rn = len(xn), accn = accel(xn, [v[0] + acc[0] * hs, v[1] + acc[1] * hs, v[2] + acc[2] * hs]);
       for (var j = 0; j < 3; j++) v[j] += 0.5 * (acc[j] + accn[j]) * hs;
-      ct += 0.5 * hs * (1 / (1 - rs / r) + 1 / (1 - rs / rn));
+      ct += 0.5 * hs * (1 / fAt(x) + 1 / fAt(xn));
       if (rn < R) {
         var fr = (r - R) / Math.max(r - rn, 1e-6);
-        ct -= (1 - fr) * hs / (1 - rs / R);
-        x = [0, 1, 2].map(function (j) { return x[j] + (xn[j] - x[j]) * fr; }); s += fr * dl; mat = 0; kind = 1;
+        ct -= (1 - fr) * hs / fAt(xn);
+        x = [0, 1, 2].map(function (k2) { return x[k2] + (xn[k2] - x[k2]) * fr; }); s += fr * dl; mat = 0; kind = 1;
         if (keep) path.push(x.slice());
         break;
       }
       x = xn; r = rn; acc = accn; s += dl;
       if (keep) path.push(x.slice());
     }
-    return { kind: kind, mat: mat, x: x, v: v, ct: ct, s: s, path: path, n0: n };
+    return { kind: kind, mat: mat, x: x, v: v, v0: v0, ct: ct, s: s, path: path, n0: n, te: T - ct / cd, sat: sat && mat === 13 ? satAt(T - ct / cd) : null };
+  }
+  function sub(p, q) { return [p[0] - q[0], p[1] - q[1], p[2] - q[2]]; }
+
+  /* Circular orbit of radius r (m) in the Schwarzschild–de Sitter field: far-away angular speed (rad/s) and
+   * uᵗ = dt/dτ. Λ cancels from uᵗ. Returns null where no circular orbit exists (r ≤ 1.5 rs). */
+  function orbit(r, rs, c, lam) {
+    var w2 = c * c * (rs / (2 * r * r * r) - (lam || 0));
+    if (r <= 1.5 * rs || w2 <= 0) return null;
+    return { w: Math.sqrt(w2), ut: 1 / Math.sqrt(1 - 1.5 * rs / r) };
   }
 
   var api = {
     R: R, NT: NT, LT: LT, EYE: EYE, HMAX: HMAX, START: START, DOORS: DOORS, TOWER: TOWER, WALL: WALL,
     mod: mod, wrapA: wrapA, toWorld: toWorld, fromWorld: fromWorld, frame: frame, footprint: footprint,
     launch: launch, trace: trace, horizon: horizon, clockRate: clockRate, dot: dot, cross: cross, len: len,
-    houseHeight: houseHeight, scene: scene, MATS: MATS, deaberrate: deaberrate, march: march
+    houseHeight: houseHeight, scene: scene, MATS: MATS, deaberrate: deaberrate, march: march, orbit: orbit, sub: sub
   };
   root.CGH = root.CGH || {};
   root.CGH.geo = api;
