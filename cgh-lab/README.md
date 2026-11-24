@@ -18,6 +18,21 @@ W/S effort, A/D steer, E/Q up and down, drag to look, F to look where you are, S
 | **ħ**: your wavelength at walking pace | You are a wavefunction: you spread, reflect, split at two doors; the view overlays every place you might be. |
 | **ħ (light)**: photons per pixel | Light arrives in lumps; the picture turns to grain. |
 
+**Missions.** Eight guided experiments, each in four steps: a brief, a prediction you lock in, an
+exploration with only the needed dial unlocked and a goal the world checks, then the explanation, your
+measured numbers and the real experiment it mirrors.
+
+| # | Mission | Dial | Real counterpart |
+|---|---|---|---|
+| 1 | The lamps flash together | c | Rømer and Io, 1676 |
+| 2 | The twin trip | c | Hafele–Keating, 1971 |
+| 3 | Colours from the tower | G | Pound–Rebka, 1960; Chou et al., 2010 |
+| 4 | Older upstairs | G | GPS clock corrections |
+| 5 | How far can you see? | G | Neutron-star light bending; the photon ring |
+| 6 | Two doors | ħ | Electron and molecule double slits |
+| 7 | The bell nobody hears | ħ | Hackermüller et al., 2004; Schwindt, Kwiat and Englert, 1999 |
+| 8 | Look closer | ħ | Radiation-pressure back-action, Purdy et al., 2013 |
+
 **Effect switches** turn off one process at a time: light bending, light delay, aberration, colour shift,
 gravity's shift, brightness shift, clock rates. "Newton's view" turns them all off.
 
@@ -45,6 +60,8 @@ what it is, when its light left, how much it bent, and each shift factor.
   relativistic dispersion), a second component for the bell's "rang" state, Gaussian position looks,
   rewinding, and the eraser.
 - `src/js/world.js`: walking and flying, the GPU passes, the HUD and the map. `src/js/probe.js`: the probe.
+- `src/js/missions.js`: the missions: each is data (brief, choices, setup, a progress check, the explanation)
+  driven by one small controller that locks the other dials and saves which missions you finished.
 
 ```
 node build.mjs           # writes index.html and dist/cgh-lab.html

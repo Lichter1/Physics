@@ -166,7 +166,7 @@
     var nu = dot(n, u), f = 1 / Math.sqrt(1 - rs / re), v = [0, 1, 2].map(function (i) { return nu * u[i] + (n[i] - nu * u[i]) * f; });
     var Lv = cross(x, v), k = -1.5 * rs * dot(Lv, Lv), acc = x.map(function (c) { return k * c / Math.pow(r, 5); });
     var path = keep ? [x.slice()] : null;
-    for (var i = 0; i < 260; i++) {
+    for (var i = 0; i < 400; i++) {
       var h = r - R, d;
       if (h < HMAX) { var sc = scene(x); d = sc.d; mat = sc.mat; if (d < 0.004 + 0.0015 * s) { kind = 1; break; } }
       else d = h - HMAX + 0.5;

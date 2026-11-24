@@ -312,6 +312,6 @@
       });
       last = performance.now(); raf = requestAnimationFrame(frame);
     },
-    state: S, place: place
+    state: S, place: place, setFx: setFx
   };
 })();

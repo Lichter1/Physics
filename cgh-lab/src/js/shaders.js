@@ -135,7 +135,7 @@ void main() {
   float k = -1.5 * uRsRay * dot(Lv, Lv);
   vec3 acc = k * x / pow(r, 5.0);
   int kind = 0;
-  for (int i = 0; i < 260; i++) {
+  for (int i = 0; i < 400; i++) {
     float h = r - R, d;
     if (h < HMAX) { d = scene(x, mat); if (d < 0.004 + 0.0015 * s) { kind = 1; break; } }
     else d = h - HMAX + 0.5;

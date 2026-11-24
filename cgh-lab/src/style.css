@@ -290,3 +290,37 @@ dl { margin: 0; }
   #world-view .hud.bl { max-width: calc(100% - 136px); }
   #wave-map { width: 110px; height: 110px; top: 62px; right: 6px; }
 }
+
+/* ---------- missions ---------- */
+.missions { min-width: 0; }
+.ms-list { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.ms-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-right: 4px; }
+.ms-chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: 13.5px; cursor: pointer; }
+.ms-chip:hover { border-color: var(--muted); }
+.ms-chip.done { border-color: var(--g); }
+.ms-chip .sym { margin-left: 2px; }
+.ms-free { color: var(--muted); font-size: 13px; }
+.ms-card { border: 1px solid var(--ink); border-radius: var(--radius); background: var(--surface); padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+.ms-card h3 { font-size: 18px; font-weight: 600; }
+.ms-card p { max-width: 75ch; }
+.ms-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ms-steps { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap; }
+.ms-steps li { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 2px 8px; border-radius: 999px; border: 1px solid transparent; }
+.ms-steps li.now { color: var(--bg); background: var(--ink); }
+.ms-steps li.past { border-color: var(--line); }
+.ms-q { font-weight: 600; }
+.ms-choices { display: grid; gap: 6px; }
+.ms-choice { display: flex; gap: 8px; align-items: baseline; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }
+.ms-choice:has(input:checked) { border-color: var(--ink); }
+.ms-choice input { accent-color: var(--ink); }
+.ms-status { font-family: var(--font-data); font-size: 13.5px; color: var(--ink); background: var(--sunk); padding: 6px 10px; border-radius: 4px; }
+.ms-verdict { font-weight: 600; }
+.ms-verdict.ok { color: var(--g); }
+.ms-verdict.no { color: var(--warn); }
+.ms-result { font-family: var(--font-data); font-size: 13.5px; }
+.ms-real { color: var(--muted); }
+.ms-real strong { color: var(--ink); }
+.ms-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.dial.locked { opacity: 0.55; }
+.chip[disabled] { opacity: 0.45; cursor: not-allowed; }

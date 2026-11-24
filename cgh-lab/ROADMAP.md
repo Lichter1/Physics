@@ -24,8 +24,15 @@ existing simulators.
 ## Status
 
 Phase 1 is built: flying up and down (E/Q, "Up to the tower clock"), seven effect switches, the light
-probe with a spectrometer, and a first version of measurement (section 9). Next: Phase 2, the mission
-framework.
+probe with a spectrometer, and a first version of measurement (section 9).
+
+Phase 2 is built: the mission framework (brief → predict → explore → explain, other dials locked,
+progress saved) and eight missions: 1–5 and 7 from the table in section 6, plus "The bell nobody hears"
+and "Look closer" (mission 8 there), brought forward because of the focus on measurement. Mission 5 asks
+how far you can see rather than for a flag behind you: a ray at exactly 2/3 is unstable and drifts off
+within a few hundred metres, so "see the back of your head" would be unreliable.
+
+Next: Phase 3, moving objects (thrown balls, orbits, satellites with lamps) and the radar mission.
 
 ## 1. What research says about teaching with simulations
 

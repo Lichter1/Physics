@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const read = (p) => readFileSync(join(root, 'src', p), 'utf8');
-const scripts = ['physics', 'qcore', 'geo', 'shaders', 'app', 'wave', 'world', 'probe', 'main'];
+const scripts = ['physics', 'qcore', 'geo', 'shaders', 'app', 'wave', 'world', 'probe', 'missions', 'main'];
 
 const head = [
   '<title>cGħ World</title>',

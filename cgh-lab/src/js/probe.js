@@ -32,6 +32,7 @@
     var bend = Math.acos(Math.max(-1, Math.min(1, G.dot(ab.n, ref)))) * 180 / Math.PI;
     var lamp = hit && m.mat === 4, nm0 = lamp ? SODIUM : GREEN, nm = nm0 / D;
     last = { m: m, n: ab.n, eye: cam.eye, re: re, rs: rsRay, hit: hit };
+    CGH.probe.last = { kind: m.kind, mat: m.mat, s: m.s, D: D, Dg: Dg, h: hit ? r - G.R : null, eyeH: re - G.R };
 
     var n = A.num, rows = [];
     rows.push(['Looking at', name(m) + (hit ? ', ' + n(m.s, 3) + ' m along the light’s path' + (Math.abs(m.s - cl) > 0.01 * cl + 0.05 ? ' (' + n(cl, 3) + ' m straight)' : '') : '')]);

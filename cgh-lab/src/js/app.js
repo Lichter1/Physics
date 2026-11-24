@@ -83,14 +83,20 @@
     var v = state[k];
     return k === 'cw' ? num(v) + ' walking speeds' : k === 'comp' ? 'rs/R = ' + num(v) : k === 'lam' ? 'λ = ' + length(v) : num(v) + ' per pixel';
   }
+  var locked = null;                 // during a mission: the only dials you may turn
   function renderDials() {
     ['cw', 'comp', 'lam', 'photons'].forEach(function (k) {
+      var off = !!locked && locked.indexOf(k) < 0;
       $('dial-' + k).value = toSlider(k, state[k]);
+      $('dial-' + k).disabled = off;
+      $('dial-' + k).closest('.dial').classList.toggle('locked', off);
       $('val-' + k).textContent = show(k);
-      $('note-' + k).textContent = note(k);
-      $('reset-' + k).disabled = isReal(k);
+      $('note-' + k).textContent = off ? 'set by the mission' : note(k);
+      $('reset-' + k).disabled = off || isReal(k);
     });
+    Array.prototype.forEach.call($('presets').children, function (b) { b.disabled = !!locked; });
   }
+  function lock(keys) { locked = keys; renderDials(); }
 
   var PRESETS = [
     { name: 'Our universe', v: REALV },
@@ -163,7 +169,7 @@
   }
 
   CGH.app = {
-    state: state, REAL: REALV, WALK: WALK, MASS: MASS, set: set, onChange: onChange, isReal: isReal, derived: derived, regime: regime,
+    state: state, REAL: REALV, WALK: WALK, MASS: MASS, set: set, lock: lock, onChange: onChange, isReal: isReal, derived: derived, regime: regime,
     num: num, length: length, duration: duration, clock: clock, css: css, fit: fit, init: init, $: $
   };
 })();
