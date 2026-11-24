@@ -1,12 +1,6 @@
-/* cGħ Lab — start-up. Scenes register themselves, then the shell opens the tab named in the URL. */
+/* cGħ World — start-up. */
 (function () {
   'use strict';
-  function go() {
-    CGH.app.init();
-    CGH.light.init();
-    CGH.gravity.init();
-    CGH.quantum.init();
-    CGH.app.start();
-  }
+  function go() { CGH.app.init(); CGH.world.init(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
 })();

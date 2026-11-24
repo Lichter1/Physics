@@ -7,10 +7,10 @@ import { fileURLToPath } from 'node:url';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const read = (p) => readFileSync(join(root, 'src', p), 'utf8');
-const scripts = ['physics', 'qcore', 'app', 'light', 'gravity', 'quantum', 'main'];
+const scripts = ['physics', 'qcore', 'geo', 'shaders', 'app', 'wave', 'world', 'main'];
 
 const head = [
-  '<title>cGħ Lab</title>',
+  '<title>cGħ World</title>',
   '<meta name="claude:viewport-fit-sides" content="cover">',
   '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=STIX+Two+Text:ital,wght@0,500;0,600;1,500;1,600&display=swap">',
   '<style>\n' + read('style.css') + '</style>'

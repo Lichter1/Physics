@@ -53,11 +53,13 @@
     for (var i = 0; i < n; i++) { re[i] *= s; im[i] *= s; }
   };
 
-  /* opts: N (power of two), L (side length, m), m (mass, kg), hbar (J·s) */
+  /* opts: N (power of two), L (side length, m), m (mass, kg), hbar (J·s),
+   * c (optional, m/s): use the relativistic energy sqrt((ħkc)² + (mc²)²) - mc² instead of (ħk)²/2m.
+   * That is the free motion of a spinless particle with no pair creation; for c → ∞ it is Schrödinger. */
   function Sim(opts) {
     var N = this.N = opts.N;
     this.L = opts.L; this.dx = opts.L / N;
-    this.m = opts.m; this.hbar = opts.hbar;
+    this.m = opts.m; this.hbar = opts.hbar; this.c = opts.c || 0;
     this.re = new Float64Array(N * N);
     this.im = new Float64Array(N * N);
     this.V = new Float64Array(N * N);          // potential energy, J
@@ -135,13 +137,14 @@
   };
 
   Sim.prototype._prepare = function (dt) {
-    var N = this.N, hb = this.hbar, L = this.L;
+    var N = this.N, hb = this.hbar, L = this.L, c = this.c, mc2 = this.m * c * c;
     var a = hb * dt / (2 * this.m);
     for (var j = 0; j < N; j++) {
       var fy = j < N / 2 ? j : j - N, ky = 2 * Math.PI * fy / L;
       for (var i = 0; i < N; i++) {
-        var fx = i < N / 2 ? i : i - N, kx = 2 * Math.PI * fx / L;
-        var ph = a * (kx * kx + ky * ky), q = j * N + i;
+        var fx = i < N / 2 ? i : i - N, kx = 2 * Math.PI * fx / L, k2 = kx * kx + ky * ky;
+        // kinetic energy × dt / ħ, written so that nothing cancels when c is large
+        var ph = c ? hb * k2 * c * c * dt / (Math.sqrt(hb * hb * k2 * c * c + mc2 * mc2) + mc2) : a * k2, q = j * N + i;
         this._kc[q] = Math.cos(ph); this._ks[q] = -Math.sin(ph);
       }
     }
@@ -204,6 +207,46 @@
     this._fft2(true);
     this._halfPotential();
     this.time += dt;
+  };
+
+  // A uniform force acting briefly: every momentum component shifts by ħ(dkx, dky).
+  Sim.prototype.kick = function (dkx, dky) {
+    var N = this.N, re = this.re, im = this.im;
+    for (var j = 0; j < N; j++) for (var i = 0; i < N; i++) {
+      var ph = dkx * this.x(i) + dky * this.y(j), c = Math.cos(ph), s = Math.sin(ph), q = j * N + i;
+      var a = re[q], b = im[q];
+      re[q] = a * c - b * s; im[q] = a * s + b * c;
+    }
+  };
+  // Mean wavenumber <k>, from the momentum distribution |ψ(k)|². y grows upward, so row frequencies flip sign.
+  Sim.prototype.meanK = function () {
+    var N = this.N, L = this.L, sx = 0, sy = 0, s = 0, re0 = this.re, im0 = this.im;
+    this.re = Float64Array.from(re0); this.im = Float64Array.from(im0);
+    this._fft2(false);
+    for (var j = 0; j < N; j++) {
+      var ky = -2 * Math.PI * (j < N / 2 ? j : j - N) / L;
+      for (var i = 0; i < N; i++) {
+        var kx = 2 * Math.PI * (i < N / 2 ? i : i - N) / L, q = j * N + i;
+        var p = this.re[q] * this.re[q] + this.im[q] * this.im[q];
+        sx += p * kx; sy += p * ky; s += p;
+      }
+    }
+    this.re = re0; this.im = im0;
+    return [sx / s, sy / s];
+  };
+  // Move the whole wave by whole cells (di right, dj up). What slides off is dropped, new cells are empty.
+  Sim.prototype.shift = function (di, dj) {
+    var N = this.N, re = new Float64Array(N * N), im = new Float64Array(N * N);
+    for (var j = 0; j < N; j++) {
+      var js = j - dj;                                   // row 0 is the top: a window moved up reads rows above
+      if (js < 0 || js >= N) continue;
+      for (var i = 0; i < N; i++) {
+        var is = i + di;
+        if (is < 0 || is >= N) continue;
+        re[j * N + i] = this.re[js * N + is]; im[j * N + i] = this.im[js * N + is];
+      }
+    }
+    this.re = re; this.im = im;
   };
 
   /* A position measurement of finite sharpness: pick where the ball is found from |ψ|²,

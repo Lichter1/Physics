@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>cGħ Lab</title>
+<title>cGħ World</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=STIX+Two+Text:ital,wght@0,500;0,600;1,500;1,600&display=swap">
 <style>
@@ -257,38 +257,56 @@ dl { margin: 0; }
 .colophon a { color: inherit; }
 
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+/* ---------- cGħ World ---------- */
+#wave-map {
+  position: absolute; right: 8px; top: 74px; width: 184px; height: 184px;
+  border: 1px solid rgba(255,255,255,0.35); border-radius: 4px; image-rendering: pixelated; pointer-events: none;
+}
+.pad { grid-template-columns: repeat(3, 44px); }
+.explain li .sym { margin-right: 4px; }
+@media (max-width: 640px) {
+  #wave-map { width: 104px; height: 104px; top: 64px; }
+}
 </style>
 </head>
 <body>
 <div class="app">
 
-  <aside class="console" aria-label="The three constants">
+  <aside class="console" aria-label="The dials">
     <header>
-      <h1 class="brand"><span class="sym sym-c">c</span><span class="sym sym-g">G</span><span class="sym sym-h">ħ</span><span class="lab">Lab</span></h1>
+      <h1 class="brand"><span class="sym sym-c">c</span><span class="sym sym-g">G</span><span class="sym sym-h">ħ</span><span class="lab">World</span></h1>
     </header>
-    <p class="tagline">Three constants decide how far from everyday life relativity, gravity and quantum mechanics sit. Turn them until the strange parts happen at walking pace.</p>
+    <p class="tagline">One small planet, one street, four dials. Each dial is a pure number that says how strongly relativity, gravity or quantum mechanics shows up at human scale. Turn one and walk.</p>
 
     <div class="dials">
       <div class="dial" data-k="c">
-        <span class="sym sym-c">c</span><span class="dial-name">speed of light</span>
-        <button class="link-btn" type="button" id="reset-c">real value</button>
-        <output class="dial-value" id="val-c" for="dial-c"></output>
-        <span class="dial-note" id="note-c"></span>
-        <input type="range" id="dial-c" min="0" max="1000" step="1" aria-label="Speed of light">
+        <span class="sym sym-c">c</span><span class="dial-name">light, in walking speeds</span>
+        <button class="link-btn" type="button" id="reset-cw">real value</button>
+        <output class="dial-value" id="val-cw" for="dial-cw"></output>
+        <span class="dial-note" id="note-cw"></span>
+        <input type="range" id="dial-cw" min="0" max="1000" step="1" aria-label="Speed of light in walking speeds">
       </div>
       <div class="dial" data-k="G">
-        <span class="sym sym-g">G</span><span class="dial-name">gravitational constant</span>
-        <button class="link-btn" type="button" id="reset-G">real value</button>
-        <output class="dial-value" id="val-G" for="dial-G"></output>
-        <span class="dial-note" id="note-G"></span>
-        <input type="range" id="dial-G" min="0" max="1000" step="1" aria-label="Gravitational constant">
+        <span class="sym sym-g">G</span><span class="dial-name">how compact the planet is</span>
+        <button class="link-btn" type="button" id="reset-comp">real value</button>
+        <output class="dial-value" id="val-comp" for="dial-comp"></output>
+        <span class="dial-note" id="note-comp"></span>
+        <input type="range" id="dial-comp" min="0" max="1000" step="1" aria-label="Planet compactness">
       </div>
       <div class="dial" data-k="hbar">
-        <span class="sym sym-h">ħ</span><span class="dial-name">Planck constant</span>
-        <button class="link-btn" type="button" id="reset-hbar">real value</button>
-        <output class="dial-value" id="val-hbar" for="dial-hbar"></output>
-        <span class="dial-note" id="note-hbar"></span>
-        <input type="range" id="dial-hbar" min="0" max="1000" step="1" aria-label="Planck constant">
+        <span class="sym sym-h">ħ</span><span class="dial-name">your wavelength at walking pace</span>
+        <button class="link-btn" type="button" id="reset-lam">real value</button>
+        <output class="dial-value" id="val-lam" for="dial-lam"></output>
+        <span class="dial-note" id="note-lam"></span>
+        <input type="range" id="dial-lam" min="0" max="1000" step="1" aria-label="Your wavelength at walking pace">
+      </div>
+      <div class="dial" data-k="hbar">
+        <span class="sym sym-h">ħ</span><span class="dial-name">light, in photons per pixel</span>
+        <button class="link-btn" type="button" id="reset-photons">real value</button>
+        <output class="dial-value" id="val-photons" for="dial-photons"></output>
+        <span class="dial-note" id="note-photons"></span>
+        <input type="range" id="dial-photons" min="0" max="1000" step="1" aria-label="Photons per pixel per frame">
       </div>
     </div>
 
@@ -304,173 +322,73 @@ dl { margin: 0; }
   </aside>
 
   <div class="stage">
-    <nav class="tabs" role="tablist" aria-label="Scenes">
-      <button class="tab" role="tab" id="tab-map" data-tab="map" type="button">Map</button>
-      <button class="tab" role="tab" id="tab-light" data-tab="light" type="button"><span class="sym sym-c">c</span>Light</button>
-      <button class="tab" role="tab" id="tab-gravity" data-tab="gravity" type="button"><span class="sym sym-g">G</span>Gravity</button>
-      <button class="tab" role="tab" id="tab-quantum" data-tab="quantum" type="button"><span class="sym sym-h">ħ</span>Quantum</button>
-    </nav>
+    <div class="panel-head">
+      <h2>Walk round a small planet</h2>
+      <p>The planet is 382 m across, with one street running round it. Every pixel is a ray of light traced back through curved spacetime to whatever sent it, with the time it took. You start facing a clock tower; behind you is a wall with two doors.</p>
+    </div>
 
-    <!-- ================= MAP ================= -->
-    <section class="panel" id="panel-map" role="tabpanel" aria-labelledby="tab-map">
-      <div class="panel-head">
-        <h2>Which physics does a person need?</h2>
-        <p>Every corner of this cube is a theory. Which corner you live in depends on whether each constant leaves a mark at the scale of a person, a street and a football. Pick a corner to set the dials there.</p>
-      </div>
-      <div class="map-top">
-        <div class="cube-wrap"><canvas id="cube" aria-label="Cube of theories: axes are 1/c, G and ħ"></canvas></div>
-        <ul class="theories" id="theories"></ul>
-      </div>
-      <h3 class="section-title">What these settings do to an ordinary day</h3>
-      <div class="table-scroll">
-        <table class="everyday">
-          <thead><tr><th scope="col">Everyday thing</th><th scope="col">Now</th><th scope="col">In our universe</th><th scope="col">So</th></tr></thead>
-          <tbody id="everyday"></tbody>
-        </table>
-      </div>
-      <p class="note"><strong>The rule of the game.</strong> Only ratios without units are physical. Changing <span class="sym">c</span> or <span class="sym">ħ</span> alone also changes the fine-structure constant <span class="formula"><i>α</i> = <i>e</i>²/4π<i>ε</i>₀<i>ħc</i></span>, and with it every atom. This lab does what George Gamow did in <em>Mr&nbsp;Tompkins</em>: it keeps people, streets and footballs intact by decree and changes only how they move, fall and spread. The table shows what that decree hides.</p>
-    </section>
+    <div class="controls">
+      <label class="field"><span>Effort <output id="effort-out"></output></span>
+        <input type="range" id="effort" min="0" max="20" step="0.1" value="0"></label>
+      <button class="btn quiet" type="button" id="w-stop">Stop</button>
+      <button class="btn quiet" type="button" id="w-turn">Turn around</button>
+      <button class="btn" type="button" id="w-look">Look where I am (F)</button>
+      <label class="check"><input type="checkbox" id="w-watched"> Always watched</label>
+      <label class="check"><input type="checkbox" id="w-newton"> Newton’s view</label>
+      <label class="check"><input type="checkbox" id="w-doppler" checked> Colour shift</label>
+      <label class="check"><input type="checkbox" id="w-beam" checked> Brightness shift</label>
+      <button class="btn quiet" type="button" id="w-home">Back to start</button>
+    </div>
 
-    <!-- ================= LIGHT ================= -->
-    <section class="panel" id="panel-light" role="tabpanel" aria-labelledby="tab-light" hidden>
-      <div class="panel-head">
-        <h2>Slow-light street</h2>
-        <p>Ride down a street with clocks overhead and trams passing. Every lamp flashes at the same instant and every clock agrees, in the town's own frame. What reaches your eyes is another matter.</p>
+    <div class="view wide" id="world-view">
+      <canvas id="world-canvas" tabindex="0" aria-label="First-person view. W and S change effort, A and D steer, drag to look, F to look where you are."></canvas>
+      <div class="crosshair" aria-hidden="true"></div>
+      <div class="hud tl" id="w-hud-l"></div>
+      <div class="hud tr" id="w-hud-r"></div>
+      <div class="hud bl" id="w-hud-b"></div>
+      <canvas id="wave-map" width="128" height="128" aria-label="Your wavefunction from above, 32 m across, street running up the page" hidden></canvas>
+      <div class="pad" aria-hidden="true">
+        <button type="button" data-act="left" tabindex="-1">⟲</button>
+        <button type="button" data-act="faster" tabindex="-1">＋</button>
+        <button type="button" data-act="right" tabindex="-1">⟳</button>
+        <button type="button" data-act="look" tabindex="-1">F</button>
+        <button type="button" data-act="slower" tabindex="-1">−</button>
+        <span></span>
       </div>
-      <div class="nudge" id="light-nudge" hidden>
-        <p id="light-nudge-text"></p>
-        <button class="btn" type="button" id="light-nudge-btn">Slow light to 10 m/s</button>
-      </div>
-      <div class="controls">
-        <label class="field"><span>Effort <output id="effort-out"></output></span>
-          <input type="range" id="effort" min="0" max="40" step="0.1" value="0"></label>
-        <div class="field"><span>Show</span>
-          <div class="seg" id="light-mode" role="group" aria-label="What to show">
-            <button type="button" data-mode="0" aria-pressed="true">What you see</button>
-            <button type="button" data-mode="1" aria-pressed="false">What is there</button>
-            <button type="button" data-mode="2" aria-pressed="false">Newton</button>
-          </div></div>
-        <label class="check"><input type="checkbox" id="opt-doppler" checked> Doppler colour</label>
-        <label class="check"><input type="checkbox" id="opt-beam" checked> Beaming</label>
-        <button class="btn quiet" type="button" id="light-stop">Stop</button>
-        <button class="btn quiet" type="button" id="light-turn">Turn around</button>
-      </div>
-      <div class="view wide" id="light-view">
-        <canvas id="light-canvas" tabindex="0" aria-label="First-person view of the street. W and S change effort, A and D steer, drag to look around."></canvas>
-        <div class="crosshair" aria-hidden="true"></div>
-        <div class="hud tl" id="light-hud-l"></div>
-        <div class="hud tr" id="light-hud-r"></div>
-        <div class="hud bl" id="light-hud-b"></div>
-        <div class="pad" aria-hidden="true">
-          <button type="button" data-act="left" tabindex="-1">⟲</button>
-          <button type="button" data-act="faster" tabindex="-1">＋</button>
-          <button type="button" data-act="right" tabindex="-1">⟳</button>
-          <span></span>
-          <button type="button" data-act="slower" tabindex="-1">−</button>
-          <span></span>
-        </div>
-      </div>
-      <dl class="readouts" id="light-readouts"></dl>
-      <div class="explain">
-        <div>
-          <h3>What to try</h3>
-          <ul>
-            <li>Stand still. The lamps flash in a ripple that runs away from you, and far clocks read earlier than near ones. Nothing is out of sync; the light is late.</li>
-            <li>Push the effort up. The street ahead stretches away and bends, things beside you swing into view, and the clock ahead runs fast. Turn around and it runs slow.</li>
-            <li>Switch to “What is there”. That is the street in your frame at this instant: simply squashed along your motion. You never see it that way, because light from its far end left earlier.</li>
-            <li>Ride out and back, then compare your watch with the town clock.</li>
-          </ul>
-        </div>
-        <div>
-          <h3>The arithmetic</h3>
-          <p class="formula"><i>v</i> = <i>c</i> tanh(effort / <i>c</i>) &nbsp; <i>γ</i> = 1/√(1 − <i>v</i>²/<i>c</i>²)<br>
-          cos <i>θ</i>′ = (cos <i>θ</i> + <i>β</i>) / (1 + <i>β</i> cos <i>θ</i>)<br>
-          <i>f</i><sub>seen</sub>/<i>f</i> = <i>γ</i>(1 + <i>β</i> cos <i>θ</i>) &nbsp; brightness ∝ (<i>f</i><sub>seen</sub>/<i>f</i>)³</p>
-          <p class="note">Each vertex is drawn where its light left it: the event on your past light cone, Lorentz-transformed into your frame. Colours are an approximation: three colour bands plus an infrared and an ultraviolet tail, so foliage brightens as its infrared shifts into view.</p>
-        </div>
-      </div>
-    </section>
+    </div>
+    <dl class="readouts" id="w-readouts"></dl>
 
-    <!-- ================= GRAVITY ================= -->
-    <section class="panel" id="panel-gravity" role="tabpanel" aria-labelledby="tab-gravity" hidden>
-      <div class="panel-head">
-        <h2 id="grav-title">Time tower</h2>
-        <p id="grav-premise"></p>
+    <div class="explain">
+      <div>
+        <h3>What each dial does to the view</h3>
+        <ul>
+          <li><span class="sym sym-c">c</span> Moving squeezes the view ahead, tints it blue and brightens it; behind you it reddens and fades. Far clocks read early because their light is old.</li>
+          <li><span class="sym sym-g">G</span> Light falls. The horizon rises, the street ahead curls up, and you see further round the planet. At 2/3 light circles the planet at eye level; beyond that the ground wraps over you and the sky shrinks to a blue disc overhead. The tower-top clock runs fast.</li>
+          <li><span class="sym sym-h">ħ</span> You become a wave. Left alone you spread, and the view overlays every place you might be. Walls reflect you; two doors split you. Looking (F) puts you in one place, at random.</li>
+          <li><span class="sym sym-h">ħ</span> Light arrives in lumps. With few photons per pixel, the scene turns to grain.</li>
+        </ul>
       </div>
-      <div class="controls">
-        <div class="field"><span>Scene</span>
-          <div class="seg" id="grav-scene" role="group" aria-label="Gravity scene">
-            <button type="button" data-scene="tower" aria-pressed="true">Time tower</button>
-            <button type="button" data-scene="hole" aria-pressed="false">Black-hole mission</button>
-          </div></div>
-        <div class="controls" id="tower-controls">
-          <label class="field"><span>Your floor <output id="floor-out"></output></span>
-            <input type="range" id="floor" min="-4" max="10" step="1" value="0"></label>
-          <label class="field"><span>Time lapse <output id="tower-speed-out"></output></span>
-            <input type="range" id="tower-speed" min="0" max="3" step="0.5" value="0"></label>
-          <button class="btn quiet" type="button" id="tower-sync">Synchronise clocks</button>
-        </div>
-        <div class="controls" id="hole-controls" hidden>
-          <label class="field"><span>Mass <output id="mass-out"></output></span>
-            <input type="range" id="mass" min="0" max="41" step="0.05" value="38.3"></label>
-          <label class="field"><span>Spin <output id="spin-out"></output></span>
-            <input type="range" id="spin" min="0" max="1" step="0.002" value="0"></label>
-          <label class="field"><span>Planet orbit <output id="orbit-out"></output></span>
-            <input type="range" id="orbit" min="0" max="1" step="0.002" value="0"></label>
-          <label class="field"><span>Stay on the planet <output id="stay-out"></output></span>
-            <input type="range" id="stay" min="0.25" max="12" step="0.25" value="1"></label>
-          <button class="btn quiet" type="button" id="hole-film">Miller's planet</button>
-          <button class="btn quiet" type="button" id="hole-plain">No spin</button>
-        </div>
+      <div>
+        <h3>What to try</h3>
+        <ul>
+          <li>Press “Light orbits”, look along the street, then look straight up.</li>
+          <li>Press “You are a wave”, walk at the wall between the doors, and watch the map. Press F on the far side, several times from the start.</li>
+          <li>Turn on “Always watched”. Being looked at keeps you sharp, but you jitter: each look kicks your momentum.</li>
+          <li>Tick “Newton’s view” to see the same place with instant, straight light.</li>
+        </ul>
       </div>
-      <div class="nudge" id="grav-nudge" hidden>
-        <p id="grav-nudge-text"></p>
-        <button class="btn" type="button" id="grav-nudge-btn">Slow light to 10 m/s</button>
+      <div>
+        <h3>What is exact, and what is not</h3>
+        <p class="note">Light paths are exact null geodesics of the Schwarzschild metric outside the planet, traced per pixel, with their travel time, gravitational and Doppler shifts. Your own wave obeys the free relativistic wave equation for a spinless particle in two dimensions, with walls. Approximations: colours (a guessed spectrum), sunlight (not bent), the overlay (an average of views, which no single observer sees), and a planet whose mass is set by decree.</p>
       </div>
-      <div class="view tall"><canvas id="grav-canvas" aria-label="Gravity scene"></canvas></div>
-      <dl class="readouts" id="grav-readouts"></dl>
-      <div class="explain" id="grav-explain"></div>
-    </section>
-
-    <!-- ================= QUANTUM ================= -->
-    <section class="panel" id="panel-quantum" role="tabpanel" aria-labelledby="tab-quantum" hidden>
-      <div class="panel-head">
-        <h2 id="q-title">Quantum yard</h2>
-        <p id="q-premise"></p>
+      <div>
+        <h3>Why pure numbers</h3>
+        <p class="note">Only ratios without units are physical. Each dial is one: your walking speed against light, the planet’s horizon radius against its size, your wavelength against a metre, and the photons that reach one pixel. The notes under each dial translate it into <span class="sym">c</span>, <span class="sym">G</span> and <span class="sym">ħ</span>. They also show the catch: the ħ that makes you a 2 m wave would make each photon carry about 3×10³⁵ times its real energy, so a consistent world would be black. The last two dials keep those two effects apart on purpose.</p>
       </div>
-      <div class="controls">
-        <div class="field"><span>Scene</span>
-          <div class="seg" id="q-scene" role="group" aria-label="Quantum scene">
-            <button type="button" data-scene="doors" aria-pressed="true">Two doors</button>
-            <button type="button" data-scene="fence" aria-pressed="false">Fence</button>
-            <button type="button" data-scene="drop" aria-pressed="false">Drop</button>
-          </div></div>
-        <label class="field" id="q-speed-field"><span>Ball speed <output id="q-speed-out"></output></span>
-          <input type="range" id="q-speed" min="0.5" max="4" step="0.1" value="2"></label>
-        <label class="field" id="q-height-field" hidden><span>Fence height <output id="q-height-out"></output></span>
-          <input type="range" id="q-height" min="0.4" max="2.5" step="0.05" value="1.2"></label>
-        <label class="field" id="q-thick-field" hidden><span>Fence thickness <output id="q-thick-out"></output></span>
-          <input type="range" id="q-thick" min="0.125" max="0.75" step="0.0625" value="0.25"></label>
-        <label class="field" id="q-drop-field" hidden><span>Drop height <output id="q-drop-out"></output></span>
-          <input type="range" id="q-drop" min="0.5" max="2.6" step="0.1" value="2"></label>
-        <label class="check"><input type="checkbox" id="q-phase"> Colour by phase</label>
-        <button class="btn quiet" type="button" id="q-restart">Kick again</button>
-        <button class="btn quiet" type="button" id="q-many">100 kicks</button>
-        <button class="btn quiet" type="button" id="q-ground" hidden>Rest it on the floor</button>
-        <button class="btn quiet" type="button" id="q-look">Look at it</button>
-        <button class="btn quiet" type="button" id="q-pause" aria-pressed="false">Pause</button>
-      </div>
-      <div class="nudge" id="q-nudge" hidden>
-        <p id="q-nudge-text"></p>
-        <button class="btn" type="button" id="q-nudge-btn">Raise ħ to 0.1 J·s</button>
-      </div>
-      <div class="view yard"><canvas id="q-canvas" aria-label="Quantum scene"></canvas></div>
-      <dl class="readouts" id="q-readouts"></dl>
-      <div class="explain" id="q-explain"></div>
-    </section>
+    </div>
 
     <footer class="colophon">
-      <p>Special relativity here is exact for the scenes drawn; colours are approximate. The tower uses a uniform field (an accelerating frame); the mission uses circular equatorial orbits around a Kerr black hole. The quantum scenes solve the Schrödinger equation for one particle with no decoherence, which is the generous assumption a football would need. Where all three constants matter at once there is no accepted theory, and the lab says so instead of guessing.</p>
+      <p>cGħ World. The earlier tab-based scenes are in the repository history. Survey of existing tools and sources: RESEARCH.md in the repository.</p>
     </footer>
   </div>
 </div>
@@ -757,11 +675,13 @@ dl { margin: 0; }
     for (var i = 0; i < n; i++) { re[i] *= s; im[i] *= s; }
   };
 
-  /* opts: N (power of two), L (side length, m), m (mass, kg), hbar (J·s) */
+  /* opts: N (power of two), L (side length, m), m (mass, kg), hbar (J·s),
+   * c (optional, m/s): use the relativistic energy sqrt((ħkc)² + (mc²)²) - mc² instead of (ħk)²/2m.
+   * That is the free motion of a spinless particle with no pair creation; for c → ∞ it is Schrödinger. */
   function Sim(opts) {
     var N = this.N = opts.N;
     this.L = opts.L; this.dx = opts.L / N;
-    this.m = opts.m; this.hbar = opts.hbar;
+    this.m = opts.m; this.hbar = opts.hbar; this.c = opts.c || 0;
     this.re = new Float64Array(N * N);
     this.im = new Float64Array(N * N);
     this.V = new Float64Array(N * N);          // potential energy, J
@@ -839,13 +759,14 @@ dl { margin: 0; }
   };
 
   Sim.prototype._prepare = function (dt) {
-    var N = this.N, hb = this.hbar, L = this.L;
+    var N = this.N, hb = this.hbar, L = this.L, c = this.c, mc2 = this.m * c * c;
     var a = hb * dt / (2 * this.m);
     for (var j = 0; j < N; j++) {
       var fy = j < N / 2 ? j : j - N, ky = 2 * Math.PI * fy / L;
       for (var i = 0; i < N; i++) {
-        var fx = i < N / 2 ? i : i - N, kx = 2 * Math.PI * fx / L;
-        var ph = a * (kx * kx + ky * ky), q = j * N + i;
+        var fx = i < N / 2 ? i : i - N, kx = 2 * Math.PI * fx / L, k2 = kx * kx + ky * ky;
+        // kinetic energy × dt / ħ, written so that nothing cancels when c is large
+        var ph = c ? hb * k2 * c * c * dt / (Math.sqrt(hb * hb * k2 * c * c + mc2 * mc2) + mc2) : a * k2, q = j * N + i;
         this._kc[q] = Math.cos(ph); this._ks[q] = -Math.sin(ph);
       }
     }
@@ -908,6 +829,46 @@ dl { margin: 0; }
     this._fft2(true);
     this._halfPotential();
     this.time += dt;
+  };
+
+  // A uniform force acting briefly: every momentum component shifts by ħ(dkx, dky).
+  Sim.prototype.kick = function (dkx, dky) {
+    var N = this.N, re = this.re, im = this.im;
+    for (var j = 0; j < N; j++) for (var i = 0; i < N; i++) {
+      var ph = dkx * this.x(i) + dky * this.y(j), c = Math.cos(ph), s = Math.sin(ph), q = j * N + i;
+      var a = re[q], b = im[q];
+      re[q] = a * c - b * s; im[q] = a * s + b * c;
+    }
+  };
+  // Mean wavenumber <k>, from the momentum distribution |ψ(k)|². y grows upward, so row frequencies flip sign.
+  Sim.prototype.meanK = function () {
+    var N = this.N, L = this.L, sx = 0, sy = 0, s = 0, re0 = this.re, im0 = this.im;
+    this.re = Float64Array.from(re0); this.im = Float64Array.from(im0);
+    this._fft2(false);
+    for (var j = 0; j < N; j++) {
+      var ky = -2 * Math.PI * (j < N / 2 ? j : j - N) / L;
+      for (var i = 0; i < N; i++) {
+        var kx = 2 * Math.PI * (i < N / 2 ? i : i - N) / L, q = j * N + i;
+        var p = this.re[q] * this.re[q] + this.im[q] * this.im[q];
+        sx += p * kx; sy += p * ky; s += p;
+      }
+    }
+    this.re = re0; this.im = im0;
+    return [sx / s, sy / s];
+  };
+  // Move the whole wave by whole cells (di right, dj up). What slides off is dropped, new cells are empty.
+  Sim.prototype.shift = function (di, dj) {
+    var N = this.N, re = new Float64Array(N * N), im = new Float64Array(N * N);
+    for (var j = 0; j < N; j++) {
+      var js = j - dj;                                   // row 0 is the top: a window moved up reads rows above
+      if (js < 0 || js >= N) continue;
+      for (var i = 0; i < N; i++) {
+        var is = i + di;
+        if (is < 0 || is >= N) continue;
+        re[j * N + i] = this.re[js * N + is]; im[j * N + i] = this.im[js * N + is];
+      }
+    }
+    this.re = re; this.im = im;
   };
 
   /* A position measurement of finite sharpness: pick where the ball is found from |ψ|²,
@@ -1026,817 +987,874 @@ dl { margin: 0; }
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 
-/* cGħ Lab — shell: the three dials, number formatting, tabs, the cube of theories and the Map panel. */
+/* cGħ World — shared geometry and the JavaScript twin of the shader's light-ray integrator. No DOM.
+ *
+ * The world is a small planet with one street running round its equator.
+ * Street coordinates: a = metres along the street, l = metres across it (+ is your right when
+ * facing +a), h = height above the ground. The street repeats every 120 m, 20 times round.
+ *
+ * Light rays follow null geodesics of the Schwarzschild metric outside the planet. Written in
+ * Cartesian form they obey  x'' = -(3/2) rs L² x / r⁵  with L = |x × x'| conserved, where the
+ * parameter is affine and c·dt = dλ / (1 - rs/r). This is exact, not a weak-field approximation.
+ */
+(function (root) {
+  'use strict';
+
+  var NT = 20, LT = 120, R = NT * LT / (2 * Math.PI), EYE = 1.7, HMAX = 52;
+  var START = { a: -10, l: 0 };
+  var DOORS = { a: -6, l: 0, heading: Math.PI };       // where the wave demo starts: facing the two doors
+  var TOWER = { a: 40, half: 1.5, height: 50, clockTop: 46, clockBase: 3 };
+  var WALL = { a: -20, half: 0.2, span: 10, height: 3, door: 1.5, doorHalf: 0.6 };
+
+  function mod(x, m) { return x - m * Math.floor(x / m); }
+  function wrapA(a) { return mod(a + Math.PI * R, 2 * Math.PI * R) - Math.PI * R; }
+
+  /* ---------- street coordinates <-> planet frame ---------- */
+  // At a = l = 0 the up direction is +y, +a is +z and +l (your right) is -x.
+  function toWorld(a, l, h) {
+    var th = l / R, ph = a / R, r = R + h, ct = Math.cos(th);
+    return [-r * Math.sin(th), r * ct * Math.cos(ph), r * ct * Math.sin(ph)];
+  }
+  function fromWorld(p) {
+    var r = Math.hypot(p[0], p[1], p[2]);
+    return { a: R * Math.atan2(p[2], p[1]), l: -R * Math.asin(Math.max(-1, Math.min(1, p[0] / r))), h: r - R };
+  }
+  // Unit vectors at a street point: up, along (+a), across (+l).
+  function frame(a, l) {
+    var th = l / R, ph = a / R, ct = Math.cos(th), st = Math.sin(th), cp = Math.cos(ph), sp = Math.sin(ph);
+    return { up: [-st, ct * cp, ct * sp], along: [0, -sp, cp], across: [-ct, -st * cp, -st * sp] };
+  }
+
+  /* ---------- what stands on the ground (for walking into things, and for the wave's walls) ---------- */
+  function box2(x, y, hx, hy) {
+    var dx = Math.abs(x) - hx, dy = Math.abs(y) - hy;
+    return Math.hypot(Math.max(dx, 0), Math.max(dy, 0)) + Math.min(Math.max(dx, dy), 0);
+  }
+  // Signed distance (m) from a ground point to the nearest footprint. Negative inside.
+  function footprint(a, l) {
+    a = wrapA(a);
+    var ti = Math.floor((a + LT / 2) / LT), al = a - ti * LT, ab = Math.abs(l);
+    var d = box2(ab - 16, mod(al, 20) - 10, 6, 8);                      // houses
+    d = Math.min(d, box2(ab - 4.6, mod(al, 12) - 6, 0.08, 0.08));        // lamp posts
+    d = Math.min(d, box2(ab - 6.3, mod(al, 6) - 3, 0.5, 0.5));           // crates
+    d = Math.min(d, box2(ab - 8.7, mod(al + 12, 24) - 12, 0.175, 0.175)); // tree trunks
+    d = Math.min(d, box2(ab - 5.2, al, 0.15, 0.15));                     // clock gantry posts
+    if (ti === 0) {
+      d = Math.min(d, box2(l, al - TOWER.a, TOWER.half, TOWER.half));
+      var wall = box2(l, al - WALL.a, WALL.span, WALL.half);
+      var doors = box2(ab - WALL.door, al - WALL.a, WALL.doorHalf, 1);
+      d = Math.min(d, Math.max(wall, -doors));
+    }
+    return d;
+  }
+
+  /* ---------- light rays ---------- */
+  function len(v) { return Math.hypot(v[0], v[1], v[2]); }
+  function dot(u, v) { return u[0] * v[0] + u[1] * v[1] + u[2] * v[2]; }
+  function cross(u, v) { return [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]]; }
+
+  // A direction seen by a static observer at x becomes the ray's starting coordinate velocity.
+  function launch(x, n, rs) {
+    var r = len(x), u = [x[0] / r, x[1] / r, x[2] / r], nr = dot(n, u), f = 1 / Math.sqrt(1 - rs / r);
+    return [nr * u[0] + (n[0] - nr * u[0]) * f, nr * u[1] + (n[1] - nr * u[1]) * f, nr * u[2] + (n[2] - nr * u[2]) * f];
+  }
+
+  /* Velocity-Verlet along the ray. opts: ground (radius, or 0 for none), escape (radius),
+   * maxStep (fraction of r), steps (cap). Returns where it ended, the bend and c × coordinate time. */
+  function trace(x, v, rs, opts) {
+    opts = opts || {};
+    var ground = opts.ground || 0, esc = opts.escape || 1e6, frac = opts.maxStep || 0.02, cap = opts.steps || 200000;
+    x = x.slice(); v = v.slice();
+    var Lv = cross(x, v), L2 = dot(Lv, Lv), k = -1.5 * rs * L2, ct = 0, n = 0, r = len(x), end = 'max';
+    function acc(p, rr) { var s = k / Math.pow(rr, 5); return [s * p[0], s * p[1], s * p[2]]; }
+    var a0 = acc(x, r);
+    for (; n < cap; n++) {
+      var h = frac * r / len(v);
+      var xn = [x[0] + v[0] * h + 0.5 * a0[0] * h * h, x[1] + v[1] * h + 0.5 * a0[1] * h * h, x[2] + v[2] * h + 0.5 * a0[2] * h * h];
+      var rn = len(xn), a1 = acc(xn, rn);
+      v = [v[0] + 0.5 * (a0[0] + a1[0]) * h, v[1] + 0.5 * (a0[1] + a1[1]) * h, v[2] + 0.5 * (a0[2] + a1[2]) * h];
+      ct += 0.5 * h * (1 / (1 - rs / r) + 1 / (1 - rs / rn));
+      x = xn; r = rn; a0 = a1;
+      if (ground && r < ground) { end = 'ground'; break; }
+      if (r > esc && dot(x, v) > 0) { end = 'sky'; break; }
+    }
+    return { x: x, v: v, ct: ct, steps: n, end: end };
+  }
+
+  /* Where the sky stops, as an elevation angle above your horizontal (negative = below eye level).
+   * Outside the photon sphere (R >= 1.5 rs) the edge is the ray that grazes the ground.
+   * Inside it, rays escape only if their impact parameter is below 3√3 rs / 2: the sky is a cone overhead. */
+  function horizon(rs, Rp, re) {
+    if (rs <= 0) return -Math.acos(Rp / re);
+    var b = Rp >= 1.5 * rs ? Rp / Math.sqrt(1 - rs / Rp) : 1.5 * Math.sqrt(3) * rs;
+    var s = Math.min(1, b * Math.sqrt(1 - rs / re) / re);
+    return Rp >= 1.5 * rs ? -Math.acos(s) : Math.PI / 2 - Math.asin(s);
+  }
+
+  // Rate of a static clock at height h compared with one at your eye.
+  function clockRate(rs, h) { return Math.sqrt((1 - rs / (R + h)) / (1 - rs / (R + EYE))); }
+
+  var api = {
+    R: R, NT: NT, LT: LT, EYE: EYE, HMAX: HMAX, START: START, DOORS: DOORS, TOWER: TOWER, WALL: WALL,
+    mod: mod, wrapA: wrapA, toWorld: toWorld, fromWorld: fromWorld, frame: frame, footprint: footprint,
+    launch: launch, trace: trace, horizon: horizon, clockRate: clockRate, dot: dot, cross: cross, len: len
+  };
+  root.CGH = root.CGH || {};
+  root.CGH.geo = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* cGħ World — GPU programs.
+ *   march  one light ray per pixel, traced backwards through curved spacetime to what it came from
+ *   accum  blends this frame into a running average (the overlay of every place you might be)
+ *   show   draws the average, one photon at a time when light is grainy
+ */
 (function () {
   'use strict';
-  var P = CGH.physics, REAL = P.REAL, K = P.K, REF = P.REF;
+  var g = CGH.geo, F = function (x) { return x.toFixed(6); };
+
+  var VS = `#version 300 es
+const vec2 P[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
+out vec2 vUV;
+void main() { vUV = P[gl_VertexID]; gl_Position = vec4(P[gl_VertexID], 0.0, 1.0); }`;
+
+  var MARCH = `#version 300 es
+precision highp float;
+in vec2 vUV;
+out vec4 outColor;
+uniform vec3 uEye, uFwd, uRight, uUp, uBeta;
+uniform vec2 uTan;
+uniform float uRs, uC, uT, uExposure;
+uniform int uDoppler, uBeam;
+const float R = ${F(g.R)};
+const float HMAX = ${F(g.HMAX)};
+const vec3 SUN = vec3(0.3015, 0.9045, 0.3015);
+
+float hash1(float n) { return fract(sin(n * 12.9898) * 43758.5453); }
+float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float sdBox(vec3 p, vec3 b) { vec3 q = abs(p) - b; return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0); }
+float houseH(float cell, float side) { return 9.0 + 3.0 * floor(6.0 * hash1(mod(cell, 120.0) * 2.0 + side + 0.5)); }
+
+// Street coordinates (across, height, along within the block) and the block index.
+vec3 street(vec3 x, out float ti) {
+  float r = length(x);
+  float a = R * atan(x.z, x.y);
+  ti = floor((a + 60.0) / 120.0);
+  return vec3(-R * asin(clamp(x.x / r, -1.0, 1.0)), r - R, a - 120.0 * ti);
+}
+
+// Distance to the nearest surface, and which material it is.
+float scene(vec3 x, out float mat) {
+  float ti; vec3 p = street(x, ti);
+  float l = p.x, h = p.y, a = p.z, al = abs(l);
+  mat = 0.0;
+  if (h > HMAX) return h - HMAX + 0.5;
+  float d = h, e;
+  float side = l > 0.0 ? 1.0 : 0.0, c0 = floor(a / 20.0), cn = c0 + (fract(a / 20.0) < 0.5 ? -1.0 : 1.0);
+  for (int k = 0; k < 2; k++) {
+    float c = k == 0 ? c0 : cn, H = houseH(ti * 6.0 + c, side);
+    e = sdBox(vec3(al - 16.0, h - 0.5 * H, a - 20.0 * c - 10.0), vec3(6.0, 0.5 * H, 8.0));
+    if (e < d) { d = e; mat = 1.0; }
+  }
+  vec3 q = vec3(al - 4.6, h, mod(a, 12.0) - 6.0);
+  e = sdBox(q - vec3(0.0, 2.2, 0.0), vec3(0.08, 2.2, 0.08)); if (e < d) { d = e; mat = 3.0; }
+  e = sdBox(q - vec3(0.0, 4.5, 0.0), vec3(0.25, 0.14, 0.25)); if (e < d) { d = e; mat = 4.0; }
+  e = sdBox(vec3(al - 6.3, h - 0.5, mod(a, 6.0) - 3.0), vec3(0.5)); if (e < d) { d = e; mat = 5.0; }
+  vec3 t = vec3(al - 8.7, h, mod(a + 12.0, 24.0) - 12.0);
+  e = sdBox(t - vec3(0.0, 1.3, 0.0), vec3(0.175, 1.3, 0.175)); if (e < d) { d = e; mat = 7.0; }
+  e = sdBox(t - vec3(0.0, 4.0, 0.0), vec3(1.3)); if (e < d) { d = e; mat = 8.0; }
+  e = min(sdBox(vec3(al - 5.2, h - 3.5, a), vec3(0.15, 3.5, 0.15)), sdBox(vec3(l, h - 6.85, a), vec3(5.35, 0.15, 0.15)));
+  if (e < d) { d = e; mat = 3.0; }
+  e = max(length(vec2(l, h - 5.4)) - 1.25, abs(a) - 0.06); if (e < d) { d = e; mat = 9.0; }
+  if (ti == 0.0) {
+    e = sdBox(vec3(l, h - 25.0, a - 40.0), vec3(1.5, 25.0, 1.5)); if (e < d) { d = e; mat = 10.0; }
+    e = max(sdBox(vec3(l, h - 1.5, a + 20.0), vec3(10.0, 1.5, 0.2)), -sdBox(vec3(al - 1.5, h - 1.5, a + 20.0), vec3(0.6, 2.0, 1.0)));
+    if (e < d) { d = e; mat = 11.0; }
+  }
+  return d;
+}
+vec3 normalAt(vec3 x, float e) {
+  float m; const vec2 k = vec2(1.0, -1.0);
+  return normalize(k.xyy * scene(x + k.xyy * e, m) + k.yyx * scene(x + k.yyx * e, m) +
+                   k.yxy * scene(x + k.yxy * e, m) + k.xxx * scene(x + k.xxx * e, m));
+}
+
+// Sunlit reflectance known at three colour bands, guessed in the infrared and ultraviolet; the light
+// available outside the visible falls off like sunlight (a 5800 K black body).
+float sunB(float lam) { float x = min(2480.7 / lam, 60.0); return x * x * x / (exp(x) - 1.0); }
+float spec(float lam, vec3 rgb, float ir, float uv) {
+  if (lam < 465.0) return mix(uv, rgb.b, smoothstep(330.0, 465.0, lam)) * sunB(lam) * 1.3598 * smoothstep(290.0, 330.0, lam);
+  if (lam < 545.0) return mix(rgb.b, rgb.g, (lam - 465.0) / 80.0);
+  if (lam < 610.0) return mix(rgb.g, rgb.r, (lam - 545.0) / 65.0);
+  return mix(rgb.r, ir, smoothstep(610.0, 780.0, lam)) * sunB(lam) * 0.8528;
+}
+vec3 shifted(vec3 rgb, float ir, float uv, float D) {
+  vec3 lam = vec3(610.0, 545.0, 465.0) * D;
+  return vec3(spec(lam.r, rgb, ir, uv), spec(lam.g, rgb, ir, uv), spec(lam.b, rgb, ir, uv));
+}
+vec3 dial(vec2 uv, float t) {
+  float r = length(uv);
+  vec3 col = vec3(0.96, 0.95, 0.90);
+  if (r > 0.92) return vec3(0.10);
+  float ang = atan(uv.x, uv.y) / 6.2831853;
+  if (r > 0.80 && abs(fract(ang * 20.0 + 0.5) - 0.5) < 0.09) col = vec3(0.10);
+  if (r > 0.66 && abs(fract(ang * 4.0 + 0.5) - 0.5) < 0.012) col = vec3(0.10);
+  float ha = 6.2831853 * fract(t / 20.0);
+  vec2 hd = vec2(sin(ha), cos(ha));
+  float along = dot(uv, hd), perp = abs(uv.x * hd.y - uv.y * hd.x);
+  if (along > -0.12 && along < 0.76 && perp < 0.06) col = vec3(0.78, 0.10, 0.08);
+  if (r < 0.08) col = vec3(0.10);
+  return col;
+}
+vec3 sky(vec3 d, out float ir, out float uv) {
+  vec3 col = vec3(0.015, 0.022, 0.045);
+  vec3 cell = floor(d * 140.0);
+  float h = hash2(cell.xy + 17.0 * cell.z);
+  if (h > 0.994) col += vec3(0.8, 0.85, 1.0) * pow((h - 0.994) / 0.006, 3.0) * 2.5;
+  vec3 mw = normalize(vec3(0.25, 0.35, -0.9));
+  col += vec3(0.20, 0.19, 0.24) * exp(-pow(dot(d, mw) / 0.14, 2.0)) * (0.6 + 0.4 * hash2(floor(d.xy * 40.0)));
+  float s = dot(d, SUN);
+  col += vec3(1.0, 0.92, 0.78) * (smoothstep(0.9990, 0.9994, s) * 4.0 + pow(max(s, 0.0), 900.0) * 0.3);
+  ir = dot(col, vec3(0.4)); uv = dot(col, vec3(0.5));
+  return col;
+}
+
+void main() {
+  // the pixel's direction in your frame, then in the frame of someone standing still where you are
+  vec3 np = normalize(uFwd + vUV.x * uTan.x * uRight + vUV.y * uTan.y * uUp);
+  float b2 = dot(uBeta, uBeta), Ddop = 1.0;
+  vec3 n = np;
+  if (b2 > 0.0) {
+    float gm = inversesqrt(1.0 - b2), nb = dot(np, uBeta);
+    vec3 bh = uBeta * inversesqrt(b2);
+    n = (np + ((gm - 1.0) * dot(np, bh) - gm * sqrt(b2)) * bh) / (gm * (1.0 - nb));
+    Ddop = 1.0 / (gm * (1.0 - nb));
+  }
+  // follow the light back along its curved path
+  float re = length(uEye), r = re, ct = 0.0, s = 0.0, mat = 0.0;
+  vec3 u = uEye / re, x = uEye;
+  vec3 v = dot(n, u) * u + (n - dot(n, u) * u) * inversesqrt(1.0 - uRs / re);
+  vec3 Lv = cross(x, v);
+  float k = -1.5 * uRs * dot(Lv, Lv);
+  vec3 acc = k * x / pow(r, 5.0);
+  int kind = 0;
+  for (int i = 0; i < 260; i++) {
+    float h = r - R, d;
+    if (h < HMAX) { d = scene(x, mat); if (d < 0.004 + 0.0015 * s) { kind = 1; break; } }
+    else d = h - HMAX + 0.5;
+    if (r > 30.0 * R) { kind = 2; break; }
+    float dl = max(min(0.8 * d, (h > 2.0 * HMAX ? 0.15 : 0.05) * r), 0.003 * s + 0.01);
+    float hs = dl / length(v);
+    vec3 xn = x + v * hs + 0.5 * acc * hs * hs;
+    float rn = length(xn);
+    vec3 accn = k * xn / pow(rn, 5.0);
+    v += 0.5 * (acc + accn) * hs;
+    ct += 0.5 * hs * (1.0 / (1.0 - uRs / r) + 1.0 / (1.0 - uRs / rn));
+    if (rn < R) {
+      float f = (r - R) / max(r - rn, 1e-6);
+      ct -= (1.0 - f) * hs / (1.0 - uRs / R);
+      x = mix(x, xn, f); s += f * dl; r = R; mat = 0.0; kind = 1; break;
+    }
+    x = xn; r = rn; acc = accn; s += dl;
+  }
+
+  vec3 col; float ir = -1.0, uvl = -1.0, Dg;
+  if (kind != 1) {
+    col = kind == 2 ? sky(normalize(v), ir, uvl) : vec3(0.05, 0.06, 0.08);
+    Dg = inversesqrt(1.0 - uRs / re);                    // starlight falling in is blueshifted
+  } else {
+    r = length(x);
+    Dg = sqrt((1.0 - uRs / r) / (1.0 - uRs / re));
+    float tau = sqrt(1.0 - uRs / r) * (uT - ct / uC);    // the emitter's own clock when this light left it
+    float ti; vec3 p = street(x, ti);
+    float l = p.x, h = p.y, a = p.z, ag = a + 120.0 * ti;
+    vec3 up = x / r, along = normalize(vec3(0.0, -x.z, x.y)), across = cross(along, up);
+    vec3 nr = mat == 0.0 ? up : normalAt(x, 0.01 + 0.001 * s);
+    float detail = 1.0 - smoothstep(40.0, 160.0, s), lit = 1.0;
+    col = vec3(0.6);
+    if (mat == 0.0) {
+      float al = abs(l);
+      if (al < 4.0) {
+        col = vec3(0.23, 0.24, 0.26) * (1.0 + detail * 0.16 * (hash2(floor(vec2(l, a) * 4.0)) - 0.5));
+        if (al < 0.09 && fract(a / 6.0) < 0.5) col = vec3(0.86);
+        if (abs(al - 3.7) < 0.08) col = vec3(0.80);
+      } else if (al < 4.3) col = mod(floor(ag), 2.0) < 0.5 ? vec3(0.84, 0.20, 0.17) : vec3(0.93);
+      else if (al < 7.7) {
+        vec2 f = fract(vec2(l, a));
+        col = vec3(0.70, 0.69, 0.66) * (1.0 + detail * 0.1 * (hash2(floor(vec2(l, ag))) - 0.5));
+        if (f.x < 0.04 || f.y < 0.04) col *= 1.0 - 0.25 * detail;
+      } else {
+        float fld = hash2(floor(vec2(l, ag) / 30.0));
+        col = mix(vec3(0.30, 0.52, 0.24), vec3(0.62, 0.55, 0.28), step(0.7, fld) * step(24.0, al));
+        col *= 1.0 + 0.3 * detail * (hash2(floor(vec2(l, ag) * 2.0)) - 0.5);
+        ir = 0.9; uvl = 0.03;
+      }
+    } else if (mat == 1.0) {
+      float c0 = floor(a / 20.0), hh = hash1(ti * 13.0 + c0 * 3.0 + (l > 0.0 ? 1.0 : 0.0));
+      col = mix(vec3(0.62, 0.36, 0.28), vec3(0.80, 0.72, 0.56), hh);
+      col = mix(col, vec3(0.55, 0.60, 0.66), step(0.66, fract(hh * 7.0)));
+      if (dot(nr, up) > 0.7) col = vec3(0.32, 0.32, 0.34);
+      else {
+        vec2 w = fract(vec2(abs(dot(nr, across)) > 0.7 ? a : l, h) / 3.0);
+        if (w.x > 0.22 && w.x < 0.78 && w.y > 0.28 && w.y < 0.80) col = vec3(0.17, 0.24, 0.32);
+      }
+    } else if (mat == 3.0) col = vec3(0.20, 0.21, 0.23);
+    else if (mat == 4.0) {
+      bool on = fract(tau / 2.0) < 0.14;
+      col = on ? vec3(1.9, 1.7, 1.0) : vec3(0.30, 0.28, 0.24); lit = on ? 0.0 : 1.0;
+    } else if (mat == 5.0) col = mod(floor(ag / 6.0), 2.0) < 0.5 ? vec3(0.78, 0.22, 0.20) : vec3(0.20, 0.40, 0.75);
+    else if (mat == 7.0) col = vec3(0.36, 0.26, 0.18);
+    else if (mat == 8.0) { col = vec3(0.22, 0.48, 0.20); ir = 0.95; uvl = 0.03; }
+    else if (mat == 9.0) { col = dial(vec2(a < 0.0 ? l : -l, h - 5.4) / 1.25, tau); lit = 0.0; }
+    else if (mat == 10.0) {
+      col = vec3(0.74, 0.72, 0.68);
+      float sa = dot(nr, along), sl = dot(nr, across);
+      float fu = abs(sa) > 0.7 ? -sign(sa) * l : sign(sl) * (a - 40.0);
+      for (int c = 0; c < 2; c++) {
+        vec2 q = vec2(fu, h - (c == 0 ? 46.0 : 3.0)) / 1.3;
+        if (abs(dot(nr, up)) < 0.5 && length(q) < 1.0) { col = dial(q, tau); lit = 0.0; }
+      }
+    } else if (mat == 11.0) col = abs(h - 2.2) < 0.15 ? vec3(0.15, 0.35, 0.75) : vec3(0.86, 0.85, 0.82);
+    float lum = dot(col, vec3(0.3, 0.55, 0.15));
+    if (ir < 0.0) { ir = lum; uvl = lum * 0.7; }
+    if (lit > 0.0) { float sh = 0.30 + 0.75 * max(dot(nr, SUN), 0.0); col *= sh; ir *= sh; uvl *= sh; }
+  }
+  float D = Ddop * Dg;
+  vec3 c = col;
+  if (uDoppler == 1) c = shifted(col, ir, uvl, D);
+  if (uBeam == 1) c *= D * D * D;
+  c *= uExposure;
+  outColor = vec4(c, 1.0);
+}`;
+
+  var ACCUM = `#version 300 es
+precision highp float;
+in vec2 vUV;
+out vec4 outColor;
+uniform sampler2D uNew, uOld;
+uniform float uK;
+void main() { vec2 t = vUV * 0.5 + 0.5; outColor = mix(texture(uOld, t), texture(uNew, t), uK); }`;
+
+  var SHOW = `#version 300 es
+precision highp float;
+in vec2 vUV;
+out vec4 outColor;
+uniform sampler2D uImg;
+uniform float uPhotons;
+uniform uint uSeed;
+uint pcg(uint v) { uint s = v * 747796405u + 2891336453u; uint w = ((s >> ((s >> 28u) + 4u)) ^ s) * 277803737u; return (w >> 22u) ^ w; }
+uint st;
+float rnd() { st = pcg(st); return float(st) / 4294967296.0; }
+float poisson(float m) {
+  if (m > 30.0) { float a = max(rnd(), 1e-7), b = rnd(); return max(0.0, m + sqrt(m) * sqrt(-2.0 * log(a)) * cos(6.2831853 * b)); }
+  float L = exp(-m), p = 1.0, k = 0.0;
+  for (int i = 0; i < 80; i++) { p *= rnd(); if (p < L) break; k += 1.0; }
+  return k;
+}
+void main() {
+  vec3 c = max(texture(uImg, vUV * 0.5 + 0.5).rgb, 0.0);
+  if (uPhotons < 1e5) {
+    st = pcg(uint(gl_FragCoord.x) * 1973u + uint(gl_FragCoord.y) * 9277u + uSeed * 26699u);
+    // each colour channel collects its own photons; a mid-grey pixel expects uPhotons of them
+    c = vec3(poisson(c.r * uPhotons), poisson(c.g * uPhotons), poisson(c.b * uPhotons)) / uPhotons;
+  }
+  vec3 hi = 0.6 + 0.4 * (1.0 - exp(-(max(c, vec3(0.6)) - 0.6) / 0.4));
+  outColor = vec4(mix(c, hi, step(vec3(0.6), c)), 1.0);
+}`;
+
+  CGH.shaders = { VS: VS, MARCH: MARCH, ACCUM: ACCUM, SHOW: SHOW };
+})();
+
+/* cGħ World — the console: four dimensionless dials, number formatting, and the cube of theories. */
+(function () {
+  'use strict';
+  var P = CGH.physics, G = CGH.geo, REAL = P.REAL;
   var $ = function (id) { return document.getElementById(id); };
+  var WALK = 1.4, MASS = 70, ROCK = 4 / 3 * Math.PI * Math.pow(G.R, 3) * 3000;   // a planet of ordinary rock
 
   /* ---------- numbers people can read ---------- */
   var SUP = { '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
-  function sup(n) { return String(n).split('').map(function (ch) { return SUP[ch] || ch; }).join(''); }
   function num(x, sig) {
     sig = sig || 3;
     if (x === 0) return '0';
-    if (!isFinite(x)) return isNaN(x) ? '–' : (x > 0 ? '∞' : '−∞');
-    var ax = Math.abs(x), e = Math.floor(Math.log10(ax));
-    if (e >= -3 && e < 6) {
-      var v = Number(x.toPrecision(sig));
-      return (Math.abs(v) >= 10000 ? v.toLocaleString('en-US') : String(v)).replace('-', '−');
-    }
-    var m = x / Math.pow(10, e), ms = m.toFixed(sig - 1);
-    if (Math.abs(Number(ms)) >= 10) { e += 1; ms = (m / 10).toFixed(sig - 1); }
-    return ms.replace('-', '−') + '×10' + sup(e);
+    if (!isFinite(x)) return '–';
+    var e = Math.floor(Math.log10(Math.abs(x)));
+    if (e >= -3 && e < 6) { var v = Number(x.toPrecision(sig)); return (Math.abs(v) >= 1e4 ? v.toLocaleString('en-US') : String(v)).replace('-', '−'); }
+    var m = (x / Math.pow(10, e)).toFixed(sig - 1);
+    if (Math.abs(Number(m)) >= 10) { e += 1; m = (x / Math.pow(10, e)).toFixed(sig - 1); }
+    return m.replace('-', '−') + '×10' + String(e).split('').map(function (c) { return SUP[c]; }).join('');
   }
-  function unit(x, table, sig) {
-    var ax = Math.abs(x);
-    for (var i = 0; i < table.length; i++) {
-      if (ax < table[i][0]) return num(x / table[i][1], sig) + ' ' + table[i][2];
-    }
-    var last = table[table.length - 1];
-    return num(x / last[1], sig) + ' ' + last[2];
-  }
-  var LY = 9.4607e15;
-  function length(m, sig) {
-    return unit(m, [[1e-12, 1, 'm'], [1e-9, 1e-12, 'pm'], [1e-6, 1e-9, 'nm'], [1e-3, 1e-6, 'µm'], [1e-2, 1e-3, 'mm'],
-      [1, 1e-2, 'cm'], [1e3, 1, 'm'], [1e9, 1e3, 'km'], [1e10, 1e3, 'km'], [LY / 10, K.AU, 'AU'], [Infinity, LY, 'light-years']], sig);
-  }
-  function duration(s, sig) {
-    return unit(s, [[1e-9, 1, 's'], [1e-6, 1e-9, 'ns'], [1e-3, 1e-6, 'µs'], [1, 1e-3, 'ms'], [120, 1, 's'], [7200, 60, 'min'],
-      [172800, 3600, 'h'], [2 * K.year, 86400, 'days'], [Infinity, K.year, 'years']], sig);
-  }
-  function mass(kg, sig) {
-    return unit(kg, [[1e-9, 1, 'kg'], [1e-6, 1e-9, 'µg'], [1e-3, 1e-6, 'mg'], [1, 1e-3, 'g'], [1e3, 1, 'kg'], [1e6, 1e3, 't'], [Infinity, 1, 'kg']], sig);
-  }
-  function pad2(n) { return (n < 10 ? '0' : '') + n; }
-  // A clock face in text: 0:07.3, 1:02:07, 3 d 04:11, 7.02 years
+  function unit(x, t, sig) { for (var i = 0; i < t.length; i++) if (Math.abs(x) < t[i][0] || i === t.length - 1) return num(x / t[i][1], sig) + ' ' + t[i][2]; }
+  function length(m, sig) { return unit(m, [[1e-9, 1, 'm'], [1e-6, 1e-9, 'nm'], [1e-3, 1e-6, 'µm'], [1e-2, 1e-3, 'mm'], [1, 1e-2, 'cm'], [1e4, 1, 'm'], [1e13, 1e3, 'km'], [Infinity, 9.4607e15, 'light-years']], sig); }
+  function duration(s, sig) { return unit(s, [[1e-6, 1e-9, 'ns'], [1e-3, 1e-6, 'µs'], [1, 1e-3, 'ms'], [120, 1, 's'], [7200, 60, 'min'], [172800, 3600, 'h'], [6.3e7, 86400, 'days'], [Infinity, 3.156e7, 'years']], sig); }
   function clock(s) {
-    if (!isFinite(s)) return '–';
     var neg = s < 0; s = Math.abs(s);
-    var out;
-    if (s < 3600) { var mm = Math.floor(s / 60), ss = s - mm * 60; out = mm + ':' + (ss < 10 ? '0' : '') + ss.toFixed(1); }
-    else if (s < 86400) { var h = Math.floor(s / 3600), m2 = Math.floor((s - h * 3600) / 60); out = h + ':' + pad2(m2) + ':' + pad2(Math.floor(s % 60)); }
-    else if (s < 2 * K.year) { var d = Math.floor(s / 86400), r = s - d * 86400; out = d + ' d ' + pad2(Math.floor(r / 3600)) + ':' + pad2(Math.floor((r % 3600) / 60)); }
-    else out = num(s / K.year, 4) + ' years';
+    var m = Math.floor(s / 60), r = s - 60 * m, out;
+    out = s < 3600 ? m + ':' + (r < 10 ? '0' : '') + r.toFixed(1) : Math.floor(s / 3600) + ':' + String(m % 60).padStart(2, '0') + ':' + String(Math.floor(r)).padStart(2, '0');
     return (neg ? '−' : '') + out;
   }
-  function times(x) { return x >= 1 ? num(x) + '×' : '÷' + num(1 / x); }
 
-  /* ---------- the constants ---------- */
-  var state = { c: REAL.c, G: REAL.G, hbar: REAL.hbar };
+  /* ---------- the four dials ---------- */
+  // cw: light speed in walking speeds · comp: rs/R of the planet · lam: your wavelength at walking pace (m)
+  // photons: photons a mid-grey pixel collects per frame
+  var REALV = { cw: REAL.c / WALK, comp: 2 * REAL.G * ROCK / (REAL.c * REAL.c * G.R), lam: 2 * Math.PI * REAL.hbar / (MASS * WALK), photons: 3e5 };
+  var state = { cw: REALV.cw, comp: REALV.comp, lam: REALV.lam, photons: REALV.photons };
+  var DIAL = {
+    cw: { lo: Math.log10(1.2), hi: Math.log10(REALV.cw) },
+    comp: { cube: true },
+    lam: { lo: -2, hi: Math.log10(8) },
+    photons: { lo: Math.log10(0.3), hi: Math.log10(REALV.photons) }
+  };
+  function toSlider(k, v) {
+    if (k === 'comp') return v < 1e-9 ? 0 : Math.round(1000 * Math.cbrt(v / 0.95));
+    if (k === 'lam' && v < 1e-2) return 0;
+    var d = DIAL[k]; return Math.round(1000 * (Math.log10(v) - d.lo) / (d.hi - d.lo));
+  }
+  function fromSlider(k, s) {
+    if (k === 'comp') return s <= 2 ? REALV.comp : 0.95 * Math.pow(s / 1000, 3);
+    if (k === 'lam' && s <= 2) return REALV.lam;
+    if ((k === 'cw' || k === 'photons') && s >= 995) return REALV[k];
+    var d = DIAL[k]; return Number(Math.pow(10, d.lo + (d.hi - d.lo) * s / 1000).toPrecision(3));
+  }
   var listeners = [];
   function onChange(fn) { listeners.push(fn); }
   function set(patch) {
     var changed = false;
     for (var k in patch) if (state[k] !== patch[k]) { state[k] = patch[k]; changed = true; }
     if (!changed) return;
-    try { localStorage.setItem('cgh-dials', JSON.stringify(state)); } catch (e) { /* storage is optional */ }
+    try { localStorage.setItem('cgh-world', JSON.stringify(state)); } catch (e) { /* optional */ }
     listeners.forEach(function (fn) { fn(state); });
   }
-  function isReal(k) { return Math.abs(state[k] / REAL[k] - 1) < 1e-9; }
+  function isReal(k) { return Math.abs(state[k] / REALV[k] - 1) < 1e-6; }
 
-  var DIALS = {
-    c: { lo: Math.log10(2), hi: Math.log10(REAL.c), unit: 'm/s' },
-    G: { lo: Math.log10(REAL.G) - 3, hi: Math.log10(REAL.G) + 12, unit: 'm³/kg·s²' },
-    hbar: { lo: Math.log10(REAL.hbar), hi: 0, unit: 'J·s' }
-  };
-  function toSlider(k, v) { var d = DIALS[k]; return Math.round(1000 * (Math.log10(v) - d.lo) / (d.hi - d.lo)); }
-  function fromSlider(k, s) {
-    var d = DIALS[k], realPos = toSlider(k, REAL[k]);
-    if (Math.abs(s - realPos) <= 5) return REAL[k];                 // snap to the real value
-    var v = Math.pow(10, d.lo + (d.hi - d.lo) * s / 1000);
-    return Number(v.toPrecision(3));
+  // What the dials mean in c, G and ħ.
+  function derived() {
+    var c = state.cw * WALK, rs = state.comp * G.R, GM = rs * c * c / 2;
+    return {
+      c: c, rs: rs, GM: GM, g: GM / (G.R * G.R * Math.sqrt(1 - state.comp)), Gratio: GM / (REAL.G * ROCK),
+      hbar: state.lam * MASS * WALK / (2 * Math.PI), hbarLight: REAL.hbar * REALV.photons / state.photons
+    };
   }
-  function dialNote(k) {
-    if (isReal(k)) return 'the value in our universe';
-    var r = state[k] / REAL[k];
-    if (k === 'c') return num(1 / r, 2) + ' times slower than real';
-    if (k === 'G') return r > 1 ? num(r, 2) + ' times stronger than real' : num(1 / r, 2) + ' times weaker than real';
-    return num(r, 2) + ' times larger than real';
+
+  function note(k) {
+    var d = derived(), v = state[k];
+    if (k === 'cw') return isReal(k) ? 'our universe: c = 3.00×10⁸ m/s' : 'c = ' + num(d.c) + ' m/s; a walk is ' + num(1 / v, 2) + ' c';
+    if (k === 'comp') {
+      if (isReal(k)) return 'a 382 m rock in our universe';
+      return v < 0.5 ? 'GM = ' + num(d.GM) + ' m³/s² at this c; a neutron star is 0.4–0.5' : v < 0.66 ? 'near 2/3, light orbits at your eye' : v < 0.68 ? 'light orbits at your eye' : 'inside the photon orbit: the sky shrinks overhead';
+    }
+    if (k === 'lam') return isReal(k) ? 'our universe: ħ = 1.05×10⁻³⁴ J·s' : 'ħ = ' + num(d.hbar) + ' J·s' + (v < 0.5 ? '; too fine to show here' : '');
+    return isReal(k) ? 'roughly what an eye gets in daylight' : 'as if ħ were ' + num(d.hbarLight / REAL.hbar, 2) + '× larger, light kept as bright';
+  }
+  function show(k) {
+    var v = state[k];
+    return k === 'cw' ? num(v) + ' walking speeds' : k === 'comp' ? 'rs/R = ' + num(v) : k === 'lam' ? 'λ = ' + length(v) : num(v) + ' per pixel';
   }
   function renderDials() {
-    ['c', 'G', 'hbar'].forEach(function (k) {
+    ['cw', 'comp', 'lam', 'photons'].forEach(function (k) {
       $('dial-' + k).value = toSlider(k, state[k]);
-      $('val-' + k).textContent = num(state[k], 3) + ' ' + DIALS[k].unit;
-      $('note-' + k).textContent = dialNote(k);
+      $('val-' + k).textContent = show(k);
+      $('note-' + k).textContent = note(k);
       $('reset-' + k).disabled = isReal(k);
     });
   }
 
   var PRESETS = [
-    { name: 'Our universe', v: { c: REAL.c, G: REAL.G, hbar: REAL.hbar } },
-    { name: 'Slow light', v: { c: 10, G: REAL.G, hbar: REAL.hbar } },
-    { name: 'Big ħ', v: { c: REAL.c, G: REAL.G, hbar: 0.1 } },
-    { name: 'Both', v: { c: 10, G: REAL.G, hbar: 0.1 } }
+    { name: 'Our universe', v: REALV },
+    { name: 'Slow light', v: { cw: 7, comp: REALV.comp, lam: REALV.lam, photons: REALV.photons } },
+    { name: 'Heavy planet', v: { cw: 7, comp: 0.45, lam: REALV.lam, photons: REALV.photons } },
+    { name: 'Light orbits', v: { cw: 7, comp: 0.667, lam: REALV.lam, photons: REALV.photons } },
+    { name: 'You are a wave', v: { cw: REALV.cw, comp: REALV.comp, lam: 2, photons: REALV.photons }, pose: 'doors' },
+    { name: 'Everything', v: { cw: 7, comp: 0.45, lam: 1.2, photons: 150 } }
   ];
-  function same(a, b) { return Math.abs(a / b - 1) < 1e-6; }
-  function matches(v) { return same(state.c, v.c) && same(state.G, v.G) && same(state.hbar, v.hbar); }
   function renderPresets() {
     Array.prototype.forEach.call($('presets').children, function (b, i) {
-      b.setAttribute('aria-pressed', matches(PRESETS[i].v) ? 'true' : 'false');
+      var v = PRESETS[i].v, on = ['cw', 'comp', 'lam', 'photons'].every(function (k) { return Math.abs(state[k] / v[k] - 1) < 1e-3; });
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
   }
 
-  /* ---------- theme-aware canvas helpers ---------- */
-  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
-  var themeListeners = [];
-  function onTheme(fn) { themeListeners.push(fn); }
-  function themeChanged() { themeListeners.forEach(function (fn) { fn(); }); }
-  if (window.matchMedia) {
-    var mq = window.matchMedia('(prefers-color-scheme: dark)');
-    if (mq.addEventListener) mq.addEventListener('change', themeChanged);
+  /* ---------- cube of theories ---------- */
+  function regime() {
+    var rel = P.logLevel(1 / state.cw, -3, -0.5), grav = P.logLevel(Math.max(state.comp, 1e-30), -3, -0.7), quant = P.logLevel(state.lam, -2, -0.3);
+    var bits = (rel > 0.5 ? 1 : 0) | (grav > 0.5 ? 2 : 0) | (quant > 0.5 ? 4 : 0);
+    return { rel: rel, grav: grav, quant: quant, corner: bits, name: P.CORNERS[bits] };
   }
-  if (window.MutationObserver) new MutationObserver(themeChanged).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-
-  // Match the canvas bitmap to its CSS box. Returns CSS-pixel size and the scale to apply.
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
   function fit(canvas, maxDpr) {
-    var r = canvas.getBoundingClientRect();
-    var dpr = Math.min(window.devicePixelRatio || 1, maxDpr || 2);
+    var r = canvas.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, maxDpr || 2);
     var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
     return { w: r.width, h: r.height, dpr: dpr };
   }
-
-  /* ---------- the cube of theories ---------- */
-  var THEORIES = [
-    { what: 'Nothing but forces and inertia. Billiard balls in deep space.' },
-    { what: 'Light is slow enough to race. Scene: Light.' },
-    { what: 'Falling, orbits, tides. The world you grew up in.' },
-    { what: 'Slow light and gravity together: clocks disagree with height. Scene: Gravity.' },
-    { what: 'Footballs spread out and interfere. Scene: Quantum.' },
-    { what: 'Fast and fuzzy at once: particles appear and vanish. Not simulated here.' },
-    { what: 'A ball that cannot lie on the floor. Scene: Quantum, Drop.' },
-    { what: 'All three at once. No accepted theory exists. Scene: Gravity, Black-hole mission, for the one formula people trust.' }
-  ];
-  function cornerPreset(bits) {
-    return { c: bits & 1 ? 10 : REAL.c, G: bits & 2 ? REAL.G : REAL.G * 1e-3, hbar: bits & 4 ? 0.1 : REAL.hbar };
-  }
-  function cubeGeometry(w, h) {
-    var S = Math.min(w, h * 1.12) * 0.5;
-    var ox = (w - 1.42 * S) / 2, oy = h - (h - 1.30 * S) / 2 + 0.02 * h;
-    function proj(x, y, z) { return [ox + S * (x + 0.42 * z), oy - S * (y + 0.30 * z)]; }
-    var corners = [];
-    for (var b = 0; b < 8; b++) corners.push(proj(b & 1, (b >> 1) & 1, (b >> 2) & 1));
-    return { S: S, proj: proj, corners: corners };
-  }
-  function drawCube(canvas, big) {
-    var f = fit(canvas, 2), ctx = canvas.getContext('2d');
-    ctx.setTransform(f.dpr, 0, 0, f.dpr, 0, 0);
-    ctx.clearRect(0, 0, f.w, f.h);
-    var g = cubeGeometry(f.w, f.h), r = P.regime(state);
-    var ink = css('--ink'), muted = css('--muted'), line = css('--line');
+  function drawCube() {
+    var cv = $('mini-cube'), f = fit(cv, 2), ctx = cv.getContext('2d'), r = regime();
+    ctx.setTransform(f.dpr, 0, 0, f.dpr, 0, 0); ctx.clearRect(0, 0, f.w, f.h);
+    var S = Math.min(f.w, f.h) * 0.56, ox = 6, oy = f.h - 6;
+    function pr(x, y, z) { return [ox + S * (x + 0.42 * z), oy - S * (y + 0.32 * z)]; }
     var col = [css('--c'), css('--g'), css('--h')];
-    ctx.lineCap = 'round';
     for (var a = 0; a < 8; a++) for (var bit = 0; bit < 3; bit++) {
-      var b = a | (1 << bit);
-      if (b === a) continue;
-      var hidden = a === 4 || b === 4;
-      ctx.beginPath(); ctx.moveTo(g.corners[a][0], g.corners[a][1]); ctx.lineTo(g.corners[b][0], g.corners[b][1]);
-      ctx.setLineDash(hidden ? [3, 4] : []);
-      // the three edges leaving the origin are the axes and carry their constant's colour
-      ctx.strokeStyle = a === 0 ? col[bit] : (hidden ? line : muted);
-      ctx.lineWidth = a === 0 ? (big ? 3 : 2) : 1;
-      ctx.stroke();
+      var b = a | (1 << bit); if (b === a) continue;
+      var p = pr(a & 1, (a >> 1) & 1, (a >> 2) & 1), q = pr(b & 1, (b >> 1) & 1, (b >> 2) & 1);
+      ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]);
+      ctx.strokeStyle = a === 0 ? col[bit] : css('--line'); ctx.lineWidth = a === 0 ? 2 : 1; ctx.stroke();
     }
-    ctx.setLineDash([]);
-    if (big) {
-      ctx.font = 'italic 600 17px ' + css('--font-math');
-      ctx.textBaseline = 'middle';
-      var mid = function (i, j) { return [(g.corners[i][0] + g.corners[j][0]) / 2, (g.corners[i][1] + g.corners[j][1]) / 2]; };
-      var m;
-      ctx.fillStyle = col[0]; ctx.textAlign = 'center'; m = mid(0, 1); ctx.fillText('slower c →', m[0], m[1] + 16);
-      ctx.fillStyle = col[1]; ctx.textAlign = 'right'; m = mid(0, 2); ctx.fillText('G on ↑', m[0] - 8, m[1]);
-      ctx.fillStyle = col[2]; ctx.textAlign = 'left'; m = mid(1, 5); ctx.fillText('↗ bigger ħ', m[0] + 8, m[1] + 8);
-    }
-    for (var c = 0; c < 8; c++) {
-      var on = c === r.corner;
-      ctx.beginPath(); ctx.arc(g.corners[c][0], g.corners[c][1], on ? (big ? 7 : 4.5) : (big ? 4 : 2.5), 0, 6.2832);
-      ctx.fillStyle = on ? ink : css('--surface'); ctx.fill();
-      ctx.strokeStyle = on ? ink : muted; ctx.lineWidth = 1.5; ctx.stroke();
-    }
-    // where the dials actually are, between the corners
-    var p = g.proj(r.rel, r.grav, r.quant);
-    if (big) {
-      ctx.strokeStyle = muted; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
-      var foot = g.proj(r.rel, 0, r.quant);
-      ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(foot[0], foot[1]); ctx.stroke();
-      ctx.setLineDash([]);
-    }
-    ctx.beginPath(); ctx.arc(p[0], p[1], big ? 11 : 7, 0, 6.2832);
-    ctx.globalAlpha = 0.18; ctx.fillStyle = ink; ctx.fill(); ctx.globalAlpha = 1;
-    ctx.beginPath(); ctx.arc(p[0], p[1], big ? 4.5 : 3, 0, 6.2832);
-    ctx.fillStyle = css('--focus'); ctx.fill();
-    if (big) {
-      var q = g.corners[r.corner];
-      ctx.font = '600 14px ' + css('--font-text'); ctx.fillStyle = ink;
-      var right = (r.corner & 1) || (r.corner & 4);
-      ctx.textAlign = right ? 'right' : 'left'; ctx.textBaseline = 'bottom';
-      ctx.fillText(r.name, q[0] + (right ? -10 : 10), q[1] - 9);
-    }
-    return g;
+    var d = pr(r.rel, r.grav, r.quant);
+    ctx.beginPath(); ctx.arc(d[0], d[1], 4, 0, 6.2832); ctx.fillStyle = css('--focus'); ctx.fill();
+    $('regime-name').textContent = r.name;
   }
 
-  function bitsHTML(b) {
-    return '<span class="sym-c' + (b & 1 ? '' : ' off') + '">c</span>' +
-           '<span class="sym-g' + (b & 2 ? '' : ' off') + '">G</span>' +
-           '<span class="sym-h' + (b & 4 ? '' : ' off') + '">ħ</span>';
-  }
-
-  /* ---------- the everyday table ---------- */
-  var PROTON = 8.4e-16;
-  function everyday(k) {
-    var rows = [], g = P.earthGravity(k.G);
-    var v = P.speedFromEffort(REF.bike, k.c), beta = v / k.c, loss = P.clockLoss(beta) * 3600;
-    rows.push({ dial: 'c', what: 'A bike ride, 8 m/s of effort', val: num(v) + ' m/s = ' + num(beta, 2) + ' c', level: P.logLevel(beta, -3, 0),
-      verdict: beta > 0.05 ? 'Your watch falls ' + duration(loss, 2) + ' behind the town for every hour you ride.' : 'Your watch falls ' + duration(loss, 2) + ' behind per hour. Nobody notices.' });
-
-    var ex = P.rindlerExcess(g, 30, k.c), horizon = P.rindlerHorizon(g, k.c);
-    rows.push({ dial: 'cg', what: 'A clock on the tenth floor, 30 m up', val: '+' + duration(ex * 86400, 2) + ' a day', level: P.logLevel(ex, -4, 0),
-      verdict: ex > 0.01 ? 'People upstairs age ' + num(1 + ex, 3) + ' times faster. Clocks stop ' + length(horizon, 2) + ' below the street.' : 'It runs ahead of the street clock, far too little to matter.' });
-
-    var rs = 2 * k.G * K.Mearth / (k.c * k.c);
-    rows.push({ dial: 'cg', what: 'Earth’s horizon radius, 2GM/c²', val: length(rs), level: P.logLevel(rs / K.Rearth, -6, 0),
-      verdict: rs >= K.Rearth ? 'Bigger than Earth. The planet would be a black hole; the tower scene keeps only its local pull.' : 'Earth is ' + num(K.Rearth / rs, 2) + ' times bigger than that. No horizon.' });
-
-    var lam = P.deBroglie(REF.ball, REF.roll, k.hbar);
-    rows.push({ dial: 'h', what: 'Wavelength of a rolling football', val: length(lam), level: P.logLevel(lam, -3, 0),
-      verdict: lam >= 0.05 ? 'About the size of a doorway. It diffracts and interferes.' : (lam < PROTON ? num(PROTON / lam, 2) + ' times smaller than a proton. It is a ball.' : 'Far finer than anything it meets. It is a ball.') });
-
-    var hover = (2 / 3) * P.bouncer(REF.ball, g, k.hbar).heights[0];
-    rows.push({ dial: 'gh', what: 'Lowest a football can sit above the floor', val: length(hover), level: P.logLevel(hover, -3, 0),
-      verdict: hover >= 0.01 ? 'It hovers. Gravity pulls down, the uncertainty principle pushes back.' : 'Indistinguishable from resting on it.' });
-
-    var a0 = P.bohrRadius(k);
-    rows.push({ dial: 'h', what: 'Size of an atom, ∝ ħ²', val: length(a0), level: P.clamp01(Math.log10(a0 / 5.29e-11) / 20),
-      verdict: a0 > 1e-3 ? 'Atoms that wide would leave no solid matter. The lab ignores this by decree.' : 'Atoms stay atoms.' });
-
-    var al = P.fineStructure(k);
-    rows.push({ dial: 'ch', what: 'Fine-structure constant α', val: al < 1 ? '1/' + num(1 / al, 3) : num(al), level: P.clamp01(Math.abs(Math.log10(al * 137.036)) / 6),
-      verdict: al >= 1 ? 'Above 1: an electron in hydrogen would have to outrun light. No atoms, no chemistry.' : (Math.abs(al * 137.036 - 1) > 0.01 ? 'Changed, so every atom and molecule is different.' : 'The real value. Chemistry as usual.') });
-
-    var pl = P.planck(k);
-    rows.push({ dial: 'all', what: 'Planck length and mass', val: length(pl.length, 2) + ', ' + mass(pl.mass, 2), level: P.logLevel(pl.length, -35, -2),
-      verdict: pl.length > PROTON ? 'Squeeze ' + mass(pl.mass, 2) + ' into ' + length(pl.length, 2) + ' and you need quantum gravity. That is ' + num(pl.length / PROTON, 2) + ' times the size of a proton, and nobody knows the rules.' : 'Quantum gravity begins ' + num(Math.log10(PROTON / pl.length), 2) + ' orders of magnitude below a proton.' });
-    return rows;
-  }
-  function renderEveryday() {
-    var now = everyday(state), real = everyday(REAL), html = '';
-    for (var i = 0; i < now.length; i++) {
-      var r = now[i], cls = r.dial.length > 1 ? 'all' : r.dial;
-      var syms = r.dial === 'all' ? 'cgh' : r.dial;
-      var tag = syms.split('').map(function (s) { return '<span class="sym sym-' + s + '">' + (s === 'h' ? 'ħ' : s === 'g' ? 'G' : 'c') + '</span>'; }).join('');
-      html += '<tr class="' + (r.level > 0.5 ? 'hot' : '') + '"><td class="what">' + tag + ' &nbsp;' + r.what + '</td>' +
-        '<td class="val" data-label="Now">' + r.val + '<span class="meter ' + cls + '"><i style="width:' + Math.round(r.level * 100) + '%"></i></span></td>' +
-        '<td class="val" data-label="In our universe">' + real[i].val + '</td><td class="verdict">' + r.verdict + '</td></tr>';
-    }
-    $('everyday').innerHTML = html;
-  }
-  function renderTheories() {
-    var r = P.regime(state);
-    Array.prototype.forEach.call($('theories').querySelectorAll('.theory'), function (b, i) {
-      b.setAttribute('aria-current', i === r.corner ? 'true' : 'false');
-    });
-  }
-
-  /* ---------- tabs ---------- */
-  var tabs = {}, current = null;
-  function registerTab(name, hooks) { tabs[name] = hooks; }
-  function show(name) {
-    if (!document.getElementById('panel-' + name)) name = 'map';
-    if (current === name) return;
-    if (current && tabs[current] && tabs[current].hide) tabs[current].hide();
-    current = name;
-    ['map', 'light', 'gravity', 'quantum'].forEach(function (t) {
-      $('panel-' + t).hidden = t !== name;
-      $('tab-' + t).setAttribute('aria-selected', t === name ? 'true' : 'false');
-    });
-    if (tabs[name] && tabs[name].show) tabs[name].show();
-    try { if (location.hash.slice(1) !== name) history.replaceState(null, '', '#' + name); } catch (e) { location.hash = name; }
-  }
-  function currentTab() { return current; }
-
-  /* ---------- wiring ---------- */
-  function renderShell() {
-    renderDials(); renderPresets();
-    $('regime-name').textContent = P.regime(state).name;
-    drawCube($('mini-cube'), false);
-  }
-  function renderMap() {
-    drawCube($('cube'), true); renderTheories(); renderEveryday();
-  }
-
+  function render() { renderDials(); renderPresets(); drawCube(); }
   function init() {
     try {
-      var saved = JSON.parse(localStorage.getItem('cgh-dials') || 'null');
-      if (saved && saved.c > 0 && saved.G > 0 && saved.hbar > 0) { state.c = saved.c; state.G = saved.G; state.hbar = saved.hbar; }
-    } catch (e) { /* start from the real values */ }
-
-    ['c', 'G', 'hbar'].forEach(function (k) {
+      var s = JSON.parse(localStorage.getItem('cgh-world') || 'null');
+      if (s && ['cw', 'comp', 'lam', 'photons'].every(function (k) { return s[k] > 0; })) state = Object.assign(state, s);
+      CGH.app.state = state;
+    } catch (e) { /* start from our universe */ }
+    ['cw', 'comp', 'lam', 'photons'].forEach(function (k) {
       $('dial-' + k).addEventListener('input', function (ev) { var p = {}; p[k] = fromSlider(k, Number(ev.target.value)); set(p); });
-      $('reset-' + k).addEventListener('click', function () { var p = {}; p[k] = REAL[k]; set(p); });
+      $('reset-' + k).addEventListener('click', function () { var p = {}; p[k] = REALV[k]; set(p); });
     });
     PRESETS.forEach(function (p) {
       var b = document.createElement('button');
       b.className = 'chip'; b.type = 'button'; b.textContent = p.name;
-      b.addEventListener('click', function () { set(p.v); });
+      b.addEventListener('click', function () {
+        set(Object.assign({}, p.v));
+        if (p.pose) document.dispatchEvent(new CustomEvent('cgh-pose', { detail: p.pose }));
+      });
       $('presets').appendChild(b);
     });
-    P.CORNERS.forEach(function (name, bits) {
-      var li = document.createElement('li'), b = document.createElement('button');
-      b.className = 'theory'; b.type = 'button';
-      b.innerHTML = '<span class="bits">' + bitsHTML(bits) + '</span><span class="t-name">' + name + '</span><span class="t-what">' + THEORIES[bits].what + '</span>';
-      b.addEventListener('click', function () { set(cornerPreset(bits)); });
-      li.appendChild(b); $('theories').appendChild(li);
-    });
-    $('cube').addEventListener('click', function (ev) {
-      var rect = ev.target.getBoundingClientRect(), g = cubeGeometry(rect.width, rect.height);
-      var x = ev.clientX - rect.left, y = ev.clientY - rect.top, best = -1, bd = 30 * 30;
-      g.corners.forEach(function (c, i) { var d = (c[0] - x) * (c[0] - x) + (c[1] - y) * (c[1] - y); if (d < bd) { bd = d; best = i; } });
-      if (best >= 0) set(cornerPreset(best));
-    });
-    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (t) {
-      t.addEventListener('click', function () { show(t.getAttribute('data-tab')); });
-    });
-    window.addEventListener('hashchange', function () { show(location.hash.slice(1) || 'map'); });
-
-    registerTab('map', { show: renderMap });
-    onChange(function () { renderShell(); if (current === 'map') renderMap(); });
-    onTheme(function () { renderShell(); if (current === 'map') renderMap(); });
-    window.addEventListener('resize', function () { drawCube($('mini-cube'), false); if (current === 'map') drawCube($('cube'), true); });
-
-  }
-  // Called once every scene has registered itself.
-  function start() {
-    renderShell();
-    show(location.hash.slice(1) || 'map');
+    onChange(render);
+    window.addEventListener('resize', drawCube);
+    render();
   }
 
   CGH.app = {
-    state: state, set: set, onChange: onChange, isReal: isReal,
-    num: num, length: length, duration: duration, mass: mass, clock: clock, times: times, sup: sup,
-    css: css, onTheme: onTheme, fit: fit, registerTab: registerTab, show: show, currentTab: currentTab, init: init, start: start, $: $
+    state: state, REAL: REALV, WALK: WALK, MASS: MASS, set: set, onChange: onChange, isReal: isReal, derived: derived, regime: regime,
+    num: num, length: length, duration: duration, clock: clock, css: css, fit: fit, init: init, $: $
   };
 })();
 
-/* cGħ Lab — Light: a first-person ride down a street with a tunable speed of light.
- *
- * The vertex shader draws every vertex at the event where its light left it (the intersection of
- * its worldline with the viewer's past light cone), Lorentz-transformed into the viewer's frame.
- * CGH.physics.apparent() is the same arithmetic in JavaScript and is what the tests check.
+/* cGħ World — you, as a wave.
+ * Your position on the ground is a 2-D wavefunction, solved on a 32 m × 32 m window that follows you.
+ * Everything standing on the ground is a wall. Your legs act as a uniform force: they shift the whole
+ * momentum distribution toward the speed you are trying to walk at. Each frame the camera is placed at
+ * one position drawn from |ψ|², and the screen keeps a running average: every place you might be.
  */
 (function () {
   'use strict';
-  var P = CGH.physics, A = CGH.app, $ = A.$;
-  var TILE = 120, EYE = 1.7, SPAN = 4, LAMP_PERIOD = 2, CLOCK_PERIOD = 20, TRAM_EFFORT = 7;
+  var G = CGH.geo, QC = CGH.qcore;
+  var N = 128, L = 32, M = 70, dx = L / N, EDGE = 2.5, BODY = 0.2, AMAX = 4;
+  var W = { sim: null, ca: 0, cl: 0, hbar: 0, c: 0, on: false, cum: new Float64Array(N * N), spread: 0, mean: null };
 
-  /* ---------- geometry ---------- */
-  function Mesh() { this.v = []; this.i = []; this.n = 0; }
-  // A subdivided parallelogram. Straight edges turn into curves at speed, so nothing may be coarse.
-  Mesh.prototype.quad = function (o, eu, ev, nu, nv, col, mat, uv0, uv1) {
-    var nx = eu[1] * ev[2] - eu[2] * ev[1], ny = eu[2] * ev[0] - eu[0] * ev[2], nz = eu[0] * ev[1] - eu[1] * ev[0];
-    var nl = Math.hypot(nx, ny, nz); nx /= nl; ny /= nl; nz /= nl;
-    var lu = Math.hypot(eu[0], eu[1], eu[2]), lv = Math.hypot(ev[0], ev[1], ev[2]);
-    uv0 = uv0 || [0, 0]; uv1 = uv1 || [lu, lv];
-    var base = this.n, a, b;
-    for (b = 0; b <= nv; b++) for (a = 0; a <= nu; a++) {
-      var s = a / nu, t = b / nv;
-      this.v.push(o[0] + s * eu[0] + t * ev[0], o[1] + s * eu[1] + t * ev[1], o[2] + s * eu[2] + t * ev[2],
-        nx, ny, nz, col[0], col[1], col[2], uv0[0] + s * (uv1[0] - uv0[0]), uv0[1] + t * (uv1[1] - uv0[1]), mat);
-      this.n++;
-    }
-    for (b = 0; b < nv; b++) for (a = 0; a < nu; a++) {
-      var i0 = base + b * (nu + 1) + a, i1 = i0 + 1, i2 = i0 + nu + 1, i3 = i2 + 1;
-      this.i.push(i0, i1, i2, i1, i3, i2);
-    }
-  };
-  Mesh.prototype.box = function (c, s, col, mat, maxEdge, opts) {
-    opts = opts || {};
-    var hx = s[0] / 2, hy = s[1] / 2, hz = s[2] / 2;
-    var kx = Math.max(1, Math.ceil(s[0] / maxEdge)), ky = Math.max(1, Math.ceil(s[1] / maxEdge)), kz = Math.max(1, Math.ceil(s[2] / maxEdge));
-    this.quad([c[0] + hx, c[1] - hy, c[2] + hz], [0, 0, -s[2]], [0, s[1], 0], kz, ky, col, mat);
-    this.quad([c[0] - hx, c[1] - hy, c[2] - hz], [0, 0, s[2]], [0, s[1], 0], kz, ky, col, mat);
-    this.quad([c[0] - hx, c[1] - hy, c[2] + hz], [s[0], 0, 0], [0, s[1], 0], kx, ky, col, mat);
-    this.quad([c[0] + hx, c[1] - hy, c[2] - hz], [-s[0], 0, 0], [0, s[1], 0], kx, ky, col, mat);
-    this.quad([c[0] - hx, c[1] + hy, c[2] + hz], [s[0], 0, 0], [0, 0, -s[2]], kx, kz, opts.top || col, opts.topMat === undefined ? mat : opts.topMat);
-    if (opts.bottom) this.quad([c[0] - hx, c[1] - hy, c[2] - hz], [s[0], 0, 0], [0, 0, s[2]], kx, kz, col, opts.topMat === undefined ? mat : opts.topMat);
-  };
-
-  var M_GROUND = 0, M_WALL = 1, M_PLAIN = 2, M_CLOCK = 3, M_LAMP = 4, M_SKY = 5, M_TRAM = 6, M_LEAF = 7, M_TRAMCLOCK = 8;
-
-  function buildTile() {
-    var m = new Mesh(), k, side;
-    // ground: 1 m cells by the road, wider cells far out (still 1 m along the street so edges meet)
-    m.quad([-24, 0, -60], [0, 0, 120], [48, 0, 0], 120, 48, [1, 1, 1], M_GROUND);
-    m.quad([-152, 0, -60], [0, 0, 120], [128, 0, 0], 120, 16, [1, 1, 1], M_GROUND);
-    m.quad([24, 0, -60], [0, 0, 120], [128, 0, 0], 120, 16, [1, 1, 1], M_GROUND);
-
-    var z0 = [-58, -42, -24, -6, 12, 30, 46], len = [14, 16, 16, 16, 16, 14, 12];
-    var hL = [15, 21, 12, 18, 9, 24, 15], hR = [12, 18, 24, 9, 15, 21, 12];
-    var walls = [[0.62, 0.36, 0.28], [0.80, 0.72, 0.56], [0.55, 0.60, 0.66], [0.86, 0.82, 0.74], [0.70, 0.46, 0.34], [0.60, 0.64, 0.58], [0.78, 0.66, 0.60]];
-    for (k = 0; k < 7; k++) {
-      m.box([-16, hL[k] / 2, z0[k] + len[k] / 2], [12, hL[k], len[k]], walls[k], M_WALL, 2, { top: [0.32, 0.32, 0.34], topMat: M_PLAIN });
-      m.box([16, hR[k] / 2, z0[k] + len[k] / 2], [12, hR[k], len[k]], walls[(k + 3) % 7], M_WALL, 2, { top: [0.32, 0.32, 0.34], topMat: M_PLAIN });
-    }
-    for (side = -1; side <= 1; side += 2) {
-      for (k = 0; k < 10; k++) {                                   // lamp posts, every 12 m
-        var lz = -54 + 12 * k;
-        m.box([side * 4.6, 2.2, lz], [0.16, 4.4, 0.16], [0.2, 0.21, 0.23], M_PLAIN, 1.1);
-        m.box([side * 4.6, 4.5, lz], [0.5, 0.28, 0.5], [1, 0.86, 0.5], M_LAMP, 0.5, { bottom: true });
-      }
-      for (k = 0; k < 20; k++) {                                   // one-metre crates: rulers you can ride past
-        m.box([side * 6.3, 0.5, -57 + 6 * k], [1, 1, 1], k % 2 ? [0.78, 0.22, 0.2] : [0.2, 0.4, 0.75], M_PLAIN, 0.5);
-      }
-      for (k = 0; k < 5; k++) {                                    // trees
-        var tz = -48 + 24 * k;
-        m.box([side * 8.7, 1.3, tz], [0.35, 2.6, 0.35], [0.36, 0.26, 0.18], M_PLAIN, 1.3);
-        m.box([side * 8.7, 4.0, tz], [2.8, 2.8, 2.8], [0.22, 0.48, 0.2], M_LEAF, 0.7, { bottom: true });
-      }
-      m.box([side * 5.2, 3.5, 0], [0.3, 7, 0.3], [0.2, 0.21, 0.23], M_PLAIN, 1);   // clock gantry posts
-    }
-    m.box([0, 6.85, 0], [10.7, 0.3, 0.3], [0.2, 0.21, 0.23], M_PLAIN, 1, { bottom: true });
-    // clock faces, one looking each way down the street; u runs to the viewer's right
-    m.quad([1.25, 4.15, -0.2], [-2.5, 0, 0], [0, 2.5, 0], 6, 6, [1, 1, 1], M_CLOCK, [-1, -1], [1, 1]);
-    m.quad([-1.25, 4.15, 0.2], [2.5, 0, 0], [0, 2.5, 0], 6, 6, [1, 1, 1], M_CLOCK, [-1, -1], [1, 1]);
-    return m;
+  function toStreet(x, y) { return { a: G.wrapA(W.ca + y - L / 2), l: W.cl + x - L / 2 }; }
+  function walls() {
+    var s = W.sim;
+    s.build(function (x, y) {
+      var e = Math.min(x, L - x, y, L - y), p = toStreet(x, y);
+      return { wall: G.footprint(p.a, p.l) < BODY, damp: e < EDGE ? 6 * Math.pow((EDGE - e) / EDGE, 2) : 0 };
+    });
   }
-  function buildTram() {
-    var m = new Mesh();
-    m.box([0, 1.75, 0], [2.4, 2.7, 14], [0.93, 0.72, 0.12], M_TRAM, 0.5, { bottom: true });
-    m.quad([1.21, 0.55, 0.5], [0, 0, -1], [0, 1, 0], 3, 3, [1, 1, 1], M_TRAMCLOCK, [-1, -1], [1, 1]);
-    m.quad([-1.21, 0.55, -0.5], [0, 0, 1], [0, 1, 0], 3, 3, [1, 1, 1], M_TRAMCLOCK, [-1, -1], [1, 1]);
-    return m;
+
+  // Start (or restart) as a packet of width sigma at street point (a, l), moving at (va, vl).
+  function start(a, l, va, vl, hbar, c, sigma) {
+    W.hbar = hbar; W.c = c; W.ca = a; W.cl = l; W.on = true; W.vel = [va, vl];
+    W.sim = new QC.Sim({ N: N, L: L, m: M, hbar: hbar, c: c });
+    walls();
+    W.sim.gaussian(L / 2, L / 2, sigma, sigma, 0, 0);
+    var k = momentumK(va, vl);
+    W.sim.kick(k[0], k[1]);
+    measure();
   }
-  function buildSky() {
-    var m = new Mesh(), st = 24, sl = 48, i, j;
-    for (i = 0; i <= st; i++) for (j = 0; j <= sl; j++) {
-      var th = Math.PI * i / st, ph = 2 * Math.PI * j / sl;
-      m.v.push(Math.sin(th) * Math.cos(ph), Math.cos(th), Math.sin(th) * Math.sin(ph), 0, 1, 0, 1, 1, 1, 0, 0, M_SKY);
-      m.n++;
-    }
-    for (i = 0; i < st; i++) for (j = 0; j < sl; j++) {
-      var a = i * (sl + 1) + j, b = a + sl + 1;
-      m.i.push(a, a + 1, b, a + 1, b + 1, b);
-    }
+  function stop() { W.on = false; W.sim = null; }
+
+  // Wavenumber of someone walking at (va, vl): p = γ m v, capped well inside what the grid can hold.
+  function momentumK(va, vl) {
+    var v2 = va * va + vl * vl, g = W.c ? 1 / Math.sqrt(Math.max(1e-6, 1 - v2 / (W.c * W.c))) : 1;
+    var kx = g * M * vl / W.hbar, ky = g * M * va / W.hbar, kk = Math.hypot(kx, ky), cap = 0.45 * Math.PI / dx;
+    return kk > cap ? [kx * cap / kk, ky * cap / kk] : [kx, ky];
+  }
+  function topSpeed() {                                   // the fastest walk the window can represent
+    var p = 0.45 * Math.PI / dx * W.hbar;
+    return W.c ? p * W.c / Math.sqrt(p * p + M * M * W.c * W.c) : p / M;
+  }
+
+  function measure() {
+    var m = W.sim.moments(), p = toStreet(m.x, m.y);
+    W.mean = p; W.spread = Math.hypot(m.sx, m.sy);
     return m;
   }
 
-  /* ---------- shaders ---------- */
-  var VS = [
-    '#version 300 es',
-    'precision highp float;',
-    'layout(location=0) in vec3 aPos;',
-    'layout(location=1) in vec3 aNormal;',
-    'layout(location=2) in vec3 aColor;',
-    'layout(location=3) in vec3 aUVM;',
-    'uniform vec3 uRel;     // object origin (at world "now") minus the eye position',
-    'uniform vec3 uV;       // viewer velocity / c, world frame',
-    'uniform vec3 uU;       // object velocity / c, world frame',
-    'uniform float uC;',
-    'uniform float uT;      // world time now',
-    'uniform int uMode;     // 0 seen, 1 simultaneous in the viewer frame, 2 Newton',
-    'uniform int uSky;',
-    'uniform mat4 uVP;',
-    'out vec3 vN; out vec3 vCol; out vec3 vUVM; out vec3 vRest; out vec3 vDir;',
-    'out float vD; out float vTe; out float vDist;',
-    'void main() {',
-    '  float bu2 = dot(uU, uU), bv2 = dot(uV, uV);',
-    '  float gu = inversesqrt(1.0 - bu2), gv = inversesqrt(1.0 - bv2);',
-    '  vec3 p = aPos;',
-    '  if (bu2 > 0.0) { vec3 uh = uU * inversesqrt(bu2); p -= (1.0 - 1.0 / gu) * dot(p, uh) * uh; }   // a moving object is contracted in the world frame',
-    '  vec3 d0 = uSky == 1 ? aPos * 3000.0 : p + uRel;',
-    '  vec3 r; float cdt;',
-    '  if (uMode == 0) {',
-    '    float a = 1.0 - bu2, b = dot(d0, uU);',
-    '    float cs = (-b + sqrt(b * b + a * dot(d0, d0))) / a;   // c × light travel time',
-    '    r = d0 - uU * cs; cdt = -cs;',
-    '  } else if (uMode == 1) {',
-    '    cdt = dot(uV, d0) / (1.0 - dot(uV, uU));',
-    '    r = d0 + uU * cdt;',
-    '  } else { r = d0; cdt = 0.0; }',
-    '  vec3 rp = r;',
-    '  if (uMode != 2 && bv2 > 0.0) {',
-    '    vec3 vh = uV * inversesqrt(bv2);',
-    '    rp = r + (gv - 1.0) * dot(r, vh) * vh - gv * uV * cdt;',
-    '  }',
-    '  float rl = max(length(r), 1e-6);',
-    '  vec3 rh = r / rl;',
-    '  vD = uMode == 0 ? gv * (1.0 + dot(rh, uV)) / (gu * (1.0 + dot(rh, uU))) : 1.0;',
-    '  vTe = uT + cdt / uC;',
-    '  vDist = rl; vDir = rh;',
-    '  vN = aNormal; vCol = aColor; vUVM = aUVM; vRest = aPos;',
-    '  gl_Position = uVP * vec4(uSky == 1 ? normalize(rp) * 50.0 : rp, 1.0);',
-    '}'
-  ].join('\n');
-
-  var FS = [
-    '#version 300 es',
-    'precision highp float;',
-    'in vec3 vN; in vec3 vCol; in vec3 vUVM; in vec3 vRest; in vec3 vDir;',
-    'in float vD; in float vTe; in float vDist;',
-    'uniform int uDoppler; uniform int uBeam; uniform float uExposure; uniform float uTauScale;',
-    'out vec4 outColor;',
-    'const vec3 SUN = vec3(0.3665, 0.8378, 0.4050);',
-    'const vec3 HAZE = vec3(0.76, 0.84, 0.92);',
-    'float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
-    '// A crude spectrum for a sunlit surface: its reflectance is known at the three colour bands,',
-    '// guessed in the infrared and ultraviolet, and joined smoothly. Outside the visible range the',
-    '// light available falls off the way sunlight does (a 5800 K black body, per unit frequency).',
-    'float sun(float l) { float x = min(2480.7 / l, 60.0); return x * x * x / (exp(x) - 1.0); }',
-    'float spec(float l, vec3 rgb, float ir, float uv) {',
-    '  if (l < 465.0) return mix(uv, rgb.b, smoothstep(330.0, 465.0, l)) * sun(l) * 1.3598 * smoothstep(290.0, 330.0, l);',
-    '  if (l < 545.0) return mix(rgb.b, rgb.g, (l - 465.0) / 80.0);',
-    '  if (l < 610.0) return mix(rgb.g, rgb.r, (l - 545.0) / 65.0);',
-    '  return mix(rgb.r, ir, smoothstep(610.0, 780.0, l)) * sun(l) * 0.8528;',
-    '}',
-    '// Each receptor reads the emitted wavelength that the Doppler factor D maps onto it.',
-    'vec3 shifted(vec3 rgb, float ir, float uv, float D) {',
-    '  vec3 lam = vec3(610.0, 545.0, 465.0) * D;',
-    '  return vec3(spec(lam.r, rgb, ir, uv), spec(lam.g, rgb, ir, uv), spec(lam.b, rgb, ir, uv));',
-    '}',
-    'vec3 dial(vec2 uv, float t, float period, float ticks) {',
-    '  float r = length(uv);',
-    '  if (r > 1.0) discard;',
-    '  vec3 col = vec3(0.96, 0.95, 0.90);',
-    '  if (r > 0.92) col = vec3(0.10);',
-    '  float ang = atan(uv.x, uv.y) / 6.2831853;',
-    '  float tk = abs(fract(ang * ticks + 0.5) - 0.5), q = abs(fract(ang * 4.0 + 0.5) - 0.5);',
-    '  if (r > 0.80 && r < 0.90 && tk < 0.09) col = vec3(0.10);',
-    '  if (r > 0.66 && r < 0.90 && q < 0.012) col = vec3(0.10);',
-    '  float ha = 6.2831853 * fract(t / period);',
-    '  vec2 hd = vec2(sin(ha), cos(ha));',
-    '  float along = dot(uv, hd), perp = abs(uv.x * hd.y - uv.y * hd.x);',
-    '  if (along > -0.12 && along < 0.76 && perp < 0.055) col = vec3(0.78, 0.10, 0.08);',
-    '  if (r < 0.08) col = vec3(0.10);',
-    '  return col;',
-    '}',
-    'void main() {',
-    '  int m = int(vUVM.z + 0.5);',
-    '  vec3 col = vCol; float ir = -1.0, uv = -1.0, lit = 1.0, fog = 1.0;',
-    '  float detail = 1.0 - smoothstep(35.0, 110.0, vDist);',
-    '  if (m == 5) {',
-    '    vec3 d = normalize(vDir);',
-    '    float up = clamp(d.y, 0.0, 1.0);',
-    '    col = mix(HAZE, vec3(0.26, 0.47, 0.86), pow(up, 0.55));',
-    '    if (d.y < 0.0) col = mix(HAZE, vec3(0.50, 0.56, 0.52), clamp(-d.y * 6.0, 0.0, 1.0));',
-    '    float s = dot(d, SUN);',
-    '    col += vec3(1.0, 0.92, 0.75) * (smoothstep(0.9994, 0.9997, s) * 3.0 + pow(max(s, 0.0), 90.0) * 0.5);',
-    '    ir = 0.12 + smoothstep(0.999, 0.9997, s) * 3.0; uv = 1.2; lit = 0.0; fog = 0.0;',
-    '  } else if (m == 0) {',
-    '    vec3 p = vRest; float ax = abs(p.x);',
-    '    if (ax < 4.0) {',
-    '      col = vec3(0.23, 0.24, 0.26) * (1.0 + detail * 0.16 * (hash(floor(p.xz * 4.0)) - 0.5));',
-    '      if (min(abs(ax - 1.28), abs(ax - 2.72)) < 0.05) col = vec3(0.56, 0.57, 0.60);',
-    '      if (ax < 0.09 && fract(p.z / 6.0) < 0.5) col = vec3(0.86);',
-    '    } else if (ax < 4.3) {',
-    '      col = mod(floor(p.z), 2.0) < 0.5 ? vec3(0.84, 0.20, 0.17) : vec3(0.93);',
-    '    } else if (ax < 7.7) {',
-    '      vec2 f = fract(p.xz);',
-    '      col = vec3(0.70, 0.69, 0.66) * (1.0 + detail * 0.10 * (hash(floor(p.xz)) - 0.5));',
-    '      if (f.x < 0.04 || f.y < 0.04) col *= 1.0 - 0.25 * detail;',
-    '    } else {',
-    '      col = vec3(0.30, 0.52, 0.24) * (1.0 + detail * 0.30 * (hash(floor(p.xz * 2.0)) - 0.5));',
-    '      ir = 0.9; uv = 0.03;',
-    '    }',
-    '  } else if (m == 1) {',
-    '    vec2 cell = fract(vUVM.xy / 3.0);',
-    '    if (cell.x > 0.22 && cell.x < 0.78 && cell.y > 0.28 && cell.y < 0.80)',
-    '      col = mix(vec3(0.15, 0.21, 0.29), vec3(0.42, 0.56, 0.70), 0.6 * hash(floor(vUVM.xy / 3.0) + floor(vCol.xy * 50.0 + 0.5)));',
-    '    else if (vUVM.y < 0.5) col *= 0.6;',
-    '  } else if (m == 3) {',
-    '    col = dial(vUVM.xy, vTe, ' + CLOCK_PERIOD.toFixed(1) + ', 20.0); lit = 0.0;',
-    '  } else if (m == 8) {',
-    '    col = dial(vUVM.xy, vTe * uTauScale, ' + CLOCK_PERIOD.toFixed(1) + ', 20.0); lit = 0.0;',
-    '  } else if (m == 4) {',
-    '    bool on = fract(vTe / ' + LAMP_PERIOD.toFixed(1) + ') < 0.14;',
-    '    col = on ? vec3(1.9, 1.7, 1.0) : vec3(0.30, 0.28, 0.24); lit = on ? 0.0 : 1.0;',
-    '  } else if (m == 6) {',
-    '    vec3 p = vRest;',
-    '    if (abs(vN.y) < 0.5 && p.y > 1.75 && p.y < 2.65 && fract(p.z / 2.0 + 0.5) > 0.12 && fract(p.z / 2.0 + 0.5) < 0.88 && abs(p.z) < 6.6) col = vec3(0.16, 0.22, 0.30);',
-    '    else if (p.y < 0.75) col = vec3(0.25, 0.26, 0.28);',
-    '    else if (p.y > 1.45 && p.y < 1.6) col = vec3(0.75, 0.12, 0.10);',
-    '  } else if (m == 7) {',
-    '    col *= 1.0 + detail * 0.35 * (hash(floor(vRest.xy * 3.0) + floor(vRest.z * 3.0)) - 0.5);',
-    '    ir = 0.95; uv = 0.03;',
-    '  }',
-    '  float lum = dot(col, vec3(0.3, 0.55, 0.15));',
-    '  if (ir < 0.0) { ir = lum; uv = lum * 0.7; }',
-    '  if (lit > 0.0) { float l = 0.42 + 0.70 * clamp(dot(normalize(vN), SUN), 0.0, 1.0); col *= l; ir *= l; uv *= l; }',
-    '  if (fog > 0.0) {',
-    '    float f = smoothstep(150.0, 430.0, vDist);',
-    '    col = mix(col, HAZE, f); ir = mix(ir, 0.2, f); uv = mix(uv, 1.0, f);',
-    '  }',
-    '  vec3 c = col;',
-    '  if (uDoppler == 1) c = shifted(col, ir, uv, vD);',
-    '  if (uBeam == 1) c *= vD * vD * vD * uExposure;',
-    '  vec3 hi = 0.6 + 0.4 * (1.0 - exp(-(max(c, vec3(0.6)) - 0.6) / 0.4));',
-    '  c = mix(c, hi, step(vec3(0.6), c));',
-    '  outColor = vec4(c, 1.0);',
-    '}'
-  ].join('\n');
-
-  /* ---------- small matrix helpers (column-major) ---------- */
-  function perspective(fovy, aspect, near, far) {
-    var f = 1 / Math.tan(fovy / 2), nf = 1 / (near - far);
-    return [f / aspect, 0, 0, 0, 0, f, 0, 0, 0, 0, (far + near) * nf, -1, 0, 0, 2 * far * near * nf, 0];
-  }
-  function mul(a, b) {
-    var o = new Float32Array(16);
-    for (var c = 0; c < 4; c++) for (var r = 0; r < 4; r++) {
-      o[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1] + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
+  // Advance by dt seconds of your own time while trying to walk at (va, vl).
+  function step(dt, va, vl) {
+    var s = W.sim, k = s.meanK(), kt = momentumK(va, vl);
+    var lim = M * AMAX * dt / W.hbar, dkx = kt[0] - k[0], dky = kt[1] - k[1], dk = Math.hypot(dkx, dky);
+    if (dk > lim) { dkx *= lim / dk; dky *= lim / dk; }
+    if (dk > 1e-9) s.kick(dkx, dky);
+    // group velocity of the mean momentum: c²p/E, or p/m without relativity
+    var kx = k[0] + dkx, ky = k[1] + dky, px = W.hbar * kx, py = W.hbar * ky;
+    var inv = W.c ? W.c * W.c / Math.sqrt((px * px + py * py) * W.c * W.c + Math.pow(M * W.c * W.c, 2)) : 1 / M;
+    W.vel = [py * inv, px * inv];
+    // walls must stand far above your energy: their height is wallPhase·ħ/dt, so take short steps
+    var v2 = va * va + vl * vl, E = 0.5 * M * Math.max(v2, 1) + W.hbar * W.hbar / (2 * M * 0.25);
+    var n = Math.max(1, Math.min(6, Math.ceil(dt * 10 * E / W.hbar)));
+    for (var i = 0; i < n; i++) s.step(dt / n);
+    s.normalise();
+    var m = measure();
+    // keep the wave in the middle of the window
+    var di = Math.round((m.x - L / 2) / dx), dj = Math.round((m.y - L / 2) / dx);
+    if (Math.abs(di) > 12 || Math.abs(dj) > 12) {
+      s.shift(di, dj); W.cl += di * dx; W.ca = G.wrapA(W.ca + dj * dx); walls(); measure();
     }
-    return o;
   }
 
-  /* ---------- state ---------- */
-  var canvas, gl, prog, U = {}, meshes = {}, raf = 0, last = 0, ok = false;
+  // One place you might be, drawn from |ψ|².
+  function sample(rand) {
+    var re = W.sim.re, im = W.sim.im, cum = W.cum, tot = 0, q;
+    for (q = 0; q < re.length; q++) { tot += re[q] * re[q] + im[q] * im[q]; cum[q] = tot; }
+    var t = rand() * tot, lo = 0, hi = re.length - 1;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (cum[mid] < t) lo = mid + 1; else hi = mid; }
+    var i = lo % N, j = (lo - i) / N;
+    return toStreet((i + rand()) * dx, L - (j + rand()) * dx);
+  }
+
+  // Find out where you are: keep only the part of the wave near one outcome.
+  function look(sigma, rand) {
+    var spot = W.sim.measure(sigma, rand);
+    measure();
+    return toStreet(spot.x, spot.y);
+  }
+
+  CGH.wave = { W: W, N: N, L: L, M: M, dx: dx, start: start, stop: stop, step: step, sample: sample, look: look, topSpeed: topSpeed, toStreet: toStreet };
+})();
+
+/* cGħ World — the first-person engine: walking, the camera, three GPU passes and the head-up display. */
+(function () {
+  'use strict';
+  var G = CGH.geo, P = CGH.physics, A = CGH.app, SH = CGH.shaders, WV = CGH.wave, $ = A.$;
+  var EFFORT_MAX = 20, FOV = 1.2, CLOCK_TOP = 46;
+  var canvas, gl, prog = {}, fmt, scene = null, acc = [], size = [0, 0], vao, raf = 0, last = 0, ok = false;
   var S = {
-    x: 2.2, z: -42, heading: 0, lookYaw: 0, lookPitch: 0.04, effort: 0,
-    T: 60, tau: 60, mode: 0, doppler: true, beam: true, exposure: 1,
-    trams: [{ x: -2, z: 70, dir: -1 }, { x: 2, z: -260, dir: 1 }],
-    keys: {}, hint: 8
+    a: G.START.a, l: G.START.l, heading: 0, lookYaw: 0, lookPitch: 0.04, effort: 0, T: 0, tau: 0,
+    street: 0, top: 0, newton: false, doppler: true, beam: true, exposure: 1, keys: {}, scale: 0.6, fixedScale: 0, ms: 16,
+    view: { a: G.START.a, l: G.START.l }, frame: 0, fresh: true, watched: false, lookTimer: 0, hint: 12, found: null
   };
 
+  /* ---------- GL plumbing ---------- */
   function compile(type, src) {
-    var s = gl.createShader(type);
-    gl.shaderSource(s, src); gl.compileShader(s);
+    var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
     if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
     return s;
   }
-  function upload(mesh) {
-    var vao = gl.createVertexArray();
-    gl.bindVertexArray(vao);
-    var vb = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vb);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.v), gl.STATIC_DRAW);
-    for (var a = 0; a < 4; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 3, gl.FLOAT, false, 48, a * 12); }
-    var ib = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(mesh.i), gl.STATIC_DRAW);
-    gl.bindVertexArray(null);
-    return { vao: vao, count: mesh.i.length };
+  function program(fs, names) {
+    var p = gl.createProgram();
+    gl.attachShader(p, compile(gl.VERTEX_SHADER, SH.VS)); gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    var u = {}; names.forEach(function (n) { u[n] = gl.getUniformLocation(p, n); });
+    return { p: p, u: u };
   }
+  function target(w, h) {
+    var t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texImage2D(gl.TEXTURE_2D, 0, fmt.internal, w, h, 0, gl.RGBA, fmt.type, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    var f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+    return { t: t, f: f };
+  }
+  function free(tg) { if (tg) { gl.deleteTexture(tg.t); gl.deleteFramebuffer(tg.f); } }
   function setup() {
-    canvas = $('light-canvas');
-    gl = canvas.getContext('webgl2', { antialias: true, alpha: false });
+    canvas = $('world-canvas');
+    gl = canvas.getContext('webgl2', { antialias: false, alpha: false });
     if (!gl) return false;
-    prog = gl.createProgram();
-    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
-    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
-    ['uRel', 'uV', 'uU', 'uC', 'uT', 'uMode', 'uSky', 'uVP', 'uDoppler', 'uBeam', 'uExposure', 'uTauScale'].forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
-    meshes.tile = upload(buildTile());
-    meshes.tram = upload(buildTram());
-    meshes.sky = upload(buildSky());
-    gl.enable(gl.DEPTH_TEST);
+    fmt = gl.getExtension('EXT_color_buffer_float') ? { internal: gl.RGBA16F, type: gl.HALF_FLOAT } : { internal: gl.RGBA8, type: gl.UNSIGNED_BYTE };
+    prog.march = program(SH.MARCH, ['uEye', 'uFwd', 'uRight', 'uUp', 'uBeta', 'uTan', 'uRs', 'uC', 'uT', 'uExposure', 'uDoppler', 'uBeam']);
+    prog.accum = program(SH.ACCUM, ['uNew', 'uOld', 'uK']);
+    prog.show = program(SH.SHOW, ['uImg', 'uPhotons', 'uSeed']);
+    vao = gl.createVertexArray();
     return true;
   }
 
-  /* ---------- per-frame ---------- */
-  function kinematics() {
-    var c = A.state.c, v = P.speedFromEffort(S.effort, c), beta = v / c;
-    return { c: c, v: v, beta: beta, gamma: P.gamma(beta), dir: [Math.sin(S.heading), 0, Math.cos(S.heading)] };
+  /* ---------- moving ---------- */
+  function dials() {
+    var d = A.derived(), st = A.state;
+    return { c: S.newton ? 1e12 : d.c, rs: S.newton ? 0 : d.rs, hbar: d.hbar, quantum: st.lam >= 0.5, photons: st.photons };
   }
-  function wrap(d, L) { return d - L * Math.round(d / L); }
-
-  function step(dtau) {
-    var k = S.keys;
-    if (k.faster) S.effort = Math.min(40, S.effort + 7 * dtau);
-    if (k.slower) S.effort = Math.max(0, S.effort - 9 * dtau);
-    if (k.left) S.heading += 1.3 * dtau;
-    if (k.right) S.heading -= 1.3 * dtau;
-    if (k.faster || k.slower) { $('effort').value = S.effort; $('effort-out').textContent = S.effort.toFixed(1) + ' m/s'; }
-    var q = kinematics();
-    var dT = q.gamma * dtau;                 // the town's clocks advance γ times faster than your watch
-    S.tau += dtau; S.T += dT;
-    S.x += q.dir[0] * q.v * dT; S.z += q.dir[2] * q.v * dT;
-    if (S.x > 7.3) S.x = 7.3; if (S.x < -7.3) S.x = -7.3;
-    var u = P.speedFromEffort(TRAM_EFFORT, q.c);
-    S.trams.forEach(function (t) { t.z += t.dir * u * dT; });
+  function update(dtau) {
+    var k = S.keys, q = dials(), re = G.R + G.EYE;
+    if (k.faster) { S.effort = Math.min(EFFORT_MAX, S.effort + 6 * dtau); syncEffort(); }
+    if (k.slower) { S.effort = Math.max(0, S.effort - 8 * dtau); syncEffort(); }
+    if (k.left) S.heading -= 1.3 * dtau;
+    if (k.right) S.heading += 1.3 * dtau;
+    var v = P.speedFromEffort(S.effort, q.c), va = v * Math.cos(S.heading), vl = v * Math.sin(S.heading);
+    q.lapse = Math.sqrt(1 - q.rs / re);
+    if (q.quantum) {
+      var W = WV.W, c = S.newton ? 0 : q.c;
+      if (!W.on || W.hbar !== q.hbar || W.c !== c) { WV.start(S.a, S.l, va, vl, q.hbar, c, 0.6); S.fresh = true; }
+      var top = WV.topSpeed();
+      if (v > top) { va *= top / v; vl *= top / v; }
+      q.top = top;
+    } else if (WV.W.on) { WV.stop(); S.fresh = true; }
+    // your own velocity relative to the ground decides the clocks and the aberration
+    var vel = q.quantum ? WV.W.vel || [0, 0] : [va, vl];
+    var sp = Math.hypot(vel[0], vel[1]);
+    q.v = sp; q.beta = sp / q.c; q.gamma = 1 / Math.sqrt(1 - q.beta * q.beta); q.vel = vel;
+    var dtLocal = q.gamma * dtau;                      // time for someone standing where you are
+    var dT = dtLocal / q.lapse;                         // far-away (coordinate) time
+    S.T += dT; S.tau += dtau;
+    S.street += dT * Math.sqrt(1 - q.rs / G.R); S.top += dT * Math.sqrt(1 - q.rs / (G.R + CLOCK_TOP));
+    if (q.quantum) {
+      WV.step(dtLocal, va, vl);
+      if (S.watched) { S.lookTimer -= dtau; if (S.lookTimer <= 0) { S.lookTimer = 0.25; WV.look(0.5, Math.random); } }
+      S.a = WV.W.mean.a; S.l = WV.W.mean.l;
+      S.view = WV.sample(Math.random);
+    } else {
+      var na = G.wrapA(S.a + va * dtLocal), nl = S.l + vl * dtLocal;
+      if (G.footprint(na, nl) > 0.25) { S.a = na; S.l = nl; }
+      else if (G.footprint(na, S.l) > 0.25) S.a = na;
+      else if (G.footprint(S.a, nl) > 0.25) S.l = nl;
+      S.view = { a: S.a, l: S.l };
+    }
     if (S.hint > 0) S.hint -= dtau;
     return q;
   }
-
-  function render(q) {
-    var f = A.fit(canvas, 1.5);
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    var yaw = S.heading + S.lookYaw, pit = S.lookPitch;
-    var fw = [Math.sin(yaw) * Math.cos(pit), Math.sin(pit), Math.cos(yaw) * Math.cos(pit)];
-    var rt = [-Math.cos(yaw), 0, Math.sin(yaw)];
-    var up = [rt[1] * fw[2] - rt[2] * fw[1], rt[2] * fw[0] - rt[0] * fw[2], rt[0] * fw[1] - rt[1] * fw[0]];
-    var view = [rt[0], up[0], -fw[0], 0, rt[1], up[1], -fw[1], 0, rt[2], up[2], -fw[2], 0, 0, 0, 0, 1];
-    var vp = mul(perspective(1.2, f.w / f.h, 0.12, 40000), view);
-
-    var bv = [q.dir[0] * q.beta, 0, q.dir[2] * q.beta];
-    // eye adaptation: beaming makes the view ahead brighter by D³, so expose for where you look
-    var cosL = fw[0] * q.dir[0] + fw[2] * q.dir[2];
-    var Dc = 1 / (q.gamma * (1 - q.beta * cosL));
-    var target = Math.max(0.02, Math.min(60, Math.pow(Dc, -2.7)));
-    S.exposure += (target - S.exposure) * 0.15;
-    S.Dc = Dc;
-
-    gl.clearColor(0.76, 0.84, 0.92, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.useProgram(prog);
-    gl.uniformMatrix4fv(U.uVP, false, vp);
-    gl.uniform3fv(U.uV, bv);
-    gl.uniform1f(U.uC, q.c);
-    gl.uniform1f(U.uT, S.T % 3600);
-    gl.uniform1i(U.uMode, S.mode);
-    gl.uniform1i(U.uDoppler, S.doppler && S.mode === 0 ? 1 : 0);
-    gl.uniform1i(U.uBeam, S.beam && S.mode === 0 ? 1 : 0);
-    gl.uniform1f(U.uExposure, S.exposure);
-    gl.uniform1f(U.uTauScale, 1);
-
-    gl.depthMask(false);                                   // the sky is at infinity: aberration only
-    gl.uniform1i(U.uSky, 1); gl.uniform3f(U.uU, 0, 0, 0); gl.uniform3f(U.uRel, 0, 0, 0);
-    gl.bindVertexArray(meshes.sky.vao);
-    gl.drawElements(gl.TRIANGLES, meshes.sky.count, gl.UNSIGNED_INT, 0);
-    gl.depthMask(true);
-
-    gl.uniform1i(U.uSky, 0);
-    gl.bindVertexArray(meshes.tile.vao);
-    var k0 = Math.round(S.z / TILE);
-    for (var k = -SPAN; k <= SPAN; k++) {                  // the street repeats every 120 m, for ever
-      gl.uniform3f(U.uRel, -S.x, -EYE, (k0 + k) * TILE - S.z);
-      gl.drawElements(gl.TRIANGLES, meshes.tile.count, gl.UNSIGNED_INT, 0);
+  function camera(q) {
+    var f = G.frame(S.view.a, S.view.l), y = S.heading + S.lookYaw, p = S.lookPitch;
+    var cy = Math.cos(y), sy = Math.sin(y), cp = Math.cos(p), sp = Math.sin(p), fwd = [], right = [], beta = [];
+    for (var i = 0; i < 3; i++) {
+      fwd.push(cp * (cy * f.along[i] + sy * f.across[i]) + sp * f.up[i]);
+      right.push(cy * f.across[i] - sy * f.along[i]);
+      beta.push(S.newton ? 0 : (q.vel[0] * f.along[i] + q.vel[1] * f.across[i]) / q.c);
     }
-    var bu = P.speedFromEffort(TRAM_EFFORT, q.c) / q.c;
-    gl.bindVertexArray(meshes.tram.vao);
-    gl.uniform1f(U.uTauScale, Math.sqrt(1 - bu * bu));     // the tram's own clock runs slow by 1/γ
-    S.trams.forEach(function (t) {
-      gl.uniform3f(U.uU, 0, 0, t.dir * bu);
-      gl.uniform3f(U.uRel, t.x - S.x, -EYE, wrap(t.z - S.z, 2 * SPAN * TILE));
-      gl.drawElements(gl.TRIANGLES, meshes.tram.count, gl.UNSIGNED_INT, 0);
-    });
-    gl.bindVertexArray(null);
+    return { eye: G.toWorld(S.view.a, S.view.l, G.EYE), fwd: fwd, right: right, up: G.cross(right, fwd), beta: beta };
+  }
+
+  /* ---------- drawing ---------- */
+  function draw(q, cam) {
+    var f = A.fit(canvas, 1.5), w = canvas.width, h = canvas.height;
+    var sc = S.fixedScale || S.scale, rw = Math.max(64, Math.round(w * sc)), rh = Math.max(36, Math.round(h * sc));
+    if (rw !== size[0] || rh !== size[1]) {
+      free(scene); free(acc[0]); free(acc[1]);
+      scene = target(rw, rh); acc = [target(rw, rh), target(rw, rh)]; size = [rw, rh]; S.fresh = true;
+    }
+    var Dc = 1 / (q.gamma * (1 - G.dot(cam.fwd, cam.beta)));
+    var aim = S.beam && !S.newton ? Math.max(0.02, Math.min(60, Math.pow(Dc, -2.7))) : 1;
+    S.exposure += (aim - S.exposure) * 0.15;
+    gl.bindVertexArray(vao);
+
+    var m = prog.march;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, scene.f); gl.viewport(0, 0, rw, rh); gl.useProgram(m.p);
+    gl.uniform3fv(m.u.uEye, cam.eye); gl.uniform3fv(m.u.uFwd, cam.fwd); gl.uniform3fv(m.u.uRight, cam.right);
+    gl.uniform3fv(m.u.uUp, cam.up); gl.uniform3fv(m.u.uBeta, cam.beta);
+    gl.uniform2f(m.u.uTan, Math.tan(FOV / 2) * f.w / f.h, Math.tan(FOV / 2));
+    gl.uniform1f(m.u.uRs, q.rs); gl.uniform1f(m.u.uC, q.c); gl.uniform1f(m.u.uT, S.T % 1e5);
+    gl.uniform1f(m.u.uExposure, S.exposure);
+    gl.uniform1i(m.u.uDoppler, S.doppler && !S.newton ? 1 : 0); gl.uniform1i(m.u.uBeam, S.beam && !S.newton ? 1 : 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    var k = S.fresh ? 1 : q.quantum ? (WV.W.spread > 0.12 ? 0.08 : 0.35) : 1;
+    var src = acc[S.frame % 2], dst = acc[(S.frame + 1) % 2], a = prog.accum;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, dst.f); gl.useProgram(a.p);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, scene.t);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, src.t);
+    gl.uniform1i(a.u.uNew, 0); gl.uniform1i(a.u.uOld, 1); gl.uniform1f(a.u.uK, k);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    var s = prog.show;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h); gl.useProgram(s.p);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, dst.t);
+    gl.uniform1i(s.u.uImg, 0); gl.uniform1f(s.u.uPhotons, q.photons); gl.uniform1ui(s.u.uSeed, S.frame & 0xffff);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    S.frame++; S.fresh = false;
+  }
+
+  function waveMap(q) {
+    var el = $('wave-map');
+    el.hidden = !q.quantum;
+    if (!q.quantum || !WV.W.sim) return;
+    var N = WV.N, sim = WV.W.sim, ctx = el.getContext('2d');
+    if (el.width !== N) { el.width = N; el.height = N; }
+    var img = ctx.createImageData(N, N), d = img.data, mx = 0, n, re = sim.re, im = sim.im;
+    for (n = 0; n < N * N; n++) mx = Math.max(mx, re[n] * re[n] + im[n] * im[n]);
+    for (n = 0; n < N * N; n++) {
+      var p = Math.sqrt((re[n] * re[n] + im[n] * im[n]) / (mx || 1)), o = 4 * n;
+      if (sim.wall[n]) { d[o] = d[o + 1] = d[o + 2] = 150; } else { d[o] = 14 + 218 * p; d[o + 1] = 18 + 102 * p; d[o + 2] = 26 + 168 * p; }
+      d[o + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    var x = (S.view.l - WV.W.cl) / WV.dx + N / 2, y = N / 2 - G.wrapA(S.view.a - WV.W.ca) / WV.dx;
+    ctx.fillStyle = '#ffd27a'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
+    ctx.strokeStyle = '#ffd27a'; ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.lineTo(x + 9 * Math.sin(S.heading + S.lookYaw), y - 9 * Math.cos(S.heading + S.lookYaw)); ctx.stroke();
   }
 
   function hud(q) {
-    var n = A.num;
-    $('light-hud-l').innerHTML = 'speed <b>' + n(q.v) + ' m/s</b> = ' + (q.beta < 1e-3 ? n(q.beta, 2) : q.beta.toFixed(3)) + ' c<br>γ = ' + (q.beta === 0 ? '1' : q.gamma < 1.001 ? '1 + ' + n(P.clockLoss(q.beta) * q.gamma, 2) : q.gamma.toFixed(3));
-    $('light-hud-r').innerHTML = 'your watch <b>' + A.clock(S.tau) + '</b><br>town clock <b>' + A.clock(S.T) + '</b>';
-    var D = S.Dc || 1, msg;
-    if (S.mode === 1) msg = 'Your frame, this instant: lengths along your motion ×' + (1 / q.gamma).toFixed(3);
-    else if (S.mode === 2) msg = 'Newton’s street: no light delay, no contraction';
-    else if (Math.abs(D - 1) < 0.01) msg = 'Where you look: colours and clock rates unchanged';
-    else msg = 'Where you look: light ×' + D.toFixed(2) + (D > 1 ? ' bluer' : ' redder') + ', clocks seem ×' + D.toFixed(2) + (D > 1 ? ' fast' : ' slow');
-    if (S.hint > 0 && canvas.clientWidth > 640) msg += '<br>W S effort · A D steer · drag to look';
-    $('light-hud-b').innerHTML = msg;
+    var n = A.num, rs = q.rs, re = G.R + G.EYE;
+    $('w-hud-l').innerHTML = 'speed <b>' + n(q.v) + ' m/s</b> = ' + (q.beta < 1e-3 ? n(q.beta, 2) : q.beta.toFixed(3)) + ' c<br>γ = ' + (q.gamma < 1.0001 ? '1.000' : q.gamma.toFixed(3));
+    $('w-hud-r').innerHTML = 'your watch <b>' + A.clock(S.tau) + '</b><br>street clocks <b>' + A.clock(S.street) + '</b><br>tower top <b>' + A.clock(S.top) + '</b>';
+    var msg = S.newton ? 'Newton’s view: light instant and straight' : '';
+    if (!msg && q.quantum) msg = WV.W.spread > 0.5 ? 'You are spread over ' + n(WV.W.spread, 2) + ' m. Every place you might be is overlaid. Press F to look.' : 'You are a narrow wave. Walk, and watch the map.';
+    if (!msg) msg = 'Drag to look around';
+    if (S.hint > 0 && canvas.clientWidth > 640) msg += '<br>W S effort · A D steer · F look · Space stop';
+    $('w-hud-b').innerHTML = msg;
 
-    // the next clock gantry ahead of you along the street
-    var ahead = Math.cos(S.heading) >= 0 ? 1 : -1;
-    var gz = (ahead > 0 ? Math.ceil(S.z / TILE) : Math.floor(S.z / TILE)) * TILE;
-    var dist = Math.hypot(gz - S.z, S.x, 5.4 - EYE);
-    var w = q.gamma * q.v;
-    var rows = [
-      ['Street covered per second on your watch, γv', n(w) + ' m'],
-      ['Overhead clock ahead, ' + n(dist, 2) + ' m away, shows', A.clock(S.T - dist / q.c)],
-      ['Its light is late by', A.duration(dist / q.c, 2)],
-      ['A one-metre crate, in your frame', (1 / q.gamma).toFixed(3) + ' m'],
-      ['Trams run at', n(P.speedFromEffort(TRAM_EFFORT, q.c)) + ' m/s']
-    ];
-    $('light-readouts').innerHTML = rows.map(function (r) { return '<div class="readout"><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; }).join('');
+    var el = G.horizon(rs, G.R, re) * 180 / Math.PI, rows = [];
+    rows.push([el < 0 ? 'Horizon, below your eye level' : 'Horizon, above your eye level', Math.abs(el).toFixed(1) + '°' + (el > 0 ? ' (sky is a cone ' + (2 * (90 - el)).toFixed(0) + '° wide)' : '')]);
+    rows.push(['Tower-top clock runs, against yours', '×' + G.clockRate(rs, CLOCK_TOP).toFixed(rs > 0.01 * G.R ? 3 : 6)]);
+    rows.push(['Light crosses the planet in', A.duration(2 * G.R / q.c * (1 + rs / G.R), 2)]);
+    if (q.quantum) rows.push(['Your spread / top speed here', n(WV.W.spread, 2) + ' m / ' + n(q.top, 2) + ' m/s']);
+    else rows.push(['Your wavelength now', A.length(2 * Math.PI * q.hbar / (A.MASS * Math.max(q.v, A.WALK) * q.gamma), 2)]);
+    rows.push(['Photons per pixel per frame', n(q.photons, 2)]);
+    $('w-readouts').innerHTML = rows.map(function (r) { return '<div class="readout"><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; }).join('');
   }
 
-  var hudClock = 0;
+  var hudT = 0;
   function frame(now) {
     raf = requestAnimationFrame(frame);
-    var dtau = Math.min(0.05, (now - last) / 1000 || 0); last = now;
-    var q = step(dtau);
-    render(q);
-    hudClock += dtau;
-    if (hudClock > 0.1) { hudClock = 0; hud(q); }
+    var dt = Math.min(0.05, (now - last) / 1000 || 0);
+    S.ms += ((now - last) - S.ms) * 0.05; last = now;
+    if (!S.fixedScale && S.frame % 30 === 29) {
+      if (S.ms > 42 && S.scale > 0.3) S.scale *= 0.85; else if (S.ms < 22 && S.scale < 1) S.scale = Math.min(1, S.scale * 1.1);
+    }
+    var q = update(dt), cam = camera(q);
+    draw(q, cam);
+    hudT += dt;
+    if (hudT > 0.12) { hudT = 0; hud(q); waveMap(q); }
   }
 
-  function nudge() {
-    var c = A.state.c, best = P.speedFromEffort(40, c) / c, el = $('light-nudge');
-    el.hidden = best > 0.2;
-    if (!el.hidden) $('light-nudge-text').textContent = 'With c = ' + A.num(c) + ' m/s your hardest pedalling reaches ' + A.num(best, 2) + ' of light speed. The street will look perfectly ordinary.';
+  /* ---------- input ---------- */
+  function syncEffort() { $('effort').value = S.effort; $('effort-out').textContent = S.effort.toFixed(1) + ' m/s'; }
+  function look() {
+    if (!WV.W.on) return;
+    S.found = WV.look(0.45, Math.random); S.fresh = true;
   }
-
+  function restartClocks() { S.T = 0; S.tau = 0; S.street = 0; S.top = 0; }
+  function place(a, l, heading) {
+    S.a = a; S.l = l; S.view = { a: a, l: l }; S.heading = heading; S.lookYaw = 0; S.lookPitch = 0.04;
+    S.effort = 0; syncEffort(); WV.stop(); restartClocks(); S.fresh = true;
+  }
   function bind() {
-    $('effort').addEventListener('input', function (e) { S.effort = Number(e.target.value); $('effort-out').textContent = S.effort.toFixed(1) + ' m/s'; });
-    $('effort-out').textContent = '0.0 m/s';
-    Array.prototype.forEach.call($('light-mode').children, function (b) {
-      b.addEventListener('click', function () {
-        S.mode = Number(b.getAttribute('data-mode'));
-        Array.prototype.forEach.call($('light-mode').children, function (o) { o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
-      });
-    });
-    $('opt-doppler').addEventListener('change', function (e) { S.doppler = e.target.checked; });
-    $('opt-beam').addEventListener('change', function (e) { S.beam = e.target.checked; });
-    $('light-stop').addEventListener('click', function () { S.effort = 0; $('effort').value = 0; $('effort-out').textContent = '0.0 m/s'; });
-    $('light-turn').addEventListener('click', function () { S.heading += Math.PI; S.lookYaw = 0; });
-    $('light-nudge-btn').addEventListener('click', function () { A.set({ c: 10 }); });
+    $('effort').addEventListener('input', function (e) { S.effort = Number(e.target.value); syncEffort(); });
+    syncEffort();
+    $('w-stop').addEventListener('click', function () { S.effort = 0; syncEffort(); });
+    $('w-turn').addEventListener('click', function () { S.heading += Math.PI; S.lookYaw = 0; });
+    $('w-home').addEventListener('click', function () { place(G.START.a, G.START.l, 0); });
+    document.addEventListener('cgh-pose', function (e) { if (e.detail === 'doors') place(G.DOORS.a, G.DOORS.l, G.DOORS.heading); });
+    $('w-look').addEventListener('click', look);
+    $('w-watched').addEventListener('change', function (e) { S.watched = e.target.checked; });
+    $('w-newton').addEventListener('change', function (e) { S.newton = e.target.checked; S.fresh = true; });
+    $('w-doppler').addEventListener('change', function (e) { S.doppler = e.target.checked; });
+    $('w-beam').addEventListener('change', function (e) { S.beam = e.target.checked; });
 
-    var KEYMAP = { w: 'faster', ArrowUp: 'faster', s: 'slower', ArrowDown: 'slower', a: 'left', ArrowLeft: 'left', d: 'right', ArrowRight: 'right' };
+    var KEYS = { w: 'faster', ArrowUp: 'faster', s: 'slower', ArrowDown: 'slower', a: 'left', ArrowLeft: 'left', d: 'right', ArrowRight: 'right' };
     function key(ev, down) {
-      if (A.currentTab() !== 'light' || !ev.key) return;
+      if (!ev.key) return;
       var t = ev.target, onCanvas = t === canvas;
-      if (!onCanvas && t && /^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(t.tagName) && ev.key.length > 1) return;   // leave arrow keys to sliders
-      var act = KEYMAP[ev.key.length === 1 ? ev.key.toLowerCase() : ev.key];
-      if (ev.key === ' ' && onCanvas && down) { S.effort = 0; $('effort').value = 0; $('effort-out').textContent = '0.0 m/s'; ev.preventDefault(); return; }
+      if (!onCanvas && t && /^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(t.tagName)) return;
+      if (down && (ev.key === 'f' || ev.key === 'F')) { look(); return; }
+      if (down && ev.key === ' ' && onCanvas) { S.effort = 0; syncEffort(); ev.preventDefault(); return; }
+      var act = KEYS[ev.key.length === 1 ? ev.key.toLowerCase() : ev.key];
       if (!act) return;
       S.keys[act] = down;
       if (onCanvas) ev.preventDefault();
@@ -1844,833 +1862,47 @@ dl { margin: 0; }
     window.addEventListener('keydown', function (e) { key(e, true); });
     window.addEventListener('keyup', function (e) { key(e, false); });
     window.addEventListener('blur', function () { S.keys = {}; });
-
     var drag = null;
-    canvas.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY }; try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* fine */ } canvas.focus({ preventScroll: true }); });
+    canvas.addEventListener('pointerdown', function (e) { drag = [e.clientX, e.clientY]; try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* fine */ } canvas.focus({ preventScroll: true }); });
     canvas.addEventListener('pointermove', function (e) {
       if (!drag) return;
-      S.lookYaw += (e.clientX - drag.x) * 0.005;
-      S.lookPitch = Math.max(-1.2, Math.min(1.3, S.lookPitch + (e.clientY - drag.y) * 0.005));
-      drag = { x: e.clientX, y: e.clientY };
+      S.lookYaw += (e.clientX - drag[0]) * 0.005;
+      S.lookPitch = Math.max(-1.3, Math.min(1.4, S.lookPitch - (e.clientY - drag[1]) * 0.005));
+      drag = [e.clientX, e.clientY];
     });
-    function end() { drag = null; }
-    canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+    canvas.addEventListener('pointerup', function () { drag = null; });
+    canvas.addEventListener('pointercancel', function () { drag = null; });
     canvas.addEventListener('dblclick', function () { S.lookYaw = 0; S.lookPitch = 0.04; });
-
-    Array.prototype.forEach.call(document.querySelectorAll('#light-view .pad button'), function (b) {
+    Array.prototype.forEach.call(document.querySelectorAll('#world-view .pad button'), function (b) {
       var act = b.getAttribute('data-act');
-      function on(e) { S.keys[act] = true; e.preventDefault(); }
+      function on(e) { if (act === 'look') look(); else S.keys[act] = true; e.preventDefault(); }
       function off() { S.keys[act] = false; }
       b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off);
       b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
     });
   }
 
-  function show() {
-    if (!ok) {
-      try { ok = setup(); } catch (e) { ok = false; console.error(e); }
-      if (!ok) { $('light-hud-b').textContent = 'This scene needs WebGL 2, which this browser did not provide.'; return; }
-    }
-    nudge();
-    last = performance.now();
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(frame);
-  }
-  function hide() { cancelAnimationFrame(raf); S.keys = {}; }
-
-  CGH.light = {
+  CGH.world = {
     init: function () {
-      canvas = $('light-canvas');
+      canvas = $('world-canvas');
       bind();
-      A.registerTab('light', { show: show, hide: hide });
-      A.onChange(function () { if (A.currentTab() === 'light') nudge(); });
+      try { ok = setup(); } catch (e) { ok = false; console.error(e); }
+      if (!ok) { $('w-hud-b').textContent = 'This view needs WebGL 2, which this browser did not provide.'; return; }
+      A.onChange(function () { S.fresh = true; restartClocks(); });   // a new world: every clock starts together
+      document.addEventListener('visibilitychange', function () {
+        cancelAnimationFrame(raf);
+        if (!document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); }
+      });
+      last = performance.now(); raf = requestAnimationFrame(frame);
     },
     state: S
   };
 })();
 
-/* cGħ Lab — Gravity: two scenes about clocks.
- *   Time tower         uniform gravity (an accelerating frame): rate(h) = 1 + g h / c², exact.
- *   Black-hole mission circular equatorial orbits around a Kerr black hole (the Interstellar set-up).
- */
+/* cGħ World — start-up. */
 (function () {
   'use strict';
-  var P = CGH.physics, A = CGH.app, $ = A.$, K = P.K;
-  var canvas, ctx, raf = 0, last = 0, scene = 'tower';
-
-  /* ================= tower ================= */
-  var LO = -4, HI = 10, STOREY = P.REF.floor;
-  var T = { floor: 0, lapse: 0, tau: [], me: 0 };
-  function resetTower() { T.tau = []; for (var i = LO; i <= HI; i++) T.tau.push(0); T.me = 0; }
-  function field() {
-    var g = P.earthGravity(A.state.G), c = A.state.c;
-    return { g: g, c: c, per: P.rindlerExcess(g, STOREY, c), horizon: P.rindlerHorizon(g, c) };
-  }
-  function rate(f, i) { return 1 + f.per * i; }                 // relative to the street clock
-  function lowestFloor(f) { for (var i = LO; i <= 0; i++) if (rate(f, i) > 0.02) return i; return 0; }
-
-  function stepTower(dt) {
-    var f = field();
-    var lo = lowestFloor(f);
-    if (T.floor < lo) { T.floor = lo; $('floor').value = lo; }
-    var dme = dt * Math.pow(10, T.lapse);                        // your own seconds: your watch always feels normal
-    var dstreet = dme / rate(f, T.floor);
-    for (var i = LO; i <= HI; i++) { var r = rate(f, i); if (r > 0) T.tau[i - LO] += r * dstreet; }
-    T.me += dme;
-    return f;
-  }
-
-  // Colour of light from a clock that runs D times faster than yours: blue above you, red below.
-  function tint(D) {
-    var t = Math.max(-1, Math.min(1, Math.log2(D) / 1.6));
-    var w = [236, 232, 214], r = [214, 62, 44], b = [72, 118, 235], e = t < 0 ? r : b, a = Math.abs(t);
-    return 'rgb(' + Math.round(w[0] + (e[0] - w[0]) * a) + ',' + Math.round(w[1] + (e[1] - w[1]) * a) + ',' + Math.round(w[2] + (e[2] - w[2]) * a) + ')';
-  }
-  function relText(f, i, j) {                                    // rate of floor i as judged from floor j
-    var d = f.per * (i - j) / rate(f, j);
-    if (i === j) return '×1';
-    if (Math.abs(d) < 1e-3) return '×1 ' + (d > 0 ? '+ ' : '− ') + A.num(Math.abs(d), 2);
-    return '×' + A.num(1 + d, 3);
-  }
-
-  function drawTower(f) {
-    var s = A.fit(canvas, 2), w = s.w, h = s.h;
-    ctx.setTransform(s.dpr, 0, 0, s.dpr, 0, 0);
-    var ink = A.css('--ink'), muted = A.css('--muted'), line = A.css('--line'), surf = A.css('--surface'), warn = A.css('--warn');
-    ctx.fillStyle = A.css('--sunk'); ctx.fillRect(0, 0, w, h);
-
-    var narrow = w < 520;
-    var n = HI - LO + 1, top = !narrow && w > 700 ? 26 : 12, fh = (h - top - 10) / n;
-    var colLabel = narrow ? 30 : 64, cellW = narrow ? 64 : 120;
-    var x0 = narrow ? 8 : Math.max(16, w * 0.08);
-    var xCell = x0 + colLabel, xDial = xCell + cellW + (narrow ? 20 : 34), xTime = xDial + (narrow ? 20 : 30), xRate = narrow ? w - 8 : xTime + 150;
-    function yTop(i) { return top + (HI - i) * fh; }
-    var yStreet = yTop(0) + fh;
-
-    // ground
-    ctx.fillStyle = line; ctx.globalAlpha = 0.55; ctx.fillRect(0, yStreet, w, h - yStreet); ctx.globalAlpha = 1;
-    ctx.strokeStyle = muted; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, yStreet); ctx.lineTo(w, yStreet); ctx.stroke();
-
-    ctx.textBaseline = 'middle';
-    for (var i = HI; i >= LO; i--) {
-      var y = yTop(i), r = rate(f, i), alive = r > 0, mid = y + fh / 2;
-      ctx.fillStyle = surf; ctx.strokeStyle = muted; ctx.lineWidth = 1;
-      ctx.fillRect(xCell, y, cellW, fh); ctx.strokeRect(xCell + 0.5, y + 0.5, cellW - 1, fh - 1);
-      // window, lit in the colour its light has when it reaches your floor
-      ctx.fillStyle = alive ? tint(r / rate(f, T.floor)) : '#333';
-      ctx.fillRect(xCell + cellW * 0.58, y + fh * 0.22, cellW * 0.3, fh * 0.5);
-      ctx.strokeStyle = muted; ctx.strokeRect(xCell + cellW * 0.58 + 0.5, y + fh * 0.22 + 0.5, cellW * 0.3 - 1, fh * 0.5 - 1);
-
-      ctx.fillStyle = muted; ctx.font = '12px ' + A.css('--font-data'); ctx.textAlign = 'right';
-      ctx.fillText(narrow ? String(i) : (i === 0 ? 'street' : (i > 0 ? 'floor ' + i : 'level ' + i)), xCell - 8, mid);
-
-      if (i === 0 || i === T.floor) {                            // the twin stays at street level; you are the filled one
-        var you = i === T.floor, px = xCell + cellW * (you ? 0.28 : 0.14), py = y + fh * 0.5, sz = Math.min(fh * 0.34, 11);
-        ctx.strokeStyle = ink; ctx.fillStyle = you ? ink : surf; ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.arc(px, py - sz * 0.75, sz * 0.42, 0, 6.2832); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(px - sz * 0.55, py + sz); ctx.lineTo(px, py - sz * 0.25); ctx.lineTo(px + sz * 0.55, py + sz); ctx.closePath(); ctx.fill(); ctx.stroke();
-      }
-      if (!alive) {
-        ctx.fillStyle = warn; ctx.textAlign = 'left'; ctx.font = '12px ' + A.css('--font-text');
-        ctx.fillText('past the horizon', xDial - 8, mid);
-        continue;
-      }
-      var rad = Math.min(fh * 0.38, 13), ang = 6.2832 * ((T.tau[i - LO] / 10) % 1);
-      ctx.beginPath(); ctx.arc(xDial, mid, rad, 0, 6.2832); ctx.fillStyle = surf; ctx.fill(); ctx.strokeStyle = ink; ctx.lineWidth = 1.25; ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(xDial, mid); ctx.lineTo(xDial + Math.sin(ang) * rad * 0.82, mid - Math.cos(ang) * rad * 0.82);
-      ctx.strokeStyle = warn; ctx.lineWidth = 1.75; ctx.stroke();
-
-      ctx.fillStyle = ink; ctx.font = (i === T.floor ? '500 ' : '') + '13px ' + A.css('--font-data'); ctx.textAlign = 'left';
-      ctx.fillText(A.clock(T.tau[i - LO]), xTime, mid);
-      ctx.fillStyle = i === T.floor ? ink : muted; ctx.textAlign = narrow ? 'right' : 'left';
-      ctx.fillText(i === T.floor ? 'you' : relText(f, i, T.floor), xRate, mid);
-    }
-    // the horizon, if it is within the drawing
-    var yH = yStreet + (f.horizon / STOREY) * fh;
-    if (yH < h - 2) {
-      ctx.strokeStyle = warn; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]);
-      ctx.beginPath(); ctx.moveTo(0, yH); ctx.lineTo(w, yH); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = warn; ctx.font = '12px ' + A.css('--font-text'); ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
-      ctx.fillText('horizon, ' + A.length(f.horizon, 2) + ' down', w - 8, yH - 3);
-    }
-    if (!narrow && w > 700) {
-      ctx.fillStyle = muted; ctx.font = '12px ' + A.css('--font-text'); ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-      ctx.fillText('clock rate seen from your floor', xRate, 6);
-    }
-  }
-
-  function towerReadouts(f) {
-    var n = A.num, d = T.me - T.tau[0 - LO];
-    var rows = [
-      ['Gravity here, g', n(f.g) + ' m/s²'],
-      ['Clock-rate change per storey, g·h/c²', n(f.per, 2)],
-      ['Horizon below the street, c²/g', A.length(f.horizon, 3)],
-      ['Your watch', A.clock(T.me)],
-      ['Street twin’s watch', A.clock(T.tau[0 - LO])],
-      [d >= 0 ? 'You are older by' : 'You are younger by', A.duration(Math.abs(d), 3)]
-    ];
-    $('grav-readouts').innerHTML = rows.map(function (r) { return '<div class="readout"><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; }).join('');
-  }
-
-  /* ================= black hole ================= */
-  var H = { massExp: 38.3, spinS: 0, orbitS: 0, stay: 1, phiP: 0, phiS: 0, tFar: 0 };
-  function hole() {
-    var k = A.state, M = Math.pow(10, H.massExp);
-    var delta = Math.pow(10, -14 * H.spinS);
-    if (H.film) delta = 1.3e-14;
-    var kk = P.kerr(delta);
-    var dr = Math.pow(10, -9 + 11 * H.orbitS) - 1e-9;
-    var rP = kk.rIsco + dr, rS = Math.max(10, 2 * rP);
-    var fP = P.kerrDilation(rP, kk.a), fS = P.kerrDilation(rS, kk.a);
-    return {
-      M: M, kk: kk, rP: rP, rS: rS, fP: fP, fS: fS,
-      rg: k.G * M / (k.c * k.c), tg: k.G * M / Math.pow(k.c, 3),
-      omP: P.kerrOmega(rP, kk.a), omS: P.kerrOmega(rS, kk.a),
-      hawking: P.hawking(M, delta, k)
-    };
-  }
-  function massName(M) {
-    var list = [[1, 'a bag of sugar'], [70, 'a person'], [1500, 'a car'], [1e12, 'a mountain'], [7.3e22, 'the Moon'], [K.Mearth, 'Earth'], [K.Msun, 'the Sun'], [8.5e36, 'the Milky Way’s black hole'], [1.99e38, 'Gargantua']];
-    var best = list[0], bd = 1e9;
-    list.forEach(function (e) { var d = Math.abs(Math.log10(M / e[0])); if (d < bd) { bd = d; best = e; } });
-    return bd < 0.12 ? best[1] : (M > 1e29 ? A.num(M / K.Msun, 2) + ' Suns' : A.mass(M, 2));
-  }
-  function spinText(kk) {
-    if (kk.delta >= 1) return 'none';
-    if (kk.delta > 1e-3) return 'a = ' + kk.a.toFixed(3);
-    return 'a = 1 − ' + A.num(kk.delta, 2);
-  }
-
-  function stepHole(dt) {
-    var b = hole();
-    var dCoord = dt * (2 * Math.PI / b.omP) / 6;                 // one planet orbit every six seconds of yours
-    H.phiP += b.omP * dCoord; H.phiS += b.omS * dCoord; H.tFar += dCoord * b.tg;
-    return b;
-  }
-
-  function drawHole(b) {
-    var s = A.fit(canvas, 2), w = s.w, h = s.h;
-    ctx.setTransform(s.dpr, 0, 0, s.dpr, 0, 0);
-    var ink = A.css('--ink'), muted = A.css('--muted'), surf = A.css('--surface'), focus = A.css('--focus'), line = A.css('--line');
-    ctx.fillStyle = A.css('--sunk'); ctx.fillRect(0, 0, w, h);
-    var side = w > h * 1.25;
-    var dw = side ? w * 0.56 : w, dh = side ? h : h * 0.58;
-    var cx = dw / 2, cy = dh / 2, Rmax = Math.min(dw, dh) / 2 - 14, Rh = Rmax * 0.2;
-    var rH = b.kk.rHorizon, span = Math.log(b.rS * 1.15 / rH);
-    function R(r) { return Rh + (Rmax - Rh) * Math.log(Math.max(r, rH) / rH) / span; }
-    function ring(r, style, dash, lw) {
-      ctx.beginPath(); ctx.arc(cx, cy, R(r), 0, 6.2832); ctx.setLineDash(dash || []); ctx.strokeStyle = style; ctx.lineWidth = lw || 1; ctx.stroke(); ctx.setLineDash([]);
-    }
-    ring(b.rS, muted, [], 1);
-    ring(b.kk.rIsco, muted, [2, 4], 1);
-    ring(b.rP, focus, [], 1.75);
-    ctx.beginPath(); ctx.arc(cx, cy, R(rH), 0, 6.2832); ctx.fillStyle = ink; ctx.fill();
-    if (b.kk.a > 0.01) {                                          // spin arrow on the hole
-      ctx.strokeStyle = surf; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(cx, cy, Rh * 0.55, -2.4, 0.9); ctx.stroke();
-      var ax = cx + Rh * 0.55 * Math.cos(-2.4), ay = cy + Rh * 0.55 * Math.sin(-2.4);
-      ctx.beginPath(); ctx.moveTo(ax - 5, ay + 3); ctx.lineTo(ax, ay); ctx.lineTo(ax + 6, ay + 4); ctx.stroke();
-    }
-    // bodies (angles run anticlockwise, the way the hole spins)
-    var px = cx + R(b.rP) * Math.cos(-H.phiP), py = cy + R(b.rP) * Math.sin(-H.phiP);
-    ctx.beginPath(); ctx.arc(px, py, 6, 0, 6.2832); ctx.fillStyle = focus; ctx.fill(); ctx.strokeStyle = surf; ctx.lineWidth = 1.5; ctx.stroke();
-    var sx = cx + R(b.rS) * Math.cos(-H.phiS), sy = cy + R(b.rS) * Math.sin(-H.phiS);
-    ctx.fillStyle = surf; ctx.strokeStyle = ink; ctx.lineWidth = 1.5; ctx.fillRect(sx - 5, sy - 5, 10, 10); ctx.strokeRect(sx - 5, sy - 5, 10, 10);
-
-    ctx.font = '12px ' + A.css('--font-text'); ctx.fillStyle = muted; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-    ctx.fillText('radius drawn on a log scale', 8, 6);
-    // labels sit outside each orbit, on the far side from the hole
-    function tag(text, x, y, color) {
-      var d = Math.hypot(x - cx, y - cy) || 1, ux = (x - cx) / d, uy = (y - cy) / d;
-      ctx.fillStyle = color; ctx.textAlign = ux > 0.3 ? 'left' : ux < -0.3 ? 'right' : 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(text, x + ux * 13, y + uy * 13);
-    }
-    tag('ship', sx, sy, muted);
-    tag('planet', px, py, focus);
-
-    // three clocks
-    var bx = side ? dw + 6 : 14, by = side ? Math.max(18, h * 0.14) : dh + 4, bw = (side ? w - dw : w) - 22, rowH = side ? Math.min(92, (h - by - 8) / 3) : (h - dh - 8) / 3;
-    var rows = [
-      ['On the planet', H.tFar / b.fP, focus, '1 s here is ' + A.duration(b.fP, 3) + ' far away'],
-      ['On the ship', H.tFar / b.fS, ink, '1 s here is ' + A.duration(b.fS, 3) + ' far away'],
-      ['Far away', H.tFar, muted, 'the reference clock']
-    ];
-    rows.forEach(function (r, i) {
-      var y = by + i * rowH;
-      ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-      ctx.fillStyle = r[2]; ctx.fillRect(bx, y + 3, 3, rowH - 12);
-      ctx.fillStyle = muted; ctx.font = '12px ' + A.css('--font-text'); ctx.fillText(r[0], bx + 10, y);
-      ctx.fillStyle = ink; ctx.font = '500 ' + (rowH > 60 ? 20 : 16) + 'px ' + A.css('--font-data'); ctx.fillText(A.clock(r[1]), bx + 10, y + 16);
-      if (rowH > 52) { ctx.fillStyle = muted; ctx.font = '12px ' + A.css('--font-text'); ctx.fillText(r[3], bx + 10, y + (rowH > 60 ? 42 : 36), bw); }
-    });
-    void line;
-  }
-
-  function holeReadouts(b) {
-    var n = A.num, stay = H.stay * 3600;
-    var rows = [
-      [n(H.stay) + ' h on the planet is, on the ship', A.duration(stay * b.fP / b.fS, 3)],
-      ['and far away', A.duration(stay * b.fP, 3)],
-      ['Time runs slower on the planet by', '×' + n(b.fP, 4)],
-      ['Horizon radius', A.length(b.kk.rHorizon * b.rg, 3)],
-      ['Planet orbit', n(b.rP, 4) + ' GM/c² = ' + A.length(b.rP * b.rg, 3)],
-      ['One orbit, far-away time', A.duration(2 * Math.PI / b.omP * b.tg, 3)],
-      ['Hawking temperature', n(b.hawking.temperature, 2) + ' K'],
-      ['Evaporates in about', A.duration(b.hawking.lifetime, 2)]
-    ];
-    $('grav-readouts').innerHTML = rows.map(function (r) { return '<div class="readout"><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; }).join('');
-    $('mass-out').textContent = massName(b.M);
-    $('spin-out').textContent = spinText(b.kk);
-    $('orbit-out').textContent = b.rP - b.kk.rIsco < 1e-6 ? 'innermost stable' : n(b.rP, 3) + ' GM/c²';
-    $('stay-out').textContent = n(H.stay) + ' h';
-  }
-
-  /* ================= shared ================= */
-  var TEXT = {
-    tower: {
-      title: 'Time tower',
-      premise: 'A tower standing in uniform gravity, with a clock on every floor. All of them were set together at street level and carried to their floors. Choose a floor and wait there.',
-      explain: '<div><h3>What to try</h3><ul>' +
-        '<li>Slow light to 10 m/s, go to the tenth floor and let time pass. Your street-level twin falls behind. Go back down and the gap stays: you really are older.</li>' +
-        '<li>Go below the street. Clocks there crawl, and a few metres down there is a level where they stop altogether, as judged from above.</li>' +
-        '<li>Raise <span class="sym sym-g">G</span>. Stronger gravity does the same thing as slower light: only <span class="formula"><i>gh</i>/<i>c</i>²</span> matters.</li></ul></div>' +
-        '<div><h3>The arithmetic</h3><p class="formula">rate(<i>h</i>) = 1 + <i>gh</i>/<i>c</i>² &nbsp; horizon at <i>h</i> = −<i>c</i>²/<i>g</i></p>' +
-        '<p class="note">This is exact for a rigid tower held at constant acceleration, which by the equivalence principle is what standing in a uniform field means. It uses Earth’s pull with your <span class="sym">G</span>. With Earth’s real mass and <span class="sym">c</span> = 10 m/s the planet would sit far inside its own horizon, so the scene keeps the local pull and drops the planet. The real effect, 1.1×10⁻¹⁶ per metre, has been measured across a single millimetre with optical clocks.</p></div>'
-    },
-    hole: {
-      title: 'Black-hole mission',
-      premise: 'A planet circles a spinning black hole while the ship waits in a wide orbit. The crew go down for a few hours. The picture runs on far-away time: one planet orbit every six seconds.',
-      explain: '<div><h3>What to try</h3><ul>' +
-        '<li>With no spin, move the planet to the innermost stable orbit. Time there runs only 1.41 times slower. A film needs more.</li>' +
-        '<li>Press “Miller’s planet”. The hole must spin within 1.3 parts in 10¹⁴ of the maximum before the innermost orbit gives one hour for seven years.</li>' +
-        '<li>Change the mass or the dials. The ratio does not move: it depends only on spin and on the orbit measured in units of <span class="formula"><i>GM</i>/<i>c</i>²</span>. The constants set how big and how slow everything is.</li>' +
-        '<li>Raise <span class="sym sym-h">ħ</span> and watch the last two readouts. Hawking’s temperature is the one widely trusted formula that needs all three constants. Nobody has measured it.</li></ul></div>' +
-        '<div><h3>The arithmetic</h3><p class="formula">d<i>t</i>/d<i>τ</i> = (1 + <i>a</i>/<i>r</i><sup>3/2</sup>) / √(1 − 3/<i>r</i> + 2<i>a</i>/<i>r</i><sup>3/2</sup>)<br><i>T</i><sub>H</sub> = <i>ħc</i>³/8π<i>GMk</i><sub>B</sub> (no spin)</p>' +
-        '<p class="note">Radii are in units of <i>GM</i>/<i>c</i>², orbits are circular, prograde and equatorial. The lifetime is the standard estimate for a non-spinning hole radiating photons only.</p></div>'
-    }
-  };
-
-  function setScene(name) {
-    scene = name;
-    Array.prototype.forEach.call($('grav-scene').children, function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-scene') === name ? 'true' : 'false'); });
-    $('tower-controls').hidden = name !== 'tower';
-    $('hole-controls').hidden = name !== 'hole';
-    $('grav-title').textContent = TEXT[name].title;
-    $('grav-premise').textContent = TEXT[name].premise;
-    $('grav-explain').innerHTML = TEXT[name].explain;
-    nudge();
-  }
-  function nudge() {
-    var f = field(), el = $('grav-nudge');
-    el.hidden = scene !== 'tower' || f.per > 1e-3;
-    if (!el.hidden) $('grav-nudge-text').textContent = 'With these dials one storey changes a clock’s rate by ' + A.num(f.per, 2) + '. The effect is real and far too small to watch.';
-  }
-
-  var roClock = 0;
-  function frame(now) {
-    raf = requestAnimationFrame(frame);
-    var dt = Math.min(0.05, (now - last) / 1000 || 0); last = now;
-    roClock += dt;
-    if (scene === 'tower') {
-      var f = stepTower(dt); drawTower(f);
-      if (roClock > 0.12) { roClock = 0; towerReadouts(f); $('floor-out').textContent = T.floor === 0 ? 'street' : String(T.floor); }
-    } else {
-      var b = stepHole(dt); drawHole(b);
-      if (roClock > 0.12) { roClock = 0; holeReadouts(b); }
-    }
-  }
-
-  function bind() {
-    Array.prototype.forEach.call($('grav-scene').children, function (b) {
-      b.addEventListener('click', function () { setScene(b.getAttribute('data-scene')); });
-    });
-    $('floor').addEventListener('input', function (e) { T.floor = Number(e.target.value); });
-    $('tower-speed').addEventListener('input', function (e) { T.lapse = Number(e.target.value); $('tower-speed-out').textContent = '×' + A.num(Math.pow(10, T.lapse), 2); });
-    $('tower-speed-out').textContent = '×1';
-    $('tower-sync').addEventListener('click', resetTower);
-    $('grav-nudge-btn').addEventListener('click', function () { A.set({ c: 10 }); });
-    $('mass').addEventListener('input', function (e) { H.massExp = Number(e.target.value); });
-    $('spin').addEventListener('input', function (e) { H.spinS = Number(e.target.value); H.film = false; });
-    $('orbit').addEventListener('input', function (e) { H.orbitS = Number(e.target.value); });
-    $('stay').addEventListener('input', function (e) { H.stay = Number(e.target.value); });
-    $('hole-film').addEventListener('click', function () {
-      H.massExp = 38.3; H.spinS = 1; H.film = true; H.orbitS = 0; H.stay = 1; H.tFar = 0;
-      $('mass').value = 38.3; $('spin').value = 1; $('orbit').value = 0; $('stay').value = 1;
-    });
-    $('hole-plain').addEventListener('click', function () {
-      H.spinS = 0; H.film = false; H.orbitS = 0; H.tFar = 0; $('spin').value = 0; $('orbit').value = 0;
-    });
-  }
-
-  CGH.gravity = {
-    init: function () {
-      canvas = $('grav-canvas'); ctx = canvas.getContext('2d');
-      resetTower(); bind(); setScene('tower');
-      A.registerTab('gravity', {
-        show: function () { nudge(); last = performance.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); },
-        hide: function () { cancelAnimationFrame(raf); }
-      });
-      A.onChange(function () { if (A.currentTab() === 'gravity') nudge(); });
-    },
-    tower: T, hole: H
-  };
-})();
-
-/* cGħ Lab — Quantum: a football in a yard, with ħ large enough to see.
- *   Two doors  2-D Schrödinger equation, a wall with two openings, hits recorded on the back wall
- *   Fence      2-D, a barrier slightly higher than the ball's energy (tunnelling)
- *   Drop       a ball over a floor under gravity; separable, so the vertical part is solved in 1-D
- */
-(function () {
-  'use strict';
-  var P = CGH.physics, QC = CGH.qcore, A = CGH.app, $ = A.$;
-  var M = P.REF.ball, N2 = 128, L2 = 8, N1 = 512, L1 = 4, ZF = 0.4, ABS = 0.75;
-  var WX0 = 3.5, WX1 = 3.75, SEP = 1.5, DOOR = 0.5, FX = 4.0, BALL_R = 0.11;
-  var canvas, ctx, off, offCtx, img, raf = 0, last = 0;
-  var Q = {
-    scene: 'doors', speed: 2, eta: 1.2, thick: 0.25, drop: 2, phase: false, paused: false, ground: false,
-    sim: null, classical: false, t: 0, pr: null, accum: null, runs: 0, landed: 0, back: 0, hits: [],
-    marker: null, slow: 1, ref: 0, latX: 2, latS: 0.5, latT: 0, done: false, wait: 0
-  };
-
-  function params() {
-    var hbar = A.state.hbar, g = P.earthGravity(A.state.G), p = { hbar: hbar, g: g };
-    if (Q.scene === 'drop') {
-      var b = P.bouncer(M, g, hbar), dz = L1 / N1;
-      p.b = b; p.vmax = Math.sqrt(2 * g * Q.drop);
-      p.lam = P.deBroglie(M, p.vmax, hbar);
-      p.Eref = Q.ground ? 4 * b.energies[0] : Math.max(M * g * Q.drop, 2 * b.energies[0]);
-      p.dt = Math.min(0.02 * hbar / p.Eref, 4 * M * dz * dz / (Math.PI * Math.PI * hbar));
-      p.classical = Q.ground ? b.z0 < 6 * dz : p.lam < 4 * dz;
-      p.period = 2 * Math.sqrt(2 * Q.drop / g);
-    } else {
-      var dx = L2 / N2;
-      p.E = 0.5 * M * Q.speed * Q.speed;
-      p.lam = P.deBroglie(M, Q.speed, hbar);
-      p.Eref = p.E * (Q.scene === 'fence' ? Math.max(1, Q.eta) : 1);
-      p.dt = Math.min(0.1 * hbar / p.Eref, 4 * M * dx * dx / (Math.PI * Math.PI * hbar));
-      p.classical = p.lam < 4 * dx;
-      p.V0 = Q.eta * p.E;
-    }
-    return p;
-  }
-
-  function absorber(x, y, g0) {
-    var d = Math.min(x, L2 - x, y, L2 - y);
-    if (d >= ABS) return 0;
-    var s = (ABS - d) / ABS;
-    return g0 * s * s;
-  }
-  function isWall(x, y) { return x > WX0 && x < WX1 && Math.abs(Math.abs(y - L2 / 2) - SEP / 2) > DOOR / 2; }
-
-  function launch() {
-    var p = Q.pr;
-    Q.t = 0; Q.done = false; Q.wait = 0; Q.marker = null; Q.ref = 0;
-    if (p.classical || !Q.sim) return;
-    if (Q.scene === 'doors') Q.sim.gaussian(1.9, L2 / 2, 0.45, 1.0, Q.speed, 0);
-    else if (Q.scene === 'fence') Q.sim.gaussian(2.0, L2 / 2, 0.5, 1.3, Q.speed, 0);
-    else {
-      Q.latX = L1 / 2; Q.latS = 0.5; Q.latT = 0;
-      if (Q.ground) {
-        var zs = []; for (var i = 0; i < N1; i++) zs.push((Q.sim.z(i) - ZF) / p.b.z0 - P.AIRY_ZEROS[0]);
-        var ai = QC.airyShape(zs);
-        Q.sim.set(function (z) { var k = Math.round(z / Q.sim.dz - 0.5); return [z > ZF ? ai[k] : 0, 0]; });
-      } else {
-        var zc = ZF + Q.drop;
-        Q.sim.set(function (z) { return [z > ZF ? Math.exp(-(z - zc) * (z - zc) / (4 * 0.18 * 0.18)) : 0, 0]; });
-      }
-    }
-  }
-
-  // Rebuild the solver for the current scene, sliders and dials.
-  function reset() {
-    var p = Q.pr = params();
-    Q.accum = new Float64Array(N2); Q.runs = 0; Q.landed = 0; Q.back = 0; Q.hits = []; Q.sim = null;
-    if (!p.classical) {
-      if (Q.scene === 'drop') {
-        Q.sim = new QC.Sim1D({ N: N1, L: L1, m: M, hbar: p.hbar });
-        Q.sim.build(function (z) { return { V: M * p.g * (z - ZF), wall: z < ZF }; });
-      } else {
-        var g0 = 14 * Q.speed / ABS;
-        Q.sim = new QC.Sim({ N: N2, L: L2, m: M, hbar: p.hbar });
-        Q.sim.screenFrom = Math.round((L2 - ABS) / Q.sim.dx);
-        if (Q.scene === 'doors') Q.sim.build(function (x, y) { return { wall: isWall(x, y), damp: absorber(x, y, g0) }; });
-        else Q.sim.build(function (x, y) { return { V: x > FX && x < FX + Q.thick ? p.V0 : 0, damp: absorber(x, y, g0) }; });
-      }
-    }
-    launch(); nudge(); labels();
-  }
-
-  // One kick is over: add what reached the back wall to the tally and record where this ball landed.
-  function finish() {
-    if (Q.done) return;
-    Q.done = true; Q.wait = 0.5;
-    if (Q.scene === 'drop' || Q.pr.classical) return;
-    var s = Q.sim.screen, tot = 0, j;
-    for (j = 0; j < N2; j++) { Q.accum[j] += s[j]; tot += s[j]; }
-    Q.runs++;
-    sampleHits(1);
-  }
-  function sampleHits(n) {
-    var tot = 0, j; for (j = 0; j < N2; j++) tot += Q.accum[j];
-    if (!Q.runs) return;
-    var pLand = tot / Q.runs;
-    for (var k = 0; k < n; k++) {
-      if (Math.random() > pLand) { Q.back++; continue; }
-      var target = Math.random() * tot, acc = 0;
-      for (j = 0; j < N2; j++) { acc += Q.accum[j]; if (acc >= target) break; }
-      Q.landed++;
-      if (Q.hits.length < 4000) Q.hits.push([Math.min(j, N2 - 1) + Math.random(), Math.random()]);
-    }
-  }
-
-  function classicalBall(t) {            // where Newton's ball is, in yard coordinates; null once it has left
-    if (Q.scene === 'drop') {
-      var g = Q.pr.g, T = Q.pr.period, u = ((t % T) + T) % T, half = T / 2;
-      var tt = u < half ? u : T - u;
-      return [L1 / 2, ZF + BALL_R + Math.max(0, Q.drop - 0.5 * g * tt * tt)];
-    }
-    var v = Q.speed, x0 = Q.scene === 'doors' ? 1.9 : 2.0, y = L2 / 2, x;
-    var stop = Q.scene === 'doors' ? WX0 - BALL_R : FX - BALL_R;
-    var tHit = (stop - x0) / v;
-    if (t < tHit) x = x0 + v * t;
-    else if (Q.scene === 'fence' && Q.eta < 1) {
-      var vin = v * Math.sqrt(1 - Q.eta), tIn = (Q.thick + 2 * BALL_R) / vin;
-      x = t < tHit + tIn ? stop + vin * (t - tHit) : stop + Q.thick + 2 * BALL_R + v * (t - tHit - tIn);
-    } else x = stop - v * (t - tHit);
-    return x < -0.3 || x > L2 + 0.3 ? null : [x, y];
-  }
-
-  function advance(dtReal) {
-    var p = Q.pr;
-    if (Q.paused) return;
-    if (Q.done) { Q.wait -= dtReal; if (Q.wait <= 0 && Q.scene !== 'drop') launch(); return; }
-    if (p.classical) {
-      Q.t += dtReal;
-      if (Q.scene !== 'drop' && !classicalBall(Q.t)) { Q.done = true; Q.wait = 0.4; }
-      return;
-    }
-    var want = Math.min(dtReal, 0.05);
-    if (want <= 0) return;
-    Q.acc = (Q.acc || 0) + want;                       // run in real time, in whole solver steps
-    var steps = Math.floor(Q.acc / p.dt), t0 = performance.now(), done = 0, capped = false;
-    for (var i = 0; i < steps; i++) { Q.sim.step(p.dt); done++; if (performance.now() - t0 > 11) { capped = done < steps; break; } }
-    var adv = done * p.dt;
-    Q.acc = capped ? 0 : Q.acc - adv;                  // if the machine cannot keep up, play in slow motion
-    Q.t += adv; Q.latT += adv;
-    Q.slow += ((capped ? adv / want : 1) - Q.slow) * 0.1;
-    if (Q.scene !== 'drop' && (Q.t > 1.7 * L2 / Q.speed || (Q.t > 1 && Q.sim.absorbed > 0.985))) finish();
-    if (Q.marker) { Q.marker.life -= dtReal; if (Q.marker.life <= 0) Q.marker = null; }
-  }
-
-  /* ---------- drawing ---------- */
-  function hsv(hh, v) {                  // hue in turns, full saturation
-    var k = function (n) { var a = (n + hh * 6) % 6; return v * (1 - Math.max(0, Math.min(a, 4 - a, 1))); };
-    return [k(5), k(3), k(1)];
-  }
-  function paint(W, Hh, density, phase) {
-    if (!off || off.width !== W || off.height !== Hh) {
-      off = document.createElement('canvas'); off.width = W; off.height = Hh; offCtx = off.getContext('2d'); img = offCtx.createImageData(W, Hh);
-    }
-    var d = img.data, n = W * Hh, mx = 0, q;
-    for (q = 0; q < n; q++) if (density[q] > mx) mx = density[q];
-    if (mx > Q.ref) Q.ref = mx;
-    var ref = Math.max(mx, 0.03 * Q.ref) || 1;
-    for (q = 0; q < n; q++) {
-      var v = Math.pow(Math.min(1, density[q] / ref), 0.5), o = q * 4, r, g, b;
-      if (phase) { var c = hsv(phase[q], v); r = c[0]; g = c[1]; b = c[2]; }
-      else { var w = v * v * v; r = 0.91 * v + 0.09 * w; g = 0.47 * v + 0.53 * w; b = 0.76 * v + 0.24 * w; }
-      d[o] = 10 + 245 * r; d[o + 1] = 15 + 240 * g; d[o + 2] = 22 + 233 * b; d[o + 3] = 255;
-    }
-    offCtx.putImageData(img, 0, 0);
-  }
-
-  var dens2 = new Float32Array(N2 * N2), ph2 = new Float32Array(N2 * N2);
-  var dens1 = new Float32Array(128 * 256);
-
-  function draw() {
-    var s = A.fit(canvas, 2), w = s.w, h = s.h, p = Q.pr;
-    ctx.setTransform(s.dpr, 0, 0, s.dpr, 0, 0);
-    ctx.fillStyle = '#0a0f15'; ctx.fillRect(0, 0, w, h);
-    var strip = w < 520 ? 66 : 120, info = w > 820 ? 210 : 0;
-    var side = Math.min(h - 8, w - strip - info - 8), ox = 4, oy = Math.max(4, (h - side) / 2);
-    if (w < 520) oy = 4;
-    var Lw = Q.scene === 'drop' ? L1 : L2, sc = side / Lw;
-    function X(x) { return ox + x * sc; }
-    function Y(y) { return oy + (Lw - y) * sc; }
-    var q, i, j;
-
-    if (!p.classical && Q.sim) {
-      if (Q.scene === 'drop') {
-        var sx = P.spread(Q.latS, Q.latT, M, p.hbar), re = Q.sim.re, im = Q.sim.im;
-        for (j = 0; j < 256; j++) {
-          var k = N1 - 2 - 2 * j, pz = re[k] * re[k] + im[k] * im[k] + re[k + 1] * re[k + 1] + im[k + 1] * im[k + 1];
-          for (i = 0; i < 128; i++) { var xx = (i + 0.5) * L1 / 128 - Q.latX; dens1[j * 128 + i] = pz * Math.exp(-xx * xx / (2 * sx * sx)) / sx; }
-        }
-        paint(128, 256, dens1, null);
-      } else {
-        var r2 = Q.sim.re, i2 = Q.sim.im;
-        for (q = 0; q < N2 * N2; q++) {
-          dens2[q] = r2[q] * r2[q] + i2[q] * i2[q];
-          if (Q.phase) ph2[q] = Math.atan2(i2[q], r2[q]) / 6.2831853 + 0.5;
-        }
-        paint(N2, N2, dens2, Q.phase ? ph2 : null);
-      }
-      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(off, ox, oy, side, side);
-    } else { ctx.fillStyle = '#0d141c'; ctx.fillRect(ox, oy, side, side); }
-
-    ctx.strokeStyle = '#3a4756'; ctx.lineWidth = 1; ctx.strokeRect(ox + 0.5, oy + 0.5, side - 1, side - 1);
-    ctx.font = '12px ' + A.css('--font-text'); ctx.textBaseline = 'middle';
-
-    // furniture
-    if (Q.scene === 'doors') {
-      ctx.fillStyle = '#c9d1d9';
-      var e1 = L2 / 2 - SEP / 2 - DOOR / 2, e2 = L2 / 2 - SEP / 2 + DOOR / 2, e3 = L2 / 2 + SEP / 2 - DOOR / 2, e4 = L2 / 2 + SEP / 2 + DOOR / 2;
-      [[0, e1], [e2, e3], [e4, L2]].forEach(function (seg) { ctx.fillRect(X(WX0), Y(seg[1]), (WX1 - WX0) * sc, (seg[1] - seg[0]) * sc); });
-    } else if (Q.scene === 'fence') {
-      ctx.fillStyle = 'rgba(201,209,217,0.38)'; ctx.fillRect(X(FX), Y(L2), Q.thick * sc, side);
-      ctx.strokeStyle = '#c9d1d9'; ctx.strokeRect(X(FX) + 0.5, Y(L2) + 0.5, Q.thick * sc - 1, side - 1);
-    } else {
-      ctx.fillStyle = '#566473'; ctx.fillRect(ox, Y(ZF), side, ZF * sc - 1);
-    }
-    if (Q.scene !== 'drop') {
-      var xs = X(L2 - ABS);
-      ctx.strokeStyle = '#8b98a5'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(xs, oy); ctx.lineTo(xs, oy + side); ctx.stroke(); ctx.setLineDash([]);
-      if (Q.scene === 'doors') {
-        ctx.fillStyle = '#ffd27a';
-        for (i = 0; i < Q.hits.length; i++) ctx.fillRect(xs + 3 + Q.hits[i][1] * (ABS * sc - 8), oy + Q.hits[i][0] * side / N2 - 1, 2, 2);
-      }
-    }
-    // Newton's ball, for comparison
-    var cb = classicalBall(Q.t);
-    if (cb && !(Q.scene === 'drop' && Q.ground)) {
-      ctx.beginPath(); ctx.arc(X(cb[0]), Y(cb[1]), Math.max(4, BALL_R * sc), 0, 6.2832);
-      if (p.classical) { ctx.fillStyle = '#f4f7fa'; ctx.fill(); }
-      ctx.strokeStyle = '#0a0f15'; ctx.lineWidth = 4; ctx.stroke();                  // dark halo so the ring shows on the glow
-      ctx.strokeStyle = '#ffd27a'; ctx.lineWidth = 1.75; ctx.setLineDash(p.classical ? [] : [3, 3]); ctx.stroke(); ctx.setLineDash([]);
-    }
-    if (Q.marker) {
-      ctx.beginPath(); ctx.arc(X(Q.marker.x), Y(Q.marker.y), 10 + 26 * (1 - Q.marker.life), 0, 6.2832);
-      ctx.strokeStyle = 'rgba(255,210,122,' + Q.marker.life + ')'; ctx.lineWidth = 2; ctx.stroke();
-    }
-    // scale: one metre, and the ball's wavelength if it fits
-    var by = oy + 34;
-    ctx.strokeStyle = '#f4f7fa'; ctx.fillStyle = '#f4f7fa'; ctx.lineWidth = 2; ctx.textAlign = 'left';
-    ctx.beginPath(); ctx.moveTo(ox + 10, by); ctx.lineTo(ox + 10 + sc, by); ctx.stroke();
-    ctx.fillText('1 m', ox + 14 + sc, by);
-    if (!p.classical && p.lam < Lw * 0.8) {
-      ctx.strokeStyle = '#e878c2'; ctx.fillStyle = '#e878c2';
-      ctx.beginPath(); ctx.moveTo(ox + 10, by - 14); ctx.lineTo(ox + 10 + p.lam * sc, by - 14); ctx.stroke();
-      ctx.fillText('λ', ox + 14 + p.lam * sc, by - 14);
-    }
-    if (!p.classical && Q.slow < 0.8) { ctx.fillStyle = '#8b98a5'; ctx.textAlign = 'right'; ctx.fillText('slow motion ×' + Q.slow.toFixed(2), ox + side - 8, oy + side - 12); }
-
-    // the strip beside the yard
-    var px = ox + side + 8, pw = strip - 12;
-    ctx.textAlign = 'left'; ctx.fillStyle = '#8b98a5';
-    if (Q.scene === 'doors') {
-      ctx.fillText('back wall', px, oy + 8);
-      var mxA = 0; for (j = 0; j < N2; j++) if (Q.accum[j] > mxA) mxA = Q.accum[j];
-      var live = Q.sim && !p.classical ? Q.sim.screen : null, mxL = 0;
-      if (live) for (j = 0; j < N2; j++) if (live[j] > mxL) mxL = live[j];
-      var src = mxA > 0 ? Q.accum : live, mxS = mxA > 0 ? mxA : mxL;
-      if (src && mxS > 0) {
-        ctx.fillStyle = '#e878c2';
-        for (j = 0; j < N2; j++) ctx.fillRect(px, oy + j * side / N2, pw * src[j] / mxS, side / N2 + 0.5);
-      }
-    } else if (Q.scene === 'fence') {
-      var through = Q.sim && !p.classical ? Q.sim.probRightOf(FX + Q.thick) + sum(Q.sim.screen) : (Q.eta < 1 ? 1 : 0);
-      var formula = P.barrierT(p.E, p.V0, Q.thick, M, p.hbar);
-      ctx.fillText('got through', px, oy + 8);
-      var bh = side - 60, bx = px + 6, bw = Math.min(34, pw - 12), by0 = oy + 26;
-      ctx.strokeStyle = '#3a4756'; ctx.lineWidth = 1; ctx.strokeRect(bx + 0.5, by0 + 0.5, bw, bh);
-      ctx.fillStyle = '#e878c2'; ctx.fillRect(bx, by0 + bh * (1 - through), bw, bh * through);
-      if (!p.classical) {
-        var fy = by0 + bh * (1 - formula);
-        ctx.strokeStyle = '#ffd27a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bx - 4, fy); ctx.lineTo(bx + bw + 4, fy); ctx.stroke();
-        ctx.fillStyle = '#ffd27a'; if (pw > 80) ctx.fillText('formula', bx + bw + 8, fy);
-      }
-      ctx.fillStyle = '#f4f7fa'; ctx.fillText((100 * through).toFixed(1) + ' %', px, by0 + bh + 16);
-    } else {
-      ctx.fillText(pw > 80 ? 'allowed heights' : 'allowed', px, oy + 8);
-      var hs = p.b.heights;
-      for (i = 0; i < hs.length; i++) {
-        var yy = Y(ZF + hs[i]); if (yy < oy + 18) break;
-        ctx.strokeStyle = '#e878c2'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(px, yy); ctx.lineTo(px + pw * 0.5, yy); ctx.stroke();
-        ctx.fillStyle = '#e878c2'; ctx.fillText(String(i + 1), px + pw * 0.5 + 5, yy);
-      }
-      if (Q.sim && !p.classical) {
-        var my = Y(Q.sim.mean());
-        ctx.fillStyle = '#f4f7fa'; ctx.beginPath(); ctx.moveTo(px - 2, my); ctx.lineTo(px - 9, my - 5); ctx.lineTo(px - 9, my + 5); ctx.fill();
-      }
-    }
-    // legend, where there is room
-    if (info) {
-      var lx = ox + side + strip + 12, ly = oy + 8, lh = 20;
-      ctx.fillStyle = '#8b98a5'; ctx.textAlign = 'left';
-      var lines = ['glow: where the ball may', 'be found, |ψ|²', '', 'yellow ring: the ball', 'Newton predicts'];
-      if (Q.scene === 'doors') lines.push('', 'yellow dots: where each', 'kicked ball landed');
-      if (Q.scene === 'fence') lines.push('', 'yellow line: textbook', 'tunnelling formula');
-      if (Q.scene === 'drop') lines.push('', 'numbered marks: how high', 'each energy level reaches');
-      lines.forEach(function (t, n) { ctx.fillText(t, lx, ly + n * lh); });
-    }
-  }
-  function sum(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s; }
-
-  /* ---------- text around the picture ---------- */
-  var TEXT = {
-    doors: {
-      title: 'Two doors',
-      premise: 'A football is rolled at a wall with two open doors. Newton’s ball hits the wall between them and comes back. Watch what the real one does, and where each kick lands on the back wall.',
-      explain: '<div><h3>What to try</h3><ul>' +
-        '<li>Let a few kicks finish, then press “100 kicks”. Each ball lands in one spot; the stripes only exist in the tally.</li>' +
-        '<li>Press “Look at it” just after the wave passes the doors. Finding the ball near one door wipes out the other path, and that kick lands without stripes.</li>' +
-        '<li>Lower <span class="sym sym-h">ħ</span>. The stripes crowd together until the grid cannot draw them and the ball simply bounces off the wall.</li></ul></div>' +
-        '<div><h3>The arithmetic</h3><p class="formula"><i>λ</i> = 2π<i>ħ</i>/<i>mv</i> &nbsp; stripe spacing ≈ <i>λD</i>/<i>d</i></p>' +
-        '<p class="note">Doors 0.5 m wide, 1.5 m apart; back wall 3.5 m behind them. The yard’s edges absorb the wave. One isolated particle, no air, no warmth: a real football loses its wave nature to its surroundings in far less than any time you could name.</p></div>'
-    },
-    fence: {
-      title: 'Fence',
-      premise: 'The ball rolls at a low fence that would take a little more energy to clear than the ball has. Newton’s ball bounces back every time.',
-      explain: '<div><h3>What to try</h3><ul>' +
-        '<li>Set the fence above 1 and watch part of the wave leak through. That fraction is the chance a given ball ends up on the far side.</li>' +
-        '<li>Make the fence thicker. The leak falls off exponentially.</li>' +
-        '<li>Set the fence a little below 1. Newton’s ball always clears it; the real one still sometimes comes back.</li></ul></div>' +
-        '<div><h3>The arithmetic</h3><p class="formula"><i>T</i> = [1 + <i>V</i>₀² sinh²(<i>κw</i>) / 4<i>E</i>(<i>V</i>₀ − <i>E</i>)]⁻¹ &nbsp; <i>κ</i> = √(2<i>m</i>(<i>V</i>₀ − <i>E</i>))/<i>ħ</i></p>' +
-        '<p class="note">The yellow line is this plane-wave formula. The simulated ball is a packet with a spread of energies, so the two agree closely, not exactly.</p></div>'
-    },
-    drop: {
-      title: 'Drop',
-      premise: 'Side view. The ball is released above a hard floor and falls under gravity. This scene uses two dials at once: ħ and G.',
-      explain: '<div><h3>What to try</h3><ul>' +
-        '<li>Watch a few bounces. The wave reflects off the floor and interferes with itself; the average height still follows Newton for a while.</li>' +
-        '<li>Press “Rest it on the floor”. The lowest state hovers: squeezing the ball onto the floor would cost more energy than lifting it.</li>' +
-        '<li>Turn <span class="sym sym-g">G</span> or <span class="sym sym-h">ħ</span> and watch the allowed heights move. Neutrons do exactly this over a mirror, with rungs about 14 µm high.</li></ul></div>' +
-        '<div><h3>The arithmetic</h3><p class="formula"><i>z</i>₀ = (<i>ħ</i>²/2<i>m</i>²<i>g</i>)<sup>1/3</sup> &nbsp; <i>E<sub>n</sub></i> = <i>mgz</i>₀<i>a<sub>n</sub></i>, &nbsp; <i>a<sub>n</sub></i> = 2.34, 4.09, 5.52 …</p>' +
-        '<p class="note">The <i>a<sub>n</sub></i> are the zeros of the Airy function. Gravity here is Earth’s pull under your <span class="sym">G</span>, treated as a fixed classical field. Whether gravity itself has quantum states is the open question this scene does not touch.</p></div>'
-    }
-  };
-
-  function labels() {
-    var p = Q.pr, n = A.num, rows;
-    $('q-speed-out').textContent = Q.speed.toFixed(1) + ' m/s';
-    $('q-height-out').textContent = Q.eta.toFixed(2) + ' × ball energy';
-    $('q-thick-out').textContent = A.length(Q.thick, 3);
-    $('q-drop-out').textContent = Q.drop.toFixed(1) + ' m';
-    if (Q.scene === 'drop') {
-      rows = [
-        ['Gravity here, g', n(p.g) + ' m/s²'],
-        ['Height scale z₀', A.length(p.b.z0, 3)],
-        ['Lowest state hovers at', A.length(2 / 3 * p.b.heights[0], 3)],
-        ['First three rungs reach', p.b.heights.slice(0, 3).map(function (x) { return A.length(x, 2); }).join(', ')],
-        ['Shortest wavelength in the fall', A.length(p.lam, 3)]
-      ];
-    } else {
-      rows = [
-        ['Ball', '0.43 kg at ' + Q.speed.toFixed(1) + ' m/s'],
-        ['Wavelength λ', A.length(p.lam, 3)],
-        ['Energy', n(p.E) + ' J']
-      ];
-      if (Q.scene === 'doors') {
-        rows.push(['Stripe spacing on the back wall', A.length(p.lam * (L2 - ABS - WX1) / SEP, 2)]);
-        rows.push(['Kicks: landed, came back', Q.landed + ', ' + Q.back]);
-      } else {
-        rows.push(['Textbook chance of getting through', (100 * P.barrierT(p.E, p.V0, Q.thick, M, p.hbar)).toFixed(1) + ' %']);
-        rows.push(['Newton says', Q.eta > 1 ? 'never' : 'always']);
-      }
-    }
-    $('q-readouts').innerHTML = rows.map(function (r) { return '<div class="readout"><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; }).join('');
-  }
-  function nudge() {
-    var p = Q.pr, el = $('q-nudge');
-    el.hidden = !p.classical;
-    if (p.classical) {
-      $('q-nudge-text').textContent = 'With ħ = ' + A.num(p.hbar) + ' J·s this ball’s wavelength is ' + A.length(p.lam, 2) +
-        (p.lam < 8.4e-16 ? ', ' + A.num(8.4e-16 / p.lam, 2) + ' times smaller than a proton' : '') + '. Nothing here can show it, so the ball goes where Newton says.';
-    }
-  }
-  function setScene(name) {
-    Q.scene = name; Q.ground = false;
-    Array.prototype.forEach.call($('q-scene').children, function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-scene') === name ? 'true' : 'false'); });
-    $('q-speed-field').hidden = name === 'drop';
-    $('q-height-field').hidden = name !== 'fence';
-    $('q-thick-field').hidden = name !== 'fence';
-    $('q-drop-field').hidden = name !== 'drop';
-    $('q-ground').hidden = name !== 'drop';
-    $('q-many').hidden = name !== 'doors';
-    $('q-phase').parentNode.hidden = name === 'drop';
-    $('q-restart').textContent = name === 'drop' ? 'Drop again' : 'Kick again';
-    $('q-title').textContent = TEXT[name].title;
-    $('q-premise').textContent = TEXT[name].premise;
-    $('q-explain').innerHTML = TEXT[name].explain;
-    reset();
-  }
-
-  var roClock = 0;
-  function frame(now) {
-    raf = requestAnimationFrame(frame);
-    var dt = Math.min(0.05, (now - last) / 1000 || 0); last = now;
-    advance(dt); draw();
-    roClock += dt; if (roClock > 0.25) { roClock = 0; labels(); }
-  }
-
-  function bind() {
-    Array.prototype.forEach.call($('q-scene').children, function (b) { b.addEventListener('click', function () { setScene(b.getAttribute('data-scene')); }); });
-    $('q-speed').addEventListener('input', function (e) { Q.speed = Number(e.target.value); reset(); });
-    $('q-height').addEventListener('input', function (e) { Q.eta = Number(e.target.value); reset(); });
-    $('q-thick').addEventListener('input', function (e) { Q.thick = Number(e.target.value); reset(); });
-    $('q-drop').addEventListener('input', function (e) { Q.drop = Number(e.target.value); Q.ground = false; reset(); });
-    $('q-phase').addEventListener('change', function (e) { Q.phase = e.target.checked; });
-    $('q-restart').addEventListener('click', function () { if (Q.scene === 'drop' && Q.ground) { Q.ground = false; reset(); } else launch(); });
-    $('q-ground').addEventListener('click', function () { Q.ground = true; reset(); });
-    $('q-many').addEventListener('click', function () { if (!Q.runs) finish(); sampleHits(100); labels(); });
-    $('q-pause').addEventListener('click', function (e) { Q.paused = !Q.paused; e.target.setAttribute('aria-pressed', Q.paused ? 'true' : 'false'); e.target.textContent = Q.paused ? 'Resume' : 'Pause'; });
-    $('q-look').addEventListener('click', function () {
-      if (!Q.sim || Q.pr.classical || Q.done) return;
-      if (Q.scene === 'drop') {
-        var re = Q.sim.re, im = Q.sim.im, tot = 0, i, acc = 0;
-        for (i = 0; i < N1; i++) tot += re[i] * re[i] + im[i] * im[i];
-        var target = Math.random() * tot, hit = N1 - 1;
-        for (i = 0; i < N1; i++) { acc += re[i] * re[i] + im[i] * im[i]; if (acc >= target) { hit = i; break; } }
-        var z0 = Q.sim.z(hit);
-        for (i = 0; i < N1; i++) { var dz = Q.sim.z(i) - z0, wgt = Math.exp(-dz * dz / (4 * 0.15 * 0.15)); re[i] *= wgt; im[i] *= wgt; }
-        Q.sim.normalise();
-        var sx = P.spread(Q.latS, Q.latT, M, Q.pr.hbar), u = Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(6.2832 * Math.random());
-        Q.latX = Math.max(0.4, Math.min(L1 - 0.4, Q.latX + sx * u)); Q.latS = 0.25; Q.latT = 0;
-        Q.marker = { x: Q.latX, y: z0, life: 1 };
-      } else {
-        var spot = Q.sim.measure(0.25, Math.random);
-        Q.marker = { x: spot.x, y: spot.y, life: 1 };
-      }
-      Q.ref = 0;
-    });
-    $('q-nudge-btn').addEventListener('click', function () { A.set({ hbar: 0.1 }); });
-  }
-
-  CGH.quantum = {
-    init: function () {
-      canvas = $('q-canvas'); ctx = canvas.getContext('2d');
-      bind(); setScene('doors');
-      A.registerTab('quantum', {
-        show: function () { last = performance.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(frame); },
-        hide: function () { cancelAnimationFrame(raf); }
-      });
-      A.onChange(function () { reset(); });
-    },
-    state: Q
-  };
-})();
-
-/* cGħ Lab — start-up. Scenes register themselves, then the shell opens the tab named in the URL. */
-(function () {
-  'use strict';
-  function go() {
-    CGH.app.init();
-    CGH.light.init();
-    CGH.gravity.init();
-    CGH.quantum.init();
-    CGH.app.start();
-  }
+  function go() { CGH.app.init(); CGH.world.init(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
 })();
 </script>

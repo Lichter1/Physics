@@ -1,32 +1,39 @@
 <div class="app">
 
-  <aside class="console" aria-label="The three constants">
+  <aside class="console" aria-label="The dials">
     <header>
-      <h1 class="brand"><span class="sym sym-c">c</span><span class="sym sym-g">G</span><span class="sym sym-h">ħ</span><span class="lab">Lab</span></h1>
+      <h1 class="brand"><span class="sym sym-c">c</span><span class="sym sym-g">G</span><span class="sym sym-h">ħ</span><span class="lab">World</span></h1>
     </header>
-    <p class="tagline">Three constants decide how far from everyday life relativity, gravity and quantum mechanics sit. Turn them until the strange parts happen at walking pace.</p>
+    <p class="tagline">One small planet, one street, four dials. Each dial is a pure number that says how strongly relativity, gravity or quantum mechanics shows up at human scale. Turn one and walk.</p>
 
     <div class="dials">
       <div class="dial" data-k="c">
-        <span class="sym sym-c">c</span><span class="dial-name">speed of light</span>
-        <button class="link-btn" type="button" id="reset-c">real value</button>
-        <output class="dial-value" id="val-c" for="dial-c"></output>
-        <span class="dial-note" id="note-c"></span>
-        <input type="range" id="dial-c" min="0" max="1000" step="1" aria-label="Speed of light">
+        <span class="sym sym-c">c</span><span class="dial-name">light, in walking speeds</span>
+        <button class="link-btn" type="button" id="reset-cw">real value</button>
+        <output class="dial-value" id="val-cw" for="dial-cw"></output>
+        <span class="dial-note" id="note-cw"></span>
+        <input type="range" id="dial-cw" min="0" max="1000" step="1" aria-label="Speed of light in walking speeds">
       </div>
       <div class="dial" data-k="G">
-        <span class="sym sym-g">G</span><span class="dial-name">gravitational constant</span>
-        <button class="link-btn" type="button" id="reset-G">real value</button>
-        <output class="dial-value" id="val-G" for="dial-G"></output>
-        <span class="dial-note" id="note-G"></span>
-        <input type="range" id="dial-G" min="0" max="1000" step="1" aria-label="Gravitational constant">
+        <span class="sym sym-g">G</span><span class="dial-name">how compact the planet is</span>
+        <button class="link-btn" type="button" id="reset-comp">real value</button>
+        <output class="dial-value" id="val-comp" for="dial-comp"></output>
+        <span class="dial-note" id="note-comp"></span>
+        <input type="range" id="dial-comp" min="0" max="1000" step="1" aria-label="Planet compactness">
       </div>
       <div class="dial" data-k="hbar">
-        <span class="sym sym-h">ħ</span><span class="dial-name">Planck constant</span>
-        <button class="link-btn" type="button" id="reset-hbar">real value</button>
-        <output class="dial-value" id="val-hbar" for="dial-hbar"></output>
-        <span class="dial-note" id="note-hbar"></span>
-        <input type="range" id="dial-hbar" min="0" max="1000" step="1" aria-label="Planck constant">
+        <span class="sym sym-h">ħ</span><span class="dial-name">your wavelength at walking pace</span>
+        <button class="link-btn" type="button" id="reset-lam">real value</button>
+        <output class="dial-value" id="val-lam" for="dial-lam"></output>
+        <span class="dial-note" id="note-lam"></span>
+        <input type="range" id="dial-lam" min="0" max="1000" step="1" aria-label="Your wavelength at walking pace">
+      </div>
+      <div class="dial" data-k="hbar">
+        <span class="sym sym-h">ħ</span><span class="dial-name">light, in photons per pixel</span>
+        <button class="link-btn" type="button" id="reset-photons">real value</button>
+        <output class="dial-value" id="val-photons" for="dial-photons"></output>
+        <span class="dial-note" id="note-photons"></span>
+        <input type="range" id="dial-photons" min="0" max="1000" step="1" aria-label="Photons per pixel per frame">
       </div>
     </div>
 
@@ -42,173 +49,73 @@
   </aside>
 
   <div class="stage">
-    <nav class="tabs" role="tablist" aria-label="Scenes">
-      <button class="tab" role="tab" id="tab-map" data-tab="map" type="button">Map</button>
-      <button class="tab" role="tab" id="tab-light" data-tab="light" type="button"><span class="sym sym-c">c</span>Light</button>
-      <button class="tab" role="tab" id="tab-gravity" data-tab="gravity" type="button"><span class="sym sym-g">G</span>Gravity</button>
-      <button class="tab" role="tab" id="tab-quantum" data-tab="quantum" type="button"><span class="sym sym-h">ħ</span>Quantum</button>
-    </nav>
+    <div class="panel-head">
+      <h2>Walk round a small planet</h2>
+      <p>The planet is 382 m across, with one street running round it. Every pixel is a ray of light traced back through curved spacetime to whatever sent it, with the time it took. You start facing a clock tower; behind you is a wall with two doors.</p>
+    </div>
 
-    <!-- ================= MAP ================= -->
-    <section class="panel" id="panel-map" role="tabpanel" aria-labelledby="tab-map">
-      <div class="panel-head">
-        <h2>Which physics does a person need?</h2>
-        <p>Every corner of this cube is a theory. Which corner you live in depends on whether each constant leaves a mark at the scale of a person, a street and a football. Pick a corner to set the dials there.</p>
-      </div>
-      <div class="map-top">
-        <div class="cube-wrap"><canvas id="cube" aria-label="Cube of theories: axes are 1/c, G and ħ"></canvas></div>
-        <ul class="theories" id="theories"></ul>
-      </div>
-      <h3 class="section-title">What these settings do to an ordinary day</h3>
-      <div class="table-scroll">
-        <table class="everyday">
-          <thead><tr><th scope="col">Everyday thing</th><th scope="col">Now</th><th scope="col">In our universe</th><th scope="col">So</th></tr></thead>
-          <tbody id="everyday"></tbody>
-        </table>
-      </div>
-      <p class="note"><strong>The rule of the game.</strong> Only ratios without units are physical. Changing <span class="sym">c</span> or <span class="sym">ħ</span> alone also changes the fine-structure constant <span class="formula"><i>α</i> = <i>e</i>²/4π<i>ε</i>₀<i>ħc</i></span>, and with it every atom. This lab does what George Gamow did in <em>Mr&nbsp;Tompkins</em>: it keeps people, streets and footballs intact by decree and changes only how they move, fall and spread. The table shows what that decree hides.</p>
-    </section>
+    <div class="controls">
+      <label class="field"><span>Effort <output id="effort-out"></output></span>
+        <input type="range" id="effort" min="0" max="20" step="0.1" value="0"></label>
+      <button class="btn quiet" type="button" id="w-stop">Stop</button>
+      <button class="btn quiet" type="button" id="w-turn">Turn around</button>
+      <button class="btn" type="button" id="w-look">Look where I am (F)</button>
+      <label class="check"><input type="checkbox" id="w-watched"> Always watched</label>
+      <label class="check"><input type="checkbox" id="w-newton"> Newton’s view</label>
+      <label class="check"><input type="checkbox" id="w-doppler" checked> Colour shift</label>
+      <label class="check"><input type="checkbox" id="w-beam" checked> Brightness shift</label>
+      <button class="btn quiet" type="button" id="w-home">Back to start</button>
+    </div>
 
-    <!-- ================= LIGHT ================= -->
-    <section class="panel" id="panel-light" role="tabpanel" aria-labelledby="tab-light" hidden>
-      <div class="panel-head">
-        <h2>Slow-light street</h2>
-        <p>Ride down a street with clocks overhead and trams passing. Every lamp flashes at the same instant and every clock agrees, in the town's own frame. What reaches your eyes is another matter.</p>
+    <div class="view wide" id="world-view">
+      <canvas id="world-canvas" tabindex="0" aria-label="First-person view. W and S change effort, A and D steer, drag to look, F to look where you are."></canvas>
+      <div class="crosshair" aria-hidden="true"></div>
+      <div class="hud tl" id="w-hud-l"></div>
+      <div class="hud tr" id="w-hud-r"></div>
+      <div class="hud bl" id="w-hud-b"></div>
+      <canvas id="wave-map" width="128" height="128" aria-label="Your wavefunction from above, 32 m across, street running up the page" hidden></canvas>
+      <div class="pad" aria-hidden="true">
+        <button type="button" data-act="left" tabindex="-1">⟲</button>
+        <button type="button" data-act="faster" tabindex="-1">＋</button>
+        <button type="button" data-act="right" tabindex="-1">⟳</button>
+        <button type="button" data-act="look" tabindex="-1">F</button>
+        <button type="button" data-act="slower" tabindex="-1">−</button>
+        <span></span>
       </div>
-      <div class="nudge" id="light-nudge" hidden>
-        <p id="light-nudge-text"></p>
-        <button class="btn" type="button" id="light-nudge-btn">Slow light to 10 m/s</button>
-      </div>
-      <div class="controls">
-        <label class="field"><span>Effort <output id="effort-out"></output></span>
-          <input type="range" id="effort" min="0" max="40" step="0.1" value="0"></label>
-        <div class="field"><span>Show</span>
-          <div class="seg" id="light-mode" role="group" aria-label="What to show">
-            <button type="button" data-mode="0" aria-pressed="true">What you see</button>
-            <button type="button" data-mode="1" aria-pressed="false">What is there</button>
-            <button type="button" data-mode="2" aria-pressed="false">Newton</button>
-          </div></div>
-        <label class="check"><input type="checkbox" id="opt-doppler" checked> Doppler colour</label>
-        <label class="check"><input type="checkbox" id="opt-beam" checked> Beaming</label>
-        <button class="btn quiet" type="button" id="light-stop">Stop</button>
-        <button class="btn quiet" type="button" id="light-turn">Turn around</button>
-      </div>
-      <div class="view wide" id="light-view">
-        <canvas id="light-canvas" tabindex="0" aria-label="First-person view of the street. W and S change effort, A and D steer, drag to look around."></canvas>
-        <div class="crosshair" aria-hidden="true"></div>
-        <div class="hud tl" id="light-hud-l"></div>
-        <div class="hud tr" id="light-hud-r"></div>
-        <div class="hud bl" id="light-hud-b"></div>
-        <div class="pad" aria-hidden="true">
-          <button type="button" data-act="left" tabindex="-1">⟲</button>
-          <button type="button" data-act="faster" tabindex="-1">＋</button>
-          <button type="button" data-act="right" tabindex="-1">⟳</button>
-          <span></span>
-          <button type="button" data-act="slower" tabindex="-1">−</button>
-          <span></span>
-        </div>
-      </div>
-      <dl class="readouts" id="light-readouts"></dl>
-      <div class="explain">
-        <div>
-          <h3>What to try</h3>
-          <ul>
-            <li>Stand still. The lamps flash in a ripple that runs away from you, and far clocks read earlier than near ones. Nothing is out of sync; the light is late.</li>
-            <li>Push the effort up. The street ahead stretches away and bends, things beside you swing into view, and the clock ahead runs fast. Turn around and it runs slow.</li>
-            <li>Switch to “What is there”. That is the street in your frame at this instant: simply squashed along your motion. You never see it that way, because light from its far end left earlier.</li>
-            <li>Ride out and back, then compare your watch with the town clock.</li>
-          </ul>
-        </div>
-        <div>
-          <h3>The arithmetic</h3>
-          <p class="formula"><i>v</i> = <i>c</i> tanh(effort / <i>c</i>) &nbsp; <i>γ</i> = 1/√(1 − <i>v</i>²/<i>c</i>²)<br>
-          cos <i>θ</i>′ = (cos <i>θ</i> + <i>β</i>) / (1 + <i>β</i> cos <i>θ</i>)<br>
-          <i>f</i><sub>seen</sub>/<i>f</i> = <i>γ</i>(1 + <i>β</i> cos <i>θ</i>) &nbsp; brightness ∝ (<i>f</i><sub>seen</sub>/<i>f</i>)³</p>
-          <p class="note">Each vertex is drawn where its light left it: the event on your past light cone, Lorentz-transformed into your frame. Colours are an approximation: three colour bands plus an infrared and an ultraviolet tail, so foliage brightens as its infrared shifts into view.</p>
-        </div>
-      </div>
-    </section>
+    </div>
+    <dl class="readouts" id="w-readouts"></dl>
 
-    <!-- ================= GRAVITY ================= -->
-    <section class="panel" id="panel-gravity" role="tabpanel" aria-labelledby="tab-gravity" hidden>
-      <div class="panel-head">
-        <h2 id="grav-title">Time tower</h2>
-        <p id="grav-premise"></p>
+    <div class="explain">
+      <div>
+        <h3>What each dial does to the view</h3>
+        <ul>
+          <li><span class="sym sym-c">c</span> Moving squeezes the view ahead, tints it blue and brightens it; behind you it reddens and fades. Far clocks read early because their light is old.</li>
+          <li><span class="sym sym-g">G</span> Light falls. The horizon rises, the street ahead curls up, and you see further round the planet. At 2/3 light circles the planet at eye level; beyond that the ground wraps over you and the sky shrinks to a blue disc overhead. The tower-top clock runs fast.</li>
+          <li><span class="sym sym-h">ħ</span> You become a wave. Left alone you spread, and the view overlays every place you might be. Walls reflect you; two doors split you. Looking (F) puts you in one place, at random.</li>
+          <li><span class="sym sym-h">ħ</span> Light arrives in lumps. With few photons per pixel, the scene turns to grain.</li>
+        </ul>
       </div>
-      <div class="controls">
-        <div class="field"><span>Scene</span>
-          <div class="seg" id="grav-scene" role="group" aria-label="Gravity scene">
-            <button type="button" data-scene="tower" aria-pressed="true">Time tower</button>
-            <button type="button" data-scene="hole" aria-pressed="false">Black-hole mission</button>
-          </div></div>
-        <div class="controls" id="tower-controls">
-          <label class="field"><span>Your floor <output id="floor-out"></output></span>
-            <input type="range" id="floor" min="-4" max="10" step="1" value="0"></label>
-          <label class="field"><span>Time lapse <output id="tower-speed-out"></output></span>
-            <input type="range" id="tower-speed" min="0" max="3" step="0.5" value="0"></label>
-          <button class="btn quiet" type="button" id="tower-sync">Synchronise clocks</button>
-        </div>
-        <div class="controls" id="hole-controls" hidden>
-          <label class="field"><span>Mass <output id="mass-out"></output></span>
-            <input type="range" id="mass" min="0" max="41" step="0.05" value="38.3"></label>
-          <label class="field"><span>Spin <output id="spin-out"></output></span>
-            <input type="range" id="spin" min="0" max="1" step="0.002" value="0"></label>
-          <label class="field"><span>Planet orbit <output id="orbit-out"></output></span>
-            <input type="range" id="orbit" min="0" max="1" step="0.002" value="0"></label>
-          <label class="field"><span>Stay on the planet <output id="stay-out"></output></span>
-            <input type="range" id="stay" min="0.25" max="12" step="0.25" value="1"></label>
-          <button class="btn quiet" type="button" id="hole-film">Miller's planet</button>
-          <button class="btn quiet" type="button" id="hole-plain">No spin</button>
-        </div>
+      <div>
+        <h3>What to try</h3>
+        <ul>
+          <li>Press “Light orbits”, look along the street, then look straight up.</li>
+          <li>Press “You are a wave”, walk at the wall between the doors, and watch the map. Press F on the far side, several times from the start.</li>
+          <li>Turn on “Always watched”. Being looked at keeps you sharp, but you jitter: each look kicks your momentum.</li>
+          <li>Tick “Newton’s view” to see the same place with instant, straight light.</li>
+        </ul>
       </div>
-      <div class="nudge" id="grav-nudge" hidden>
-        <p id="grav-nudge-text"></p>
-        <button class="btn" type="button" id="grav-nudge-btn">Slow light to 10 m/s</button>
+      <div>
+        <h3>What is exact, and what is not</h3>
+        <p class="note">Light paths are exact null geodesics of the Schwarzschild metric outside the planet, traced per pixel, with their travel time, gravitational and Doppler shifts. Your own wave obeys the free relativistic wave equation for a spinless particle in two dimensions, with walls. Approximations: colours (a guessed spectrum), sunlight (not bent), the overlay (an average of views, which no single observer sees), and a planet whose mass is set by decree.</p>
       </div>
-      <div class="view tall"><canvas id="grav-canvas" aria-label="Gravity scene"></canvas></div>
-      <dl class="readouts" id="grav-readouts"></dl>
-      <div class="explain" id="grav-explain"></div>
-    </section>
-
-    <!-- ================= QUANTUM ================= -->
-    <section class="panel" id="panel-quantum" role="tabpanel" aria-labelledby="tab-quantum" hidden>
-      <div class="panel-head">
-        <h2 id="q-title">Quantum yard</h2>
-        <p id="q-premise"></p>
+      <div>
+        <h3>Why pure numbers</h3>
+        <p class="note">Only ratios without units are physical. Each dial is one: your walking speed against light, the planet’s horizon radius against its size, your wavelength against a metre, and the photons that reach one pixel. The notes under each dial translate it into <span class="sym">c</span>, <span class="sym">G</span> and <span class="sym">ħ</span>. They also show the catch: the ħ that makes you a 2 m wave would make each photon carry about 3×10³⁵ times its real energy, so a consistent world would be black. The last two dials keep those two effects apart on purpose.</p>
       </div>
-      <div class="controls">
-        <div class="field"><span>Scene</span>
-          <div class="seg" id="q-scene" role="group" aria-label="Quantum scene">
-            <button type="button" data-scene="doors" aria-pressed="true">Two doors</button>
-            <button type="button" data-scene="fence" aria-pressed="false">Fence</button>
-            <button type="button" data-scene="drop" aria-pressed="false">Drop</button>
-          </div></div>
-        <label class="field" id="q-speed-field"><span>Ball speed <output id="q-speed-out"></output></span>
-          <input type="range" id="q-speed" min="0.5" max="4" step="0.1" value="2"></label>
-        <label class="field" id="q-height-field" hidden><span>Fence height <output id="q-height-out"></output></span>
-          <input type="range" id="q-height" min="0.4" max="2.5" step="0.05" value="1.2"></label>
-        <label class="field" id="q-thick-field" hidden><span>Fence thickness <output id="q-thick-out"></output></span>
-          <input type="range" id="q-thick" min="0.125" max="0.75" step="0.0625" value="0.25"></label>
-        <label class="field" id="q-drop-field" hidden><span>Drop height <output id="q-drop-out"></output></span>
-          <input type="range" id="q-drop" min="0.5" max="2.6" step="0.1" value="2"></label>
-        <label class="check"><input type="checkbox" id="q-phase"> Colour by phase</label>
-        <button class="btn quiet" type="button" id="q-restart">Kick again</button>
-        <button class="btn quiet" type="button" id="q-many">100 kicks</button>
-        <button class="btn quiet" type="button" id="q-ground" hidden>Rest it on the floor</button>
-        <button class="btn quiet" type="button" id="q-look">Look at it</button>
-        <button class="btn quiet" type="button" id="q-pause" aria-pressed="false">Pause</button>
-      </div>
-      <div class="nudge" id="q-nudge" hidden>
-        <p id="q-nudge-text"></p>
-        <button class="btn" type="button" id="q-nudge-btn">Raise ħ to 0.1 J·s</button>
-      </div>
-      <div class="view yard"><canvas id="q-canvas" aria-label="Quantum scene"></canvas></div>
-      <dl class="readouts" id="q-readouts"></dl>
-      <div class="explain" id="q-explain"></div>
-    </section>
+    </div>
 
     <footer class="colophon">
-      <p>Special relativity here is exact for the scenes drawn; colours are approximate. The tower uses a uniform field (an accelerating frame); the mission uses circular equatorial orbits around a Kerr black hole. The quantum scenes solve the Schrödinger equation for one particle with no decoherence, which is the generous assumption a football would need. Where all three constants matter at once there is no accepted theory, and the lab says so instead of guessing.</p>
+      <p>cGħ World. The earlier tab-based scenes are in the repository history. Survey of existing tools and sources: RESEARCH.md in the repository.</p>
     </footer>
   </div>
 </div>

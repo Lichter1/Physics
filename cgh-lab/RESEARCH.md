@@ -163,3 +163,49 @@ Ordered by how much each would add for a study group:
    Diósi-Penrose collapse times and the entanglement phase in the Bose-Marletto-Vedral proposal, each
    labelled with the experiment that would test it.
 6. **A headset version,** probably by porting scenes to the OpenRelativity fork.
+
+## 7. Second version: one world instead of three scenes
+
+Feedback on the first version: only the slow-light street built intuition; the gravity and quantum tabs
+were formula displays like many others. The second version applies the one approach that works, walking
+through a familiar place and watching it change, to all three constants at once.
+
+**Pure numbers instead of constants.** Each dial is a ratio without units:
+
+| Dial | Number | Real value here | Plays with |
+|---|---|---|---|
+| c | light speed in walking speeds, c / 1.4 m/s | 2.1×10⁸ | aberration, Doppler, beaming, light delay |
+| G | planet compactness, r_s / R | 2.7×10⁻¹⁸ for a 382 m rock | light bending, horizon, gravitational shifts, clock rates |
+| ħ | your wavelength at walking pace, 2πħ / (m·1.4 m/s) | 6.8×10⁻³⁶ m | you become a wave: spreading, diffraction, collapse |
+| ħ (light) | photons a pixel collects per frame | about 3×10⁵ | grainy light |
+
+Two consequences of thinking in pure numbers turned out to be good intuition in their own right:
+
+- **Strong light bending at street scale needs a street-sized planet.** Bending over a distance L is about
+  gL/c². Making that large with ordinary gravity needs c²/g near L, and any planet much bigger than c²/2g is
+  inside its own horizon. So the world is a 382 m planet, and the G dial is its compactness.
+- **The same ħ hides both quantum effects, in opposite directions.** With atoms and colours held fixed, a
+  photon's energy is proportional to ħ. The ħ that makes a person a 2 m wave (3×10³⁵ times the real value)
+  would make each photon carry that much more energy, so at a safe brightness almost no photons arrive.
+  A consistent world with wavy people would be dark. The lab therefore gives matter waves and light grains
+  separate dials, and says so.
+
+**What is exact:** null geodesics of the Schwarzschild exterior, one per pixel, with travel time and
+gravitational shift; the aberration and Doppler shift of a moving observer; your wavefunction under the free
+relativistic (spinless, positive-energy) wave equation in two dimensions, with walls; Poisson photon counts.
+**What is not:** colours, unbent sunlight, the overlay of views (an average no single observer sees), and a
+planet whose mass is set by decree.
+
+**What I could and could not find.** Pre-rendered films of the view near neutron stars and black holes exist
+(for example in Ute Kraus's work collected at spacetimetravel.org), the OpenRelativity fork has approximate
+black-hole shaders, and Relativity Park covers special relativity. I did not find an interactive, walkable
+view that traces exact Schwarzschild light paths together with the walker's own motion, nor one where the
+camera's position is a solved wavefunction. That is a search result, not a claim of priority.
+
+**Next step at the boundary.** The world already has the ingredients of a real research question: a clock
+in a superposition of two heights ticks at two rates, and the which-height information stored in its time
+reading should wash out interference. Proposals and analogue tests: Zych, Costa, Pikovski and Brukner,
+*Nature Communications* 2011; Pikovski, Zych, Costa and Brukner, *Nature Physics* 2015; Margalit et al.,
+*Science* 2015 (cited from memory; check before citing). A scene where your wave climbs two staircases and
+recombines would let you see that effect, with c, G and ħ all on at once and no quantum-gravity theory
+needed.

@@ -201,3 +201,27 @@ test('the Airy ground state of the bouncer is stationary', () => {
   let maxDev = 0; for (let i = 0; i < 4000; i++) { sim.step(dt); maxDev = Math.max(maxDev, Math.abs(sim.mean() - zf - mean0)); }
   assert.ok(maxDev < 0.05 * mean0, 'hovers in place, drift ' + maxDev / mean0);
 });
+
+test('relativistic wave: the packet cannot outrun light and agrees with Schrödinger when c is huge', () => {
+  const m = 1, hbar = 0.2, N = 128, L = 16;         // k = 10 per metre, well inside the grid's limit of 25
+  const slow = new Q.Sim({ N, L, m, hbar, c: 1e9 }), fast = new Q.Sim({ N, L, m, hbar, c: 1 });
+  for (const s of [slow, fast]) s.gaussian(4, 8, 0.6, 0.6, 0, 0);
+  // give both the momentum of a Newtonian speed of 2 (twice c for the second)
+  const k = m * 2 / hbar;
+  slow.kick(k, 0); fast.kick(k, 0);
+  close(slow.meanK()[0], k, 1e-3, 'meanK after a kick');
+  for (let i = 0; i < 200; i++) { slow.step(0.005); fast.step(0.005); }
+  close(slow.moments().x, 4 + 2 * 1.0, 1e-2, 'Newtonian drift');
+  const vg = k * hbar / Math.sqrt((k * hbar) ** 2 + m * m);   // c² p / E with c = 1
+  close(fast.moments().x, 4 + vg * 1.0, 2e-2, 'relativistic drift at the group velocity');
+  assert.ok(vg < 1);
+});
+
+test('shifting the window moves the wave by whole cells', () => {
+  const s = new Q.Sim({ N: 64, L: 8, m: 1, hbar: 0.1 });
+  s.gaussian(4, 4, 0.5, 0.5, 0, 0);
+  const before = s.moments();
+  s.shift(4, -8);                                    // window 4 cells right, 8 cells down
+  const after = s.moments();
+  close(after.x, before.x - 4 * s.dx, 1e-9); close(after.y, before.y + 8 * s.dx, 1e-9);
+});
