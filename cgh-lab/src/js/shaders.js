@@ -18,8 +18,8 @@ in vec2 vUV;
 out vec4 outColor;
 uniform vec3 uEye, uFwd, uRight, uUp, uBeta;
 uniform vec2 uTan;
-uniform float uRs, uC, uT, uExposure;
-uniform int uDoppler, uBeam;
+uniform float uRsRay, uRsShift, uRsClock, uC, uCdelay, uT, uExposure, uBell;
+uniform int uDoppler, uBeam, uAberr;
 const float R = ${F(g.R)};
 const float HMAX = ${F(g.HMAX)};
 const vec3 SUN = vec3(0.3015, 0.9045, 0.3015);
@@ -27,7 +27,7 @@ const vec3 SUN = vec3(0.3015, 0.9045, 0.3015);
 float hash1(float n) { return fract(sin(n * 12.9898) * 43758.5453); }
 float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float sdBox(vec3 p, vec3 b) { vec3 q = abs(p) - b; return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0); }
-float houseH(float cell, float side) { return 9.0 + 3.0 * floor(6.0 * hash1(mod(cell, 120.0) * 2.0 + side + 0.5)); }
+float houseH(float cell, float side) { return 9.0 + 3.0 * mod(cell * 7.0 + side * 3.0 + 5.0, 6.0); }
 
 // Street coordinates (across, height, along within the block) and the block index.
 vec3 street(vec3 x, out float ti) {
@@ -50,10 +50,12 @@ float scene(vec3 x, out float mat) {
     e = sdBox(vec3(al - 16.0, h - 0.5 * H, a - 20.0 * c - 10.0), vec3(6.0, 0.5 * H, 8.0));
     if (e < d) { d = e; mat = 1.0; }
   }
-  vec3 q = vec3(al - 4.6, h, mod(a, 12.0) - 6.0);
-  e = sdBox(q - vec3(0.0, 2.2, 0.0), vec3(0.08, 2.2, 0.08)); if (e < d) { d = e; mat = 3.0; }
-  e = sdBox(q - vec3(0.0, 4.5, 0.0), vec3(0.25, 0.14, 0.25)); if (e < d) { d = e; mat = 4.0; }
-  e = sdBox(vec3(al - 6.3, h - 0.5, mod(a, 6.0) - 3.0), vec3(0.5)); if (e < d) { d = e; mat = 5.0; }
+  if (!(ti == 0.0 && a < -19.5 && a > -38.5)) {          // the yard behind the two doors is kept empty
+    vec3 q = vec3(al - 4.6, h, mod(a, 12.0) - 6.0);
+    e = sdBox(q - vec3(0.0, 2.2, 0.0), vec3(0.08, 2.2, 0.08)); if (e < d) { d = e; mat = 3.0; }
+    e = sdBox(q - vec3(0.0, 4.5, 0.0), vec3(0.25, 0.14, 0.25)); if (e < d) { d = e; mat = 4.0; }
+    e = sdBox(vec3(al - 6.3, h - 0.5, mod(a, 6.0) - 3.0), vec3(0.5)); if (e < d) { d = e; mat = 5.0; }
+  }
   vec3 t = vec3(al - 8.7, h, mod(a + 12.0, 24.0) - 12.0);
   e = sdBox(t - vec3(0.0, 1.3, 0.0), vec3(0.175, 1.3, 0.175)); if (e < d) { d = e; mat = 7.0; }
   e = sdBox(t - vec3(0.0, 4.0, 0.0), vec3(1.3)); if (e < d) { d = e; mat = 8.0; }
@@ -64,6 +66,7 @@ float scene(vec3 x, out float mat) {
     e = sdBox(vec3(l, h - 25.0, a - 40.0), vec3(1.5, 25.0, 1.5)); if (e < d) { d = e; mat = 10.0; }
     e = max(sdBox(vec3(l, h - 1.5, a + 20.0), vec3(10.0, 1.5, 0.2)), -sdBox(vec3(al - 1.5, h - 1.5, a + 20.0), vec3(0.6, 2.0, 1.0)));
     if (e < d) { d = e; mat = 11.0; }
+    e = sdBox(vec3(l - 1.5, h - 3.25, a + 20.0), vec3(0.3, 0.2, 0.3)); if (e < d) { d = e; mat = 12.0; }
   }
   return d;
 }
@@ -121,15 +124,15 @@ void main() {
   if (b2 > 0.0) {
     float gm = inversesqrt(1.0 - b2), nb = dot(np, uBeta);
     vec3 bh = uBeta * inversesqrt(b2);
-    n = (np + ((gm - 1.0) * dot(np, bh) - gm * sqrt(b2)) * bh) / (gm * (1.0 - nb));
+    if (uAberr == 1) n = (np + ((gm - 1.0) * dot(np, bh) - gm * sqrt(b2)) * bh) / (gm * (1.0 - nb));
     Ddop = 1.0 / (gm * (1.0 - nb));
   }
   // follow the light back along its curved path
   float re = length(uEye), r = re, ct = 0.0, s = 0.0, mat = 0.0;
   vec3 u = uEye / re, x = uEye;
-  vec3 v = dot(n, u) * u + (n - dot(n, u) * u) * inversesqrt(1.0 - uRs / re);
+  vec3 v = dot(n, u) * u + (n - dot(n, u) * u) * inversesqrt(1.0 - uRsRay / re);
   vec3 Lv = cross(x, v);
-  float k = -1.5 * uRs * dot(Lv, Lv);
+  float k = -1.5 * uRsRay * dot(Lv, Lv);
   vec3 acc = k * x / pow(r, 5.0);
   int kind = 0;
   for (int i = 0; i < 260; i++) {
@@ -143,10 +146,10 @@ void main() {
     float rn = length(xn);
     vec3 accn = k * xn / pow(rn, 5.0);
     v += 0.5 * (acc + accn) * hs;
-    ct += 0.5 * hs * (1.0 / (1.0 - uRs / r) + 1.0 / (1.0 - uRs / rn));
+    ct += 0.5 * hs * (1.0 / (1.0 - uRsRay / r) + 1.0 / (1.0 - uRsRay / rn));
     if (rn < R) {
       float f = (r - R) / max(r - rn, 1e-6);
-      ct -= (1.0 - f) * hs / (1.0 - uRs / R);
+      ct -= (1.0 - f) * hs / (1.0 - uRsRay / R);
       x = mix(x, xn, f); s += f * dl; r = R; mat = 0.0; kind = 1; break;
     }
     x = xn; r = rn; acc = accn; s += dl;
@@ -155,11 +158,11 @@ void main() {
   vec3 col; float ir = -1.0, uvl = -1.0, Dg;
   if (kind != 1) {
     col = kind == 2 ? sky(normalize(v), ir, uvl) : vec3(0.05, 0.06, 0.08);
-    Dg = inversesqrt(1.0 - uRs / re);                    // starlight falling in is blueshifted
+    Dg = inversesqrt(1.0 - uRsShift / re);                    // starlight falling in is blueshifted
   } else {
     r = length(x);
-    Dg = sqrt((1.0 - uRs / r) / (1.0 - uRs / re));
-    float tau = sqrt(1.0 - uRs / r) * (uT - ct / uC);    // the emitter's own clock when this light left it
+    Dg = sqrt((1.0 - uRsShift / r) / (1.0 - uRsShift / re));
+    float tau = sqrt(1.0 - uRsClock / r) * (uT - ct / uCdelay);    // the emitter's own clock when this light left it
     float ti; vec3 p = street(x, ti);
     float l = p.x, h = p.y, a = p.z, ag = a + 120.0 * ti;
     vec3 up = x / r, along = normalize(vec3(0.0, -x.z, x.y)), across = cross(along, up);
@@ -208,7 +211,8 @@ void main() {
         vec2 q = vec2(fu, h - (c == 0 ? 46.0 : 3.0)) / 1.3;
         if (abs(dot(nr, up)) < 0.5 && length(q) < 1.0) { col = dial(q, tau); lit = 0.0; }
       }
-    } else if (mat == 11.0) col = abs(h - 2.2) < 0.15 ? vec3(0.15, 0.35, 0.75) : vec3(0.86, 0.85, 0.82);
+    } else if (mat == 12.0) { col = uBell > 0.5 ? vec3(0.5, 1.6, 1.9) : vec3(0.25, 0.27, 0.30); lit = uBell > 0.5 ? 0.0 : 1.0; }
+    else if (mat == 11.0) col = abs(h - 2.2) < 0.15 ? vec3(0.15, 0.35, 0.75) : vec3(0.86, 0.85, 0.82);
     float lum = dot(col, vec3(0.3, 0.55, 0.15));
     if (ir < 0.0) { ir = lum; uvl = lum * 0.7; }
     if (lit > 0.0) { float sh = 0.30 + 0.75 * max(dot(nr, SUN), 0.0); col *= sh; ir *= sh; uvl *= sh; }

@@ -250,11 +250,43 @@ dl { margin: 0; }
 
 /* ---------- cGħ World ---------- */
 #wave-map {
-  position: absolute; right: 8px; top: 74px; width: 184px; height: 184px;
+  position: absolute; right: 8px; top: 74px; width: 220px; height: 220px;
   border: 1px solid rgba(255,255,255,0.35); border-radius: 4px; image-rendering: pixelated; pointer-events: none;
 }
 .pad { grid-template-columns: repeat(3, 44px); }
 .explain li .sym { margin-right: 4px; }
 @media (max-width: 640px) {
   #wave-map { width: 104px; height: 104px; top: 64px; }
+}
+
+/* ---------- effects bar, probe and measurement ---------- */
+.fxbar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 16px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.fx-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+.fxbar .btn { padding: 4px 10px; font-size: 13px; }
+.tools { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+@media (min-width: 900px) { .tools { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.tool { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tool h3 { font-size: 15px; font-weight: 600; }
+#probe-path { width: 100%; aspect-ratio: 16 / 10; display: block; background: var(--bg); border-radius: 4px; }
+#probe-spec { width: 100%; height: 72px; display: block; }
+.probe-info, .m-meter { display: grid; gap: 6px; }
+.probe-info div, .m-meter div { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.probe-info dt, .m-meter dt { font-size: 12.5px; color: var(--muted); }
+.probe-info dd, .m-meter dd { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.m-meter dd { font-family: var(--font-data); font-variant-numeric: tabular-nums; font-size: 13.5px; }
+.m-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: end; }
+.tool select { padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); max-width: 100%; }
+.tool input[type="range"] { width: 100%; accent-color: var(--h); }
+.m-track { grid-column: 2; display: block; height: 6px; border-radius: 3px; background: var(--sunk); border: 1px solid var(--line); overflow: hidden; }
+.m-track i { display: block; height: 100%; background: var(--h); }
+.wide-note { grid-column: 1 / -1; }
+.links { list-style: none; padding-left: 0 !important; }
+.links a { color: inherit; text-underline-offset: 2px; }
+@media (max-width: 640px) { .probe-info div, .m-meter div { grid-template-columns: minmax(0, 1fr); gap: 0; } .m-track { grid-column: 1; } }
+@media (max-width: 640px) {
+  #world-view canvas { aspect-ratio: 1 / 1; }
+  .pad { grid-template-columns: repeat(3, 34px); gap: 4px; }
+  .pad button { height: 34px; font-size: 15px; }
+  #world-view .hud.bl { max-width: calc(100% - 136px); }
+  #wave-map { width: 110px; height: 110px; top: 62px; right: 6px; }
 }

@@ -1,13 +1,15 @@
-/* cGħ World — the first-person engine: walking, the camera, three GPU passes and the head-up display. */
+/* cGħ World — the first-person engine: walking and flying, the camera, the GPU passes, the head-up display and the map. */
 (function () {
   'use strict';
   var G = CGH.geo, P = CGH.physics, A = CGH.app, SH = CGH.shaders, WV = CGH.wave, $ = A.$;
-  var EFFORT_MAX = 20, FOV = 1.2, CLOCK_TOP = 46;
+  var EFFORT_MAX = 20, FOV = 1.2, CLOCK_TOP = 46, CLIMB = 3, TOP_EYE = 80;
+  var FX = ['bend', 'delay', 'aberr', 'doppler', 'gshift', 'beam', 'rates'];
   var canvas, gl, prog = {}, fmt, scene = null, acc = [], size = [0, 0], vao, raf = 0, last = 0, ok = false;
   var S = {
-    a: G.START.a, l: G.START.l, heading: 0, lookYaw: 0, lookPitch: 0.04, effort: 0, T: 0, tau: 0,
-    street: 0, top: 0, newton: false, doppler: true, beam: true, exposure: 1, keys: {}, scale: 0.6, fixedScale: 0, ms: 16,
-    view: { a: G.START.a, l: G.START.l }, frame: 0, fresh: true, watched: false, lookTimer: 0, hint: 12, found: null
+    a: G.START.a, l: G.START.l, h: G.EYE, heading: 0, lookYaw: 0, lookPitch: 0.04, effort: 0,
+    T: 0, tau: 0, street: 0, top: 0, exposure: 1, keys: {}, scale: 0.6, fixedScale: 0, ms: 16,
+    fx: { bend: true, delay: true, aberr: true, doppler: true, gshift: true, beam: true, rates: true },
+    view: { a: G.START.a, l: G.START.l }, frame: 0, fresh: true, envRate: 0, envTimer: 0, sharp: 0.5, screen: false, hint: 12, q: null, cam: null
   };
 
   /* ---------- GL plumbing ---------- */
@@ -27,8 +29,8 @@
   function target(w, h) {
     var t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
     gl.texImage2D(gl.TEXTURE_2D, 0, fmt.internal, w, h, 0, gl.RGBA, fmt.type, null);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER].forEach(function (k) { gl.texParameteri(gl.TEXTURE_2D, k, gl.LINEAR); });
+    [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T].forEach(function (k) { gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE); });
     var f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
     return { t: t, f: f };
@@ -39,7 +41,8 @@
     gl = canvas.getContext('webgl2', { antialias: false, alpha: false });
     if (!gl) return false;
     fmt = gl.getExtension('EXT_color_buffer_float') ? { internal: gl.RGBA16F, type: gl.HALF_FLOAT } : { internal: gl.RGBA8, type: gl.UNSIGNED_BYTE };
-    prog.march = program(SH.MARCH, ['uEye', 'uFwd', 'uRight', 'uUp', 'uBeta', 'uTan', 'uRs', 'uC', 'uT', 'uExposure', 'uDoppler', 'uBeam']);
+    prog.march = program(SH.MARCH, ['uEye', 'uFwd', 'uRight', 'uUp', 'uBeta', 'uTan', 'uRsRay', 'uRsShift', 'uRsClock', 'uCdelay', 'uT',
+      'uExposure', 'uDoppler', 'uBeam', 'uAberr', 'uBell']);
     prog.accum = program(SH.ACCUM, ['uNew', 'uOld', 'uK']);
     prog.show = program(SH.SHOW, ['uImg', 'uPhotons', 'uSeed']);
     vao = gl.createVertexArray();
@@ -49,41 +52,45 @@
   /* ---------- moving ---------- */
   function dials() {
     var d = A.derived(), st = A.state;
-    return { c: S.newton ? 1e12 : d.c, rs: S.newton ? 0 : d.rs, hbar: d.hbar, quantum: st.lam >= 0.5, photons: st.photons };
+    return { c: d.c, rs: d.rs, hbar: d.hbar, quantum: st.lam >= 0.5, photons: st.photons };
+  }
+  // Is there room for a body with its eyes at (a, l, h)? Checks at eye and knee height.
+  function room(a, l, h) {
+    return G.scene(G.toWorld(a, l, h)).d > 0.25 && G.scene(G.toWorld(a, l, Math.max(h - 1.2, 0.5))).d > 0.25;
   }
   function update(dtau) {
-    var k = S.keys, q = dials(), re = G.R + G.EYE;
+    var k = S.keys, q = dials();
     if (k.faster) { S.effort = Math.min(EFFORT_MAX, S.effort + 6 * dtau); syncEffort(); }
     if (k.slower) { S.effort = Math.max(0, S.effort - 8 * dtau); syncEffort(); }
     if (k.left) S.heading -= 1.3 * dtau;
     if (k.right) S.heading += 1.3 * dtau;
+    if (q.quantum) S.h = G.EYE;                               // the wave lives on the ground
+    q.vz = q.quantum ? 0 : CLIMB * ((k.up ? 1 : 0) - (k.down ? 1 : 0));
+    if ((S.h <= G.EYE && q.vz < 0) || (S.h >= TOP_EYE && q.vz > 0)) q.vz = 0;
     var v = P.speedFromEffort(S.effort, q.c), va = v * Math.cos(S.heading), vl = v * Math.sin(S.heading);
-    q.lapse = Math.sqrt(1 - q.rs / re);
+    q.re = G.R + S.h; q.lapse = Math.sqrt(1 - q.rs / q.re);
     if (q.quantum) {
-      var W = WV.W, c = S.newton ? 0 : q.c;
-      if (!W.on || W.hbar !== q.hbar || W.c !== c) { WV.start(S.a, S.l, va, vl, q.hbar, c, 0.6); S.fresh = true; }
-      var top = WV.topSpeed();
-      if (v > top) { va *= top / v; vl *= top / v; }
+      var W = WV.W;
+      if (!W.on || W.hbar !== q.hbar || W.c !== q.c) { WV.start(S.a, S.l, va, vl, q.hbar, q.c, 0.6); S.fresh = true; }
+      var top = WV.topSpeed(); if (v > top) { va *= top / v; vl *= top / v; }
       q.top = top;
     } else if (WV.W.on) { WV.stop(); S.fresh = true; }
-    // your own velocity relative to the ground decides the clocks and the aberration
     var vel = q.quantum ? WV.W.vel || [0, 0] : [va, vl];
-    var sp = Math.hypot(vel[0], vel[1]);
+    var sp = Math.min(Math.hypot(vel[0], vel[1], q.vz), 0.9999 * q.c);
     q.v = sp; q.beta = sp / q.c; q.gamma = 1 / Math.sqrt(1 - q.beta * q.beta); q.vel = vel;
-    var dtLocal = q.gamma * dtau;                      // time for someone standing where you are
-    var dT = dtLocal / q.lapse;                         // far-away (coordinate) time
-    S.T += dT; S.tau += dtau;
-    S.street += dT * Math.sqrt(1 - q.rs / G.R); S.top += dT * Math.sqrt(1 - q.rs / (G.R + CLOCK_TOP));
+    var dtLocal = q.gamma * dtau, dT = dtLocal / q.lapse;    // time for someone standing here; far-away time
+    S.T += dT;
+    if (S.fx.rates) { S.tau += dtau; S.street += dT * Math.sqrt(1 - q.rs / G.R); S.top += dT * Math.sqrt(1 - q.rs / (G.R + CLOCK_TOP)); }
+    else { S.tau += dT; S.street += dT; S.top += dT; }
     if (q.quantum) {
       WV.step(dtLocal, va, vl);
-      if (S.watched) { S.lookTimer -= dtau; if (S.lookTimer <= 0) { S.lookTimer = 0.25; WV.look(0.5, Math.random); } }
+      if (S.envRate) { S.envTimer -= dtau; if (S.envTimer <= 0) { S.envTimer = 1 / S.envRate; WV.look(0.5, Math.random); } }
       S.a = WV.W.mean.a; S.l = WV.W.mean.l;
       S.view = WV.sample(Math.random);
     } else {
-      var na = G.wrapA(S.a + va * dtLocal), nl = S.l + vl * dtLocal;
-      if (G.footprint(na, nl) > 0.25) { S.a = na; S.l = nl; }
-      else if (G.footprint(na, S.l) > 0.25) S.a = na;
-      else if (G.footprint(S.a, nl) > 0.25) S.l = nl;
+      var na = G.wrapA(S.a + va * dtLocal), nl = S.l + vl * dtLocal, nh = Math.max(G.EYE, Math.min(TOP_EYE, S.h + q.vz * dtLocal));
+      if (room(na, nl, S.h)) { S.a = na; S.l = nl; } else if (room(na, S.l, S.h)) S.a = na; else if (room(S.a, nl, S.h)) S.l = nl;
+      if (nh !== S.h && room(S.a, S.l, nh)) S.h = nh;
       S.view = { a: S.a, l: S.l };
     }
     if (S.hint > 0) S.hint -= dtau;
@@ -95,32 +102,33 @@
     for (var i = 0; i < 3; i++) {
       fwd.push(cp * (cy * f.along[i] + sy * f.across[i]) + sp * f.up[i]);
       right.push(cy * f.across[i] - sy * f.along[i]);
-      beta.push(S.newton ? 0 : (q.vel[0] * f.along[i] + q.vel[1] * f.across[i]) / q.c);
+      beta.push((q.vel[0] * f.along[i] + q.vel[1] * f.across[i] + q.vz * f.up[i]) / q.c);
     }
-    return { eye: G.toWorld(S.view.a, S.view.l, G.EYE), fwd: fwd, right: right, up: G.cross(right, fwd), beta: beta };
+    return { eye: G.toWorld(S.view.a, S.view.l, S.h), fwd: fwd, right: right, up: G.cross(right, fwd), beta: beta };
   }
 
   /* ---------- drawing ---------- */
   function draw(q, cam) {
-    var f = A.fit(canvas, 1.5), w = canvas.width, h = canvas.height;
+    var f = A.fit(canvas, 1.5), w = canvas.width, h = canvas.height, fx = S.fx;
     var sc = S.fixedScale || S.scale, rw = Math.max(64, Math.round(w * sc)), rh = Math.max(36, Math.round(h * sc));
     if (rw !== size[0] || rh !== size[1]) {
       free(scene); free(acc[0]); free(acc[1]);
       scene = target(rw, rh); acc = [target(rw, rh), target(rw, rh)]; size = [rw, rh]; S.fresh = true;
     }
     var Dc = 1 / (q.gamma * (1 - G.dot(cam.fwd, cam.beta)));
-    var aim = S.beam && !S.newton ? Math.max(0.02, Math.min(60, Math.pow(Dc, -2.7))) : 1;
+    var aim = fx.beam ? Math.max(0.02, Math.min(60, Math.pow(Dc, -2.7))) : 1;
     S.exposure += (aim - S.exposure) * 0.15;
     gl.bindVertexArray(vao);
 
-    var m = prog.march;
+    var m = prog.march, u = m.u;
     gl.bindFramebuffer(gl.FRAMEBUFFER, scene.f); gl.viewport(0, 0, rw, rh); gl.useProgram(m.p);
-    gl.uniform3fv(m.u.uEye, cam.eye); gl.uniform3fv(m.u.uFwd, cam.fwd); gl.uniform3fv(m.u.uRight, cam.right);
-    gl.uniform3fv(m.u.uUp, cam.up); gl.uniform3fv(m.u.uBeta, cam.beta);
-    gl.uniform2f(m.u.uTan, Math.tan(FOV / 2) * f.w / f.h, Math.tan(FOV / 2));
-    gl.uniform1f(m.u.uRs, q.rs); gl.uniform1f(m.u.uC, q.c); gl.uniform1f(m.u.uT, S.T % 1e5);
-    gl.uniform1f(m.u.uExposure, S.exposure);
-    gl.uniform1i(m.u.uDoppler, S.doppler && !S.newton ? 1 : 0); gl.uniform1i(m.u.uBeam, S.beam && !S.newton ? 1 : 0);
+    gl.uniform3fv(u.uEye, cam.eye); gl.uniform3fv(u.uFwd, cam.fwd); gl.uniform3fv(u.uRight, cam.right);
+    gl.uniform3fv(u.uUp, cam.up); gl.uniform3fv(u.uBeta, cam.beta);
+    gl.uniform2f(u.uTan, Math.tan(FOV / 2) * f.w / f.h, Math.tan(FOV / 2));
+    gl.uniform1f(u.uRsRay, fx.bend ? q.rs : 0); gl.uniform1f(u.uRsShift, fx.gshift ? q.rs : 0); gl.uniform1f(u.uRsClock, fx.rates ? q.rs : 0);
+    gl.uniform1f(u.uCdelay, fx.delay ? q.c : 1e12); gl.uniform1f(u.uT, S.T % 1e5); gl.uniform1f(u.uExposure, S.exposure);
+    gl.uniform1i(u.uDoppler, fx.doppler ? 1 : 0); gl.uniform1i(u.uBeam, fx.beam ? 1 : 0); gl.uniform1i(u.uAberr, fx.aberr ? 1 : 0);
+    gl.uniform1f(u.uBell, q.quantum && WV.W.bell > 0 ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
     var k = S.fresh ? 1 : q.quantum ? (WV.W.spread > 0.12 ? 0.08 : 0.35) : 1;
@@ -139,47 +147,75 @@
     S.frame++; S.fresh = false;
   }
 
+  // Top-down map of your wave: magenta where the bell is silent, cyan where it rang, yellow dots for past looks.
   function waveMap(q) {
     var el = $('wave-map');
     el.hidden = !q.quantum;
     if (!q.quantum || !WV.W.sim) return;
-    var N = WV.N, sim = WV.W.sim, ctx = el.getContext('2d');
-    if (el.width !== N) { el.width = N; el.height = N; }
-    var img = ctx.createImageData(N, N), d = img.data, mx = 0, n, re = sim.re, im = sim.im;
-    for (n = 0; n < N * N; n++) mx = Math.max(mx, re[n] * re[n] + im[n] * im[n]);
+    var N = WV.N, a = WV.W.sim, b = WV.W.sim1, ctx = el.getContext('2d');
+    if (el.width !== 2 * N) { el.width = 2 * N; el.height = 2 * N; }
+    var img = ctx.createImageData(N, N), d = img.data, mx = 0, n;
+    for (n = 0; n < N * N; n++) mx = Math.max(mx, a.re[n] * a.re[n] + a.im[n] * a.im[n] + (b ? b.re[n] * b.re[n] + b.im[n] * b.im[n] : 0));
     for (n = 0; n < N * N; n++) {
-      var p = Math.sqrt((re[n] * re[n] + im[n] * im[n]) / (mx || 1)), o = 4 * n;
-      if (sim.wall[n]) { d[o] = d[o + 1] = d[o + 2] = 150; } else { d[o] = 14 + 218 * p; d[o + 1] = 18 + 102 * p; d[o + 2] = 26 + 168 * p; }
+      var p0 = Math.sqrt((a.re[n] * a.re[n] + a.im[n] * a.im[n]) / (mx || 1)), p1 = b ? Math.sqrt((b.re[n] * b.re[n] + b.im[n] * b.im[n]) / (mx || 1)) : 0, o = 4 * n;
+      if (a.wall[n]) { d[o] = d[o + 1] = d[o + 2] = 150; }
+      else { d[o] = Math.min(255, 14 + 218 * p0 + 40 * p1); d[o + 1] = Math.min(255, 18 + 102 * p0 + 200 * p1); d[o + 2] = Math.min(255, 26 + 168 * p0 + 230 * p1); }
       d[o + 3] = 255;
     }
-    ctx.putImageData(img, 0, 0);
-    var x = (S.view.l - WV.W.cl) / WV.dx + N / 2, y = N / 2 - G.wrapA(S.view.a - WV.W.ca) / WV.dx;
-    ctx.fillStyle = '#ffd27a'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
-    ctx.strokeStyle = '#ffd27a'; ctx.beginPath(); ctx.moveTo(x, y);
-    ctx.lineTo(x + 9 * Math.sin(S.heading + S.lookYaw), y - 9 * Math.cos(S.heading + S.lookYaw)); ctx.stroke();
+    var tmp = waveMap.tmp || (waveMap.tmp = document.createElement('canvas'));
+    tmp.width = N; tmp.height = N; tmp.getContext('2d').putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = false; ctx.drawImage(tmp, 0, 0, 2 * N, 2 * N);
+    function px(p) { return [2 * (p.l - WV.W.cl + WV.L / 2) / WV.dx, 2 * (WV.L / 2 - G.wrapA(p.a - WV.W.ca)) / WV.dx]; }
+    if (WV.W.bell > 0) {
+      var bz = px({ a: WV.BELL.a + WV.BELL.ha, l: WV.BELL.l - WV.BELL.hl });
+      ctx.strokeStyle = '#5fd7ff'; ctx.lineWidth = 1.5; ctx.strokeRect(bz[0], bz[1], 4 * WV.BELL.hl / WV.dx, 4 * WV.BELL.ha / WV.dx);
+    }
+    ctx.fillStyle = '#ffd27a';
+    WV.W.marks.forEach(function (mk) { var p = px(mk); ctx.fillRect(p[0] - 1.5, p[1] - 1.5, 3, 3); });
+    var me = px(S.view);
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(me[0], me[1], 4, 0, 6.2832); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(me[0], me[1]);
+    ctx.lineTo(me[0] + 16 * Math.sin(S.heading + S.lookYaw), me[1] - 16 * Math.cos(S.heading + S.lookYaw)); ctx.stroke();
   }
 
+  function row(dt, dd) { return '<div class="readout"><dt>' + dt + '</dt><dd>' + dd + '</dd></div>'; }
   function hud(q) {
-    var n = A.num, rs = q.rs, re = G.R + G.EYE;
-    $('w-hud-l').innerHTML = 'speed <b>' + n(q.v) + ' m/s</b> = ' + (q.beta < 1e-3 ? n(q.beta, 2) : q.beta.toFixed(3)) + ' c<br>γ = ' + (q.gamma < 1.0001 ? '1.000' : q.gamma.toFixed(3));
+    var n = A.num, rs = q.rs;
+    $('w-hud-l').innerHTML = 'speed <b>' + n(q.v) + ' m/s</b> = ' + (q.beta < 1e-3 ? n(q.beta, 2) : q.beta.toFixed(3)) + ' c<br>γ = ' +
+      (q.gamma < 1.0001 ? '1.000' : q.gamma.toFixed(3)) + '<br>eyes <b>' + n(S.h, 3) + ' m</b> up';
     $('w-hud-r').innerHTML = 'your watch <b>' + A.clock(S.tau) + '</b><br>street clocks <b>' + A.clock(S.street) + '</b><br>tower top <b>' + A.clock(S.top) + '</b>';
-    var msg = S.newton ? 'Newton’s view: light instant and straight' : '';
-    if (!msg && q.quantum) msg = WV.W.spread > 0.5 ? 'You are spread over ' + n(WV.W.spread, 2) + ' m. Every place you might be is overlaid. Press F to look.' : 'You are a narrow wave. Walk, and watch the map.';
-    if (!msg) msg = 'Drag to look around';
-    if (S.hint > 0 && canvas.clientWidth > 640) msg += '<br>W S effort · A D steer · F look · Space stop';
+    var msg = '';
+    if (q.quantum) msg = WV.W.spread > 0.5 ? 'You are spread over ' + n(WV.W.spread, 2) + ' m: every place you might be is overlaid. F looks.' : 'You are a narrow wave. Walk, and watch the map.';
+    else if (S.h > G.EYE + 0.5) msg = 'Q to go down, E to go up';
+    else msg = 'Drag to look around · E to fly up';
+    if (S.hint > 0 && canvas.clientWidth > 640) msg += '<br>W S effort · A D steer · E Q up and down · F look · Space stop';
     $('w-hud-b').innerHTML = msg;
-
-    var el = G.horizon(rs, G.R, re) * 180 / Math.PI, rows = [];
-    rows.push([el < 0 ? 'Horizon, below your eye level' : 'Horizon, above your eye level', Math.abs(el).toFixed(1) + '°' + (el > 0 ? ' (sky is a cone ' + (2 * (90 - el)).toFixed(0) + '° wide)' : '')]);
-    rows.push(['Tower-top clock runs, against yours', '×' + G.clockRate(rs, CLOCK_TOP).toFixed(rs > 0.01 * G.R ? 3 : 6)]);
-    rows.push(['Light crosses the planet in', A.duration(2 * G.R / q.c * (1 + rs / G.R), 2)]);
-    if (q.quantum) rows.push(['Your spread / top speed here', n(WV.W.spread, 2) + ' m / ' + n(q.top, 2) + ' m/s']);
-    else rows.push(['Your wavelength now', A.length(2 * Math.PI * q.hbar / (A.MASS * Math.max(q.v, A.WALK) * q.gamma), 2)]);
-    rows.push(['Photons per pixel per frame', n(q.photons, 2)]);
-    $('w-readouts').innerHTML = rows.map(function (r) { return '<div class="readout"><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; }).join('');
+    var el = G.horizon(rs, G.R, q.re) * 180 / Math.PI;
+    $('w-readouts').innerHTML = [
+      row(el < 0 ? 'Horizon, below your eye level' : 'Horizon, above your eye level', Math.abs(el).toFixed(1) + '°' + (el > 0 ? ' (sky is a cone ' + (2 * (90 - el)).toFixed(0) + '° wide)' : '')),
+      row('Tower-top clock against yours', '×' + Math.sqrt((1 - rs / (G.R + CLOCK_TOP)) / (1 - rs / q.re)).toFixed(rs > 0.01 * G.R ? 3 : 6)),
+      row('Light crosses the planet in', A.duration(2 * G.R / q.c * (1 + rs / G.R), 2)),
+      q.quantum ? row('Your spread / top speed here', n(WV.W.spread, 2) + ' m / ' + n(q.top, 2) + ' m/s')
+                : row('Your wavelength now', A.length(2 * Math.PI * q.hbar / (A.MASS * Math.max(q.v, A.WALK) * q.gamma), 2)),
+      row('Photons per pixel per frame', n(q.photons, 2))
+    ].join('');
+    measurePanel(q);
+  }
+  function measurePanel(q) {
+    $('m-off').hidden = q.quantum; $('m-on').hidden = !q.quantum;
+    if (!q.quantum || !WV.W.sim) return;
+    var W = WV.W, ks = WV.kstats(), hb = W.hbar, m = W.pos;
+    var px = m.sx * hb * ks.dk[0] / (hb / 2), pa = m.sy * hb * ks.dk[1] / (hb / 2);
+    $('m-dx').textContent = A.num(m.sx, 2) + ' m across · ' + A.num(m.sy, 2) + ' m along';
+    $('m-dp').textContent = A.num(hb * ks.dk[0] / A.MASS, 2) + ' m/s across · ' + A.num(hb * ks.dk[1] / A.MASS, 2) + ' m/s along';
+    $('m-prod').textContent = A.num(px, 3) + ' × ħ/2 across · ' + A.num(pa, 3) + ' × ħ/2 along';
+    $('m-bar').style.width = Math.min(100, 100 / Math.max(1, Math.min(px, pa))) + '%';
+    $('m-rang').textContent = W.bell > 0 ? Math.round(100 * W.rang) + '% of you rang it' : 'no bell';
+    $('m-marks').textContent = W.marks.length + (W.marks.length === 1 ? ' look' : ' looks') + ' so far';
+    $('m-behind').textContent = Math.round(100 * WV.chanceBehind()) + '%';
   }
 
-  var hudT = 0;
+  var hudT = 0, probeT = 0;
   function frame(now) {
     raf = requestAnimationFrame(frame);
     var dt = Math.min(0.05, (now - last) / 1000 || 0);
@@ -188,36 +224,47 @@
       if (S.ms > 42 && S.scale > 0.3) S.scale *= 0.85; else if (S.ms < 22 && S.scale < 1) S.scale = Math.min(1, S.scale * 1.1);
     }
     var q = update(dt), cam = camera(q);
+    S.q = q; S.cam = cam;
     draw(q, cam);
-    hudT += dt;
+    hudT += dt; probeT += dt;
     if (hudT > 0.12) { hudT = 0; hud(q); waveMap(q); }
+    if (probeT > 0.25 && CGH.probe) { probeT = 0; CGH.probe.update(); }
   }
 
   /* ---------- input ---------- */
   function syncEffort() { $('effort').value = S.effort; $('effort-out').textContent = S.effort.toFixed(1) + ' m/s'; }
+  function restartClocks() { S.T = 0; S.tau = 0; S.street = 0; S.top = 0; }
+  function place(a, l, heading, h) {
+    S.a = a; S.l = l; S.view = { a: a, l: l }; S.h = h || G.EYE; S.heading = heading; S.lookYaw = 0; S.lookPitch = 0.04;
+    S.effort = 0; syncEffort(); WV.stop(); WV.W.marks = []; restartClocks(); S.fresh = true;
+  }
   function look() {
     if (!WV.W.on) return;
-    S.found = WV.look(0.45, Math.random); S.fresh = true;
+    if (WV.look(S.sharp, Math.random, S.screen)) S.fresh = true;
+    else $('m-note').textContent = 'None of you has reached the yard behind the wall yet.';
   }
-  function restartClocks() { S.T = 0; S.tau = 0; S.street = 0; S.top = 0; }
-  function place(a, l, heading) {
-    S.a = a; S.l = l; S.view = { a: a, l: l }; S.heading = heading; S.lookYaw = 0; S.lookPitch = 0.04;
-    S.effort = 0; syncEffort(); WV.stop(); restartClocks(); S.fresh = true;
-  }
+  function setFx(all) { FX.forEach(function (k) { S.fx[k] = all; $('fx-' + k).checked = all; }); S.fresh = true; }
   function bind() {
     $('effort').addEventListener('input', function (e) { S.effort = Number(e.target.value); syncEffort(); });
     syncEffort();
     $('w-stop').addEventListener('click', function () { S.effort = 0; syncEffort(); });
     $('w-turn').addEventListener('click', function () { S.heading += Math.PI; S.lookYaw = 0; });
     $('w-home').addEventListener('click', function () { place(G.START.a, G.START.l, 0); });
+    $('w-tower').addEventListener('click', function () { place(G.TOWER.a - 4, 0, 0, CLOCK_TOP); });
     document.addEventListener('cgh-pose', function (e) { if (e.detail === 'doors') place(G.DOORS.a, G.DOORS.l, G.DOORS.heading); });
-    $('w-look').addEventListener('click', look);
-    $('w-watched').addEventListener('change', function (e) { S.watched = e.target.checked; });
-    $('w-newton').addEventListener('change', function (e) { S.newton = e.target.checked; S.fresh = true; });
-    $('w-doppler').addEventListener('change', function (e) { S.doppler = e.target.checked; });
-    $('w-beam').addEventListener('change', function (e) { S.beam = e.target.checked; });
+    FX.forEach(function (k) { $('fx-' + k).addEventListener('change', function (e) { S.fx[k] = e.target.checked; S.fresh = true; }); });
+    $('fx-none').addEventListener('click', function () { setFx(false); });
+    $('fx-all').addEventListener('click', function () { setFx(true); });
+    $('m-look').addEventListener('click', look);
+    $('m-relook').addEventListener('click', function () { if (WV.W.on && WV.relook(S.sharp, Math.random, S.screen)) S.fresh = true; });
+    $('m-screen').addEventListener('change', function (e) { S.screen = e.target.checked; });
+    $('m-sharp').addEventListener('change', function (e) { S.sharp = Number(e.target.value); });
+    $('m-env').addEventListener('change', function (e) { S.envRate = Number(e.target.value); S.envTimer = 0; });
+    $('m-bell').addEventListener('input', function (e) { WV.W.bell = Number(e.target.value) / 100; $('m-bell-out').textContent = e.target.value + '%'; });
+    $('m-erase').addEventListener('click', function () { if (WV.W.on && WV.erase(Math.random)) S.fresh = true; });
+    $('m-clear').addEventListener('click', function () { WV.W.marks = []; });
 
-    var KEYS = { w: 'faster', ArrowUp: 'faster', s: 'slower', ArrowDown: 'slower', a: 'left', ArrowLeft: 'left', d: 'right', ArrowRight: 'right' };
+    var KEYS = { w: 'faster', ArrowUp: 'faster', s: 'slower', ArrowDown: 'slower', a: 'left', ArrowLeft: 'left', d: 'right', ArrowRight: 'right', e: 'up', q: 'down' };
     function key(ev, down) {
       if (!ev.key) return;
       var t = ev.target, onCanvas = t === canvas;
@@ -237,7 +284,7 @@
     canvas.addEventListener('pointermove', function (e) {
       if (!drag) return;
       S.lookYaw += (e.clientX - drag[0]) * 0.005;
-      S.lookPitch = Math.max(-1.3, Math.min(1.4, S.lookPitch - (e.clientY - drag[1]) * 0.005));
+      S.lookPitch = Math.max(-1.5, Math.min(1.5, S.lookPitch - (e.clientY - drag[1]) * 0.005));
       drag = [e.clientX, e.clientY];
     });
     canvas.addEventListener('pointerup', function () { drag = null; });
@@ -258,13 +305,13 @@
       bind();
       try { ok = setup(); } catch (e) { ok = false; console.error(e); }
       if (!ok) { $('w-hud-b').textContent = 'This view needs WebGL 2, which this browser did not provide.'; return; }
-      A.onChange(function () { S.fresh = true; restartClocks(); });   // a new world: every clock starts together
+      A.onChange(function () { S.fresh = true; restartClocks(); });
       document.addEventListener('visibilitychange', function () {
         cancelAnimationFrame(raf);
         if (!document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); }
       });
       last = performance.now(); raf = requestAnimationFrame(frame);
     },
-    state: S
+    state: S, place: place
   };
 })();

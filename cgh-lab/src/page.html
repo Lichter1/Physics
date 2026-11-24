@@ -59,63 +59,132 @@
         <input type="range" id="effort" min="0" max="20" step="0.1" value="0"></label>
       <button class="btn quiet" type="button" id="w-stop">Stop</button>
       <button class="btn quiet" type="button" id="w-turn">Turn around</button>
-      <button class="btn" type="button" id="w-look">Look where I am (F)</button>
-      <label class="check"><input type="checkbox" id="w-watched"> Always watched</label>
-      <label class="check"><input type="checkbox" id="w-newton"> Newton’s view</label>
-      <label class="check"><input type="checkbox" id="w-doppler" checked> Colour shift</label>
-      <label class="check"><input type="checkbox" id="w-beam" checked> Brightness shift</label>
+      <button class="btn quiet" type="button" id="w-tower">Up to the tower clock</button>
       <button class="btn quiet" type="button" id="w-home">Back to start</button>
+    </div>
+    <div class="fxbar" role="group" aria-label="Effects you can switch off one at a time">
+      <span class="fx-label">Effects</span>
+      <label class="check"><input type="checkbox" id="fx-bend" checked> Light bends</label>
+      <label class="check"><input type="checkbox" id="fx-delay" checked> Light takes time</label>
+      <label class="check"><input type="checkbox" id="fx-aberr" checked> Aberration</label>
+      <label class="check"><input type="checkbox" id="fx-doppler" checked> Colour shift</label>
+      <label class="check"><input type="checkbox" id="fx-gshift" checked> Gravity’s shift</label>
+      <label class="check"><input type="checkbox" id="fx-beam" checked> Brightness shift</label>
+      <label class="check"><input type="checkbox" id="fx-rates" checked> Clocks tick at different rates</label>
+      <button class="btn quiet" type="button" id="fx-none">Newton’s view</button>
+      <button class="btn quiet" type="button" id="fx-all">All on</button>
     </div>
 
     <div class="view wide" id="world-view">
-      <canvas id="world-canvas" tabindex="0" aria-label="First-person view. W and S change effort, A and D steer, drag to look, F to look where you are."></canvas>
+      <canvas id="world-canvas" tabindex="0" aria-label="First-person view. W and S change effort, A and D steer, E and Q go up and down, drag to look, F to look where you are."></canvas>
       <div class="crosshair" aria-hidden="true"></div>
       <div class="hud tl" id="w-hud-l"></div>
       <div class="hud tr" id="w-hud-r"></div>
       <div class="hud bl" id="w-hud-b"></div>
-      <canvas id="wave-map" width="128" height="128" aria-label="Your wavefunction from above, 32 m across, street running up the page" hidden></canvas>
+      <canvas id="wave-map" width="256" height="256" aria-label="Your wavefunction from above, 32 m across, street running up the page" hidden></canvas>
       <div class="pad" aria-hidden="true">
-        <button type="button" data-act="left" tabindex="-1">⟲</button>
+        <button type="button" data-act="up" tabindex="-1">▲</button>
         <button type="button" data-act="faster" tabindex="-1">＋</button>
-        <button type="button" data-act="right" tabindex="-1">⟳</button>
         <button type="button" data-act="look" tabindex="-1">F</button>
+        <button type="button" data-act="left" tabindex="-1">⟲</button>
         <button type="button" data-act="slower" tabindex="-1">−</button>
-        <span></span>
+        <button type="button" data-act="right" tabindex="-1">⟳</button>
+        <button type="button" data-act="down" tabindex="-1">▼</button>
       </div>
     </div>
     <dl class="readouts" id="w-readouts"></dl>
+
+    <div class="tools">
+      <section class="tool" id="probe" aria-labelledby="probe-h">
+        <h3 id="probe-h">Light probe: where the crosshair’s light came from</h3>
+        <canvas id="probe-path" aria-label="The light ray's path in a slice through the planet"></canvas>
+        <canvas id="probe-spec" aria-label="Spectrometer: the colour sent and the colour you see"></canvas>
+        <dl class="probe-info" id="probe-info"></dl>
+      </section>
+      <section class="tool" id="measure" aria-labelledby="m-h">
+        <h3 id="m-h">Measuring you</h3>
+        <p class="note" id="m-off">Measurement needs you to be a wave. Press “You are a wave”, or turn the third dial to 0.5 m or more.</p>
+        <div id="m-on" hidden>
+          <div class="m-row">
+            <button class="btn" type="button" id="m-look">Look where I am (F)</button>
+            <button class="btn quiet" type="button" id="m-relook">Rewind and look again</button>
+          </div>
+          <div class="m-row">
+            <label class="field"><span>Microscope sharpness</span>
+              <select id="m-sharp"><option value="0.25">0.25 m: sharp, hard kick</option><option value="0.5" selected>0.5 m</option><option value="1">1 m</option><option value="2">2 m: blurry, gentle</option></select></label>
+            <label class="field"><span>The world looks at you</span>
+              <select id="m-env"><option value="0" selected>never</option><option value="1">once a second</option><option value="4">4 times a second</option><option value="16">16 times a second</option></select></label>
+          </div>
+          <label class="check"><input type="checkbox" id="m-screen"> Only count looks that land behind the wall (a detector screen)</label>
+          <p class="note" id="m-note" aria-live="polite"></p>
+          <label class="field"><span>Bell at the left door records <output id="m-bell-out">0%</output> of who passes</span>
+            <input type="range" id="m-bell" min="0" max="100" step="5" value="0"></label>
+          <div class="m-row">
+            <button class="btn quiet" type="button" id="m-erase">Erase the bell’s record</button>
+            <button class="btn quiet" type="button" id="m-clear">Clear the marks</button>
+          </div>
+          <dl class="m-meter">
+            <div><dt>Δx, your spread in position</dt><dd id="m-dx"></dd></div>
+            <div><dt>Δv, your spread in velocity (Δp / m)</dt><dd id="m-dp"></dd></div>
+            <div><dt>Δx·Δp, which can never go below ħ/2</dt><dd id="m-prod"></dd><span class="m-track" title="Full bar: right at the limit"><i id="m-bar"></i></span></div>
+            <div><dt>The bell</dt><dd id="m-rang"></dd></div>
+            <div><dt>Chance you are past the wall</dt><dd id="m-behind"></dd></div>
+            <div><dt>Yellow marks on the map</dt><dd id="m-marks"></dd></div>
+          </dl>
+        </div>
+      </section>
+    </div>
 
     <div class="explain">
       <div>
         <h3>What each dial does to the view</h3>
         <ul>
           <li><span class="sym sym-c">c</span> Moving squeezes the view ahead, tints it blue and brightens it; behind you it reddens and fades. Far clocks read early because their light is old.</li>
-          <li><span class="sym sym-g">G</span> Light falls. The horizon rises, the street ahead curls up, and you see further round the planet. At 2/3 light circles the planet at eye level; beyond that the ground wraps over you and the sky shrinks to a blue disc overhead. The tower-top clock runs fast.</li>
-          <li><span class="sym sym-h">ħ</span> You become a wave. Left alone you spread, and the view overlays every place you might be. Walls reflect you; two doors split you. Looking (F) puts you in one place, at random.</li>
+          <li><span class="sym sym-g">G</span> Light falls. The horizon rises, the street ahead curls up, and you see further round the planet. Fly up (E) and lamps below turn red while the sky turns blue. Higher clocks run fast.</li>
+          <li><span class="sym sym-h">ħ</span> You become a wave. Left alone you spread, and the view overlays every place you might be. Walls reflect you; two doors split you.</li>
           <li><span class="sym sym-h">ħ</span> Light arrives in lumps. With few photons per pixel, the scene turns to grain.</li>
         </ul>
       </div>
       <div>
         <h3>What to try</h3>
         <ul>
-          <li>Press “Light orbits”, look along the street, then look straight up.</li>
-          <li>Press “You are a wave”, walk at the wall between the doors, and watch the map. Press F on the far side, several times from the start.</li>
-          <li>Turn on “Always watched”. Being looked at keeps you sharp, but you jitter: each look kicks your momentum.</li>
-          <li>Tick “Newton’s view” to see the same place with instant, straight light.</li>
+          <li>“Heavy planet”, then “Up to the tower clock”. Point the crosshair at a street lamp below and read the spectrometer.</li>
+          <li>Switch effects off one at a time. Each switch removes exactly one process from the picture.</li>
+          <li>“You are a wave”: walk at the doors until about a third of you is past the wall. Tick the detector screen, look, then “Rewind and look again” forty times. Clear the marks, set the bell to 100%, and repeat.</li>
+          <li>Set the microscope to 0.25 m and look. Watch Δv jump and your spreading speed up.</li>
+        </ul>
+      </div>
+      <div class="wide-note">
+        <h3>What a measurement is</h3>
+        <ul>
+          <li><strong>Outcomes are random, with probability |ψ|².</strong> “Rewind and look again” repeats the same experiment on the same wave; the yellow marks pile up where the map is bright. The look did not reveal where you already were: before it, there was no single place.</li>
+          <li><strong>A measurement is any interaction that leaves a record.</strong> The bell rings for whoever passes the left door. Nobody reads it, yet the stripes behind the doors fade, because the part of you that went left is now tied to “bell rang”. No conscious observer is needed.</li>
+          <li><strong>Records can be undone, sometimes.</strong> “Erase the bell’s record” reads the bell in a way that cannot tell left from right. The stripes come back, shifted for one of the two outcomes. This is the quantum eraser.</li>
+          <li><strong>Measuring disturbs.</strong> A sharp look pins your position and so spreads your momentum, because Δx·Δp ≥ ħ/2. Watch the meter and how fast you spread afterwards.</li>
+          <li><strong>After a look the state is updated, then evolves again.</strong> Look twice quickly: same place. Wait: you spread again. It neither stays collapsed nor snaps back.</li>
+          <li><strong>Why big things look definite:</strong> the world looks at them all the time. Set “The world looks at you” to 16 a second: you stay sharp but jitter. Hot molecules lose their stripes the same way, by giving off light.</li>
+          <li><strong>What is not settled</strong> is why one outcome happens rather than another. Decoherence explains the fading of stripes; interpretations (Copenhagen, many-worlds, pilot waves, collapse models) differ on the rest. The lab picks no side: “Look” uses the textbook rule.</li>
         </ul>
       </div>
       <div>
         <h3>What is exact, and what is not</h3>
-        <p class="note">Light paths are exact null geodesics of the Schwarzschild metric outside the planet, traced per pixel, with their travel time, gravitational and Doppler shifts. Your own wave obeys the free relativistic wave equation for a spinless particle in two dimensions, with walls. Approximations: colours (a guessed spectrum), sunlight (not bent), the overlay (an average of views, which no single observer sees), and a planet whose mass is set by decree.</p>
+        <p class="note">Light paths are exact null geodesics of the Schwarzschild metric outside the planet, traced per pixel, with travel time, gravitational and Doppler shifts; the probe re-traces the same ray in JavaScript. Your wave obeys the free relativistic wave equation for a spinless particle in two dimensions, with walls. The bell is a two-state detector coupled to you near the door; looks are Gaussian position measurements. Approximations: colours, unbent sunlight, the overlay of views, and a planet whose mass is set by decree.</p>
       </div>
       <div>
-        <h3>Why pure numbers</h3>
-        <p class="note">Only ratios without units are physical. Each dial is one: your walking speed against light, the planet’s horizon radius against its size, your wavelength against a metre, and the photons that reach one pixel. The notes under each dial translate it into <span class="sym">c</span>, <span class="sym">G</span> and <span class="sym">ħ</span>. They also show the catch: the ħ that makes you a 2 m wave would make each photon carry about 3×10³⁵ times its real energy, so a consistent world would be black. The last two dials keep those two effects apart on purpose.</p>
+        <h3>Further watching and reading</h3>
+        <ul class="links">
+          <li><a href="https://www.pbs.org/video/how-decoherence-splits-the-quantum-multiverse-b29lll" rel="noopener" target="_blank">PBS Space Time: How decoherence splits the quantum multiverse</a> (15 min)</li>
+          <li><a href="https://profmattstrassler.com/?p=21478" rel="noopener" target="_blank">Matt Strassler on why measurement destroys interference</a></li>
+          <li><a href="https://arxiv.org/abs/2212.02391" rel="noopener" target="_blank">Hsu: Decoherence and quantum measurement, the missing lecture</a></li>
+          <li><a href="https://arxiv.org/abs/1602.05720" rel="noopener" target="_blank">Zhu and Singh: students’ difficulties with quantum measurement</a></li>
+          <li><a href="https://arxiv.org/abs/quant-ph/0402146" rel="noopener" target="_blank">Hackermüller et al. 2004: hot molecules lose their stripes</a></li>
+          <li><a href="https://quantumflytrap.com/virtual-lab" rel="noopener" target="_blank">Quantum Flytrap Virtual Lab</a> and <a href="https://www.st-andrews.ac.uk/physics/quvis/" rel="noopener" target="_blank">QuVis</a>: photon interferometers, the quantum eraser and the bomb tester</li>
+        </ul>
       </div>
     </div>
 
     <footer class="colophon">
-      <p>cGħ World. The earlier tab-based scenes are in the repository history. Survey of existing tools and sources: RESEARCH.md in the repository.</p>
+      <p>cGħ World. Survey of existing tools and the plan ahead: RESEARCH.md and ROADMAP.md in the repository.</p>
     </footer>
   </div>
 </div>

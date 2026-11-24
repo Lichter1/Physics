@@ -260,13 +260,45 @@ dl { margin: 0; }
 
 /* ---------- cGħ World ---------- */
 #wave-map {
-  position: absolute; right: 8px; top: 74px; width: 184px; height: 184px;
+  position: absolute; right: 8px; top: 74px; width: 220px; height: 220px;
   border: 1px solid rgba(255,255,255,0.35); border-radius: 4px; image-rendering: pixelated; pointer-events: none;
 }
 .pad { grid-template-columns: repeat(3, 44px); }
 .explain li .sym { margin-right: 4px; }
 @media (max-width: 640px) {
   #wave-map { width: 104px; height: 104px; top: 64px; }
+}
+
+/* ---------- effects bar, probe and measurement ---------- */
+.fxbar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 16px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.fx-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+.fxbar .btn { padding: 4px 10px; font-size: 13px; }
+.tools { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+@media (min-width: 900px) { .tools { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.tool { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tool h3 { font-size: 15px; font-weight: 600; }
+#probe-path { width: 100%; aspect-ratio: 16 / 10; display: block; background: var(--bg); border-radius: 4px; }
+#probe-spec { width: 100%; height: 72px; display: block; }
+.probe-info, .m-meter { display: grid; gap: 6px; }
+.probe-info div, .m-meter div { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.probe-info dt, .m-meter dt { font-size: 12.5px; color: var(--muted); }
+.probe-info dd, .m-meter dd { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.m-meter dd { font-family: var(--font-data); font-variant-numeric: tabular-nums; font-size: 13.5px; }
+.m-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: end; }
+.tool select { padding: 5px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); max-width: 100%; }
+.tool input[type="range"] { width: 100%; accent-color: var(--h); }
+.m-track { grid-column: 2; display: block; height: 6px; border-radius: 3px; background: var(--sunk); border: 1px solid var(--line); overflow: hidden; }
+.m-track i { display: block; height: 100%; background: var(--h); }
+.wide-note { grid-column: 1 / -1; }
+.links { list-style: none; padding-left: 0 !important; }
+.links a { color: inherit; text-underline-offset: 2px; }
+@media (max-width: 640px) { .probe-info div, .m-meter div { grid-template-columns: minmax(0, 1fr); gap: 0; } .m-track { grid-column: 1; } }
+@media (max-width: 640px) {
+  #world-view canvas { aspect-ratio: 1 / 1; }
+  .pad { grid-template-columns: repeat(3, 34px); gap: 4px; }
+  .pad button { height: 34px; font-size: 15px; }
+  #world-view .hud.bl { max-width: calc(100% - 136px); }
+  #wave-map { width: 110px; height: 110px; top: 62px; right: 6px; }
 }
 </style>
 </head>
@@ -332,63 +364,132 @@ dl { margin: 0; }
         <input type="range" id="effort" min="0" max="20" step="0.1" value="0"></label>
       <button class="btn quiet" type="button" id="w-stop">Stop</button>
       <button class="btn quiet" type="button" id="w-turn">Turn around</button>
-      <button class="btn" type="button" id="w-look">Look where I am (F)</button>
-      <label class="check"><input type="checkbox" id="w-watched"> Always watched</label>
-      <label class="check"><input type="checkbox" id="w-newton"> Newton’s view</label>
-      <label class="check"><input type="checkbox" id="w-doppler" checked> Colour shift</label>
-      <label class="check"><input type="checkbox" id="w-beam" checked> Brightness shift</label>
+      <button class="btn quiet" type="button" id="w-tower">Up to the tower clock</button>
       <button class="btn quiet" type="button" id="w-home">Back to start</button>
+    </div>
+    <div class="fxbar" role="group" aria-label="Effects you can switch off one at a time">
+      <span class="fx-label">Effects</span>
+      <label class="check"><input type="checkbox" id="fx-bend" checked> Light bends</label>
+      <label class="check"><input type="checkbox" id="fx-delay" checked> Light takes time</label>
+      <label class="check"><input type="checkbox" id="fx-aberr" checked> Aberration</label>
+      <label class="check"><input type="checkbox" id="fx-doppler" checked> Colour shift</label>
+      <label class="check"><input type="checkbox" id="fx-gshift" checked> Gravity’s shift</label>
+      <label class="check"><input type="checkbox" id="fx-beam" checked> Brightness shift</label>
+      <label class="check"><input type="checkbox" id="fx-rates" checked> Clocks tick at different rates</label>
+      <button class="btn quiet" type="button" id="fx-none">Newton’s view</button>
+      <button class="btn quiet" type="button" id="fx-all">All on</button>
     </div>
 
     <div class="view wide" id="world-view">
-      <canvas id="world-canvas" tabindex="0" aria-label="First-person view. W and S change effort, A and D steer, drag to look, F to look where you are."></canvas>
+      <canvas id="world-canvas" tabindex="0" aria-label="First-person view. W and S change effort, A and D steer, E and Q go up and down, drag to look, F to look where you are."></canvas>
       <div class="crosshair" aria-hidden="true"></div>
       <div class="hud tl" id="w-hud-l"></div>
       <div class="hud tr" id="w-hud-r"></div>
       <div class="hud bl" id="w-hud-b"></div>
-      <canvas id="wave-map" width="128" height="128" aria-label="Your wavefunction from above, 32 m across, street running up the page" hidden></canvas>
+      <canvas id="wave-map" width="256" height="256" aria-label="Your wavefunction from above, 32 m across, street running up the page" hidden></canvas>
       <div class="pad" aria-hidden="true">
-        <button type="button" data-act="left" tabindex="-1">⟲</button>
+        <button type="button" data-act="up" tabindex="-1">▲</button>
         <button type="button" data-act="faster" tabindex="-1">＋</button>
-        <button type="button" data-act="right" tabindex="-1">⟳</button>
         <button type="button" data-act="look" tabindex="-1">F</button>
+        <button type="button" data-act="left" tabindex="-1">⟲</button>
         <button type="button" data-act="slower" tabindex="-1">−</button>
-        <span></span>
+        <button type="button" data-act="right" tabindex="-1">⟳</button>
+        <button type="button" data-act="down" tabindex="-1">▼</button>
       </div>
     </div>
     <dl class="readouts" id="w-readouts"></dl>
+
+    <div class="tools">
+      <section class="tool" id="probe" aria-labelledby="probe-h">
+        <h3 id="probe-h">Light probe: where the crosshair’s light came from</h3>
+        <canvas id="probe-path" aria-label="The light ray's path in a slice through the planet"></canvas>
+        <canvas id="probe-spec" aria-label="Spectrometer: the colour sent and the colour you see"></canvas>
+        <dl class="probe-info" id="probe-info"></dl>
+      </section>
+      <section class="tool" id="measure" aria-labelledby="m-h">
+        <h3 id="m-h">Measuring you</h3>
+        <p class="note" id="m-off">Measurement needs you to be a wave. Press “You are a wave”, or turn the third dial to 0.5 m or more.</p>
+        <div id="m-on" hidden>
+          <div class="m-row">
+            <button class="btn" type="button" id="m-look">Look where I am (F)</button>
+            <button class="btn quiet" type="button" id="m-relook">Rewind and look again</button>
+          </div>
+          <div class="m-row">
+            <label class="field"><span>Microscope sharpness</span>
+              <select id="m-sharp"><option value="0.25">0.25 m: sharp, hard kick</option><option value="0.5" selected>0.5 m</option><option value="1">1 m</option><option value="2">2 m: blurry, gentle</option></select></label>
+            <label class="field"><span>The world looks at you</span>
+              <select id="m-env"><option value="0" selected>never</option><option value="1">once a second</option><option value="4">4 times a second</option><option value="16">16 times a second</option></select></label>
+          </div>
+          <label class="check"><input type="checkbox" id="m-screen"> Only count looks that land behind the wall (a detector screen)</label>
+          <p class="note" id="m-note" aria-live="polite"></p>
+          <label class="field"><span>Bell at the left door records <output id="m-bell-out">0%</output> of who passes</span>
+            <input type="range" id="m-bell" min="0" max="100" step="5" value="0"></label>
+          <div class="m-row">
+            <button class="btn quiet" type="button" id="m-erase">Erase the bell’s record</button>
+            <button class="btn quiet" type="button" id="m-clear">Clear the marks</button>
+          </div>
+          <dl class="m-meter">
+            <div><dt>Δx, your spread in position</dt><dd id="m-dx"></dd></div>
+            <div><dt>Δv, your spread in velocity (Δp / m)</dt><dd id="m-dp"></dd></div>
+            <div><dt>Δx·Δp, which can never go below ħ/2</dt><dd id="m-prod"></dd><span class="m-track" title="Full bar: right at the limit"><i id="m-bar"></i></span></div>
+            <div><dt>The bell</dt><dd id="m-rang"></dd></div>
+            <div><dt>Chance you are past the wall</dt><dd id="m-behind"></dd></div>
+            <div><dt>Yellow marks on the map</dt><dd id="m-marks"></dd></div>
+          </dl>
+        </div>
+      </section>
+    </div>
 
     <div class="explain">
       <div>
         <h3>What each dial does to the view</h3>
         <ul>
           <li><span class="sym sym-c">c</span> Moving squeezes the view ahead, tints it blue and brightens it; behind you it reddens and fades. Far clocks read early because their light is old.</li>
-          <li><span class="sym sym-g">G</span> Light falls. The horizon rises, the street ahead curls up, and you see further round the planet. At 2/3 light circles the planet at eye level; beyond that the ground wraps over you and the sky shrinks to a blue disc overhead. The tower-top clock runs fast.</li>
-          <li><span class="sym sym-h">ħ</span> You become a wave. Left alone you spread, and the view overlays every place you might be. Walls reflect you; two doors split you. Looking (F) puts you in one place, at random.</li>
+          <li><span class="sym sym-g">G</span> Light falls. The horizon rises, the street ahead curls up, and you see further round the planet. Fly up (E) and lamps below turn red while the sky turns blue. Higher clocks run fast.</li>
+          <li><span class="sym sym-h">ħ</span> You become a wave. Left alone you spread, and the view overlays every place you might be. Walls reflect you; two doors split you.</li>
           <li><span class="sym sym-h">ħ</span> Light arrives in lumps. With few photons per pixel, the scene turns to grain.</li>
         </ul>
       </div>
       <div>
         <h3>What to try</h3>
         <ul>
-          <li>Press “Light orbits”, look along the street, then look straight up.</li>
-          <li>Press “You are a wave”, walk at the wall between the doors, and watch the map. Press F on the far side, several times from the start.</li>
-          <li>Turn on “Always watched”. Being looked at keeps you sharp, but you jitter: each look kicks your momentum.</li>
-          <li>Tick “Newton’s view” to see the same place with instant, straight light.</li>
+          <li>“Heavy planet”, then “Up to the tower clock”. Point the crosshair at a street lamp below and read the spectrometer.</li>
+          <li>Switch effects off one at a time. Each switch removes exactly one process from the picture.</li>
+          <li>“You are a wave”: walk at the doors until about a third of you is past the wall. Tick the detector screen, look, then “Rewind and look again” forty times. Clear the marks, set the bell to 100%, and repeat.</li>
+          <li>Set the microscope to 0.25 m and look. Watch Δv jump and your spreading speed up.</li>
+        </ul>
+      </div>
+      <div class="wide-note">
+        <h3>What a measurement is</h3>
+        <ul>
+          <li><strong>Outcomes are random, with probability |ψ|².</strong> “Rewind and look again” repeats the same experiment on the same wave; the yellow marks pile up where the map is bright. The look did not reveal where you already were: before it, there was no single place.</li>
+          <li><strong>A measurement is any interaction that leaves a record.</strong> The bell rings for whoever passes the left door. Nobody reads it, yet the stripes behind the doors fade, because the part of you that went left is now tied to “bell rang”. No conscious observer is needed.</li>
+          <li><strong>Records can be undone, sometimes.</strong> “Erase the bell’s record” reads the bell in a way that cannot tell left from right. The stripes come back, shifted for one of the two outcomes. This is the quantum eraser.</li>
+          <li><strong>Measuring disturbs.</strong> A sharp look pins your position and so spreads your momentum, because Δx·Δp ≥ ħ/2. Watch the meter and how fast you spread afterwards.</li>
+          <li><strong>After a look the state is updated, then evolves again.</strong> Look twice quickly: same place. Wait: you spread again. It neither stays collapsed nor snaps back.</li>
+          <li><strong>Why big things look definite:</strong> the world looks at them all the time. Set “The world looks at you” to 16 a second: you stay sharp but jitter. Hot molecules lose their stripes the same way, by giving off light.</li>
+          <li><strong>What is not settled</strong> is why one outcome happens rather than another. Decoherence explains the fading of stripes; interpretations (Copenhagen, many-worlds, pilot waves, collapse models) differ on the rest. The lab picks no side: “Look” uses the textbook rule.</li>
         </ul>
       </div>
       <div>
         <h3>What is exact, and what is not</h3>
-        <p class="note">Light paths are exact null geodesics of the Schwarzschild metric outside the planet, traced per pixel, with their travel time, gravitational and Doppler shifts. Your own wave obeys the free relativistic wave equation for a spinless particle in two dimensions, with walls. Approximations: colours (a guessed spectrum), sunlight (not bent), the overlay (an average of views, which no single observer sees), and a planet whose mass is set by decree.</p>
+        <p class="note">Light paths are exact null geodesics of the Schwarzschild metric outside the planet, traced per pixel, with travel time, gravitational and Doppler shifts; the probe re-traces the same ray in JavaScript. Your wave obeys the free relativistic wave equation for a spinless particle in two dimensions, with walls. The bell is a two-state detector coupled to you near the door; looks are Gaussian position measurements. Approximations: colours, unbent sunlight, the overlay of views, and a planet whose mass is set by decree.</p>
       </div>
       <div>
-        <h3>Why pure numbers</h3>
-        <p class="note">Only ratios without units are physical. Each dial is one: your walking speed against light, the planet’s horizon radius against its size, your wavelength against a metre, and the photons that reach one pixel. The notes under each dial translate it into <span class="sym">c</span>, <span class="sym">G</span> and <span class="sym">ħ</span>. They also show the catch: the ħ that makes you a 2 m wave would make each photon carry about 3×10³⁵ times its real energy, so a consistent world would be black. The last two dials keep those two effects apart on purpose.</p>
+        <h3>Further watching and reading</h3>
+        <ul class="links">
+          <li><a href="https://www.pbs.org/video/how-decoherence-splits-the-quantum-multiverse-b29lll" rel="noopener" target="_blank">PBS Space Time: How decoherence splits the quantum multiverse</a> (15 min)</li>
+          <li><a href="https://profmattstrassler.com/?p=21478" rel="noopener" target="_blank">Matt Strassler on why measurement destroys interference</a></li>
+          <li><a href="https://arxiv.org/abs/2212.02391" rel="noopener" target="_blank">Hsu: Decoherence and quantum measurement, the missing lecture</a></li>
+          <li><a href="https://arxiv.org/abs/1602.05720" rel="noopener" target="_blank">Zhu and Singh: students’ difficulties with quantum measurement</a></li>
+          <li><a href="https://arxiv.org/abs/quant-ph/0402146" rel="noopener" target="_blank">Hackermüller et al. 2004: hot molecules lose their stripes</a></li>
+          <li><a href="https://quantumflytrap.com/virtual-lab" rel="noopener" target="_blank">Quantum Flytrap Virtual Lab</a> and <a href="https://www.st-andrews.ac.uk/physics/quvis/" rel="noopener" target="_blank">QuVis</a>: photon interferometers, the quantum eraser and the bomb tester</li>
+        </ul>
       </div>
     </div>
 
     <footer class="colophon">
-      <p>cGħ World. The earlier tab-based scenes are in the repository history. Survey of existing tools and sources: RESEARCH.md in the repository.</p>
+      <p>cGħ World. Survey of existing tools and the plan ahead: RESEARCH.md and ROADMAP.md in the repository.</p>
     </footer>
   </div>
 </div>
@@ -856,6 +957,22 @@ dl { margin: 0; }
     this.re = re0; this.im = im0;
     return [sx / s, sy / s];
   };
+  // Momentum statistics: [<kx>, <ky>, <kx²>, <ky²>, norm] from |ψ(k)|². y grows upward.
+  Sim.prototype.kStats = function () {
+    var N = this.N, L = this.L, sx = 0, sy = 0, sxx = 0, syy = 0, s = 0, re0 = this.re, im0 = this.im;
+    this.re = Float64Array.from(re0); this.im = Float64Array.from(im0);
+    this._fft2(false);
+    for (var j = 0; j < N; j++) {
+      var ky = -2 * Math.PI * (j < N / 2 ? j : j - N) / L;
+      for (var i = 0; i < N; i++) {
+        var kx = 2 * Math.PI * (i < N / 2 ? i : i - N) / L, q = j * N + i, p = this.re[q] * this.re[q] + this.im[q] * this.im[q];
+        sx += p * kx; sy += p * ky; sxx += p * kx * kx; syy += p * ky * ky; s += p;
+      }
+    }
+    this.re = re0; this.im = im0;
+    var norm = s * this.dx * this.dx / (N * N);         // Parseval: Σ|ψ(k)|² = N² Σ|ψ(x)|²
+    return [sx / s, sy / s, sxx / s, syy / s, norm];
+  };
   // Move the whole wave by whole cells (di right, dj up). What slides off is dropped, new cells are empty.
   Sim.prototype.shift = function (di, dj) {
     var N = this.N, re = new Float64Array(N * N), im = new Float64Array(N * N);
@@ -1025,6 +1142,9 @@ dl { margin: 0; }
     return { up: [-st, ct * cp, ct * sp], along: [0, -sp, cp], across: [-ct, -st * cp, -st * sp] };
   }
 
+  // The yard behind the two doors (block 0) is kept empty so the stripes are clean.
+  function yard(ti, al) { return ti === 0 && al < -19.5 && al > -38.5; }
+
   /* ---------- what stands on the ground (for walking into things, and for the wave's walls) ---------- */
   function box2(x, y, hx, hy) {
     var dx = Math.abs(x) - hx, dy = Math.abs(y) - hy;
@@ -1035,8 +1155,10 @@ dl { margin: 0; }
     a = wrapA(a);
     var ti = Math.floor((a + LT / 2) / LT), al = a - ti * LT, ab = Math.abs(l);
     var d = box2(ab - 16, mod(al, 20) - 10, 6, 8);                      // houses
-    d = Math.min(d, box2(ab - 4.6, mod(al, 12) - 6, 0.08, 0.08));        // lamp posts
-    d = Math.min(d, box2(ab - 6.3, mod(al, 6) - 3, 0.5, 0.5));           // crates
+    if (!yard(ti, al)) {
+      d = Math.min(d, box2(ab - 4.6, mod(al, 12) - 6, 0.08, 0.08));      // lamp posts
+      d = Math.min(d, box2(ab - 6.3, mod(al, 6) - 3, 0.5, 0.5));         // crates
+    }
     d = Math.min(d, box2(ab - 8.7, mod(al + 12, 24) - 12, 0.175, 0.175)); // tree trunks
     d = Math.min(d, box2(ab - 5.2, al, 0.15, 0.15));                     // clock gantry posts
     if (ti === 0) {
@@ -1094,10 +1216,90 @@ dl { margin: 0; }
   // Rate of a static clock at height h compared with one at your eye.
   function clockRate(rs, h) { return Math.sqrt((1 - rs / (R + h)) / (1 - rs / (R + EYE))); }
 
+  /* ---------- the full scene, mirrored from the shader (for the probe and for walking into things) ---------- */
+  // Building heights use exact integer arithmetic so the GPU and JavaScript agree.
+  function houseHeight(cell, side) { return 9 + 3 * mod(cell * 7 + side * 3 + 5, 6); }
+  function sdBox(x, y, z, bx, by, bz) {
+    var qx = Math.abs(x) - bx, qy = Math.abs(y) - by, qz = Math.abs(z) - bz;
+    return Math.hypot(Math.max(qx, 0), Math.max(qy, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, Math.max(qy, qz)), 0);
+  }
+  var MATS = ['the street', 'a house', '', 'a post', 'a lamp', 'a crate', '', 'a tree trunk', 'a tree', 'the street clock',
+              'the clock tower', 'the wall with two doors', 'the bell over the left door'];
+  // Distance to the nearest surface from a planet-frame point, and its material (same numbering as the shader).
+  function scene(x) {
+    var r = len(x), a = R * Math.atan2(x[2], x[1]), ti = Math.floor((a + 60) / 120);
+    var l = -R * Math.asin(Math.max(-1, Math.min(1, x[0] / r))), h = r - R, al = l < 0 ? -l : l;
+    a -= 120 * ti;
+    if (h > HMAX) return { d: h - HMAX + 0.5, mat: 0 };
+    var d = h, mat = 0, e, k;
+    function take(v, m) { if (v < d) { d = v; mat = m; } }
+    var side = l > 0 ? 1 : 0, c0 = Math.floor(a / 20), f = a / 20 - c0, cn = c0 + (f < 0.5 ? -1 : 1);
+    for (k = 0; k < 2; k++) {
+      var c = k === 0 ? c0 : cn, H = houseHeight(ti * 6 + c, side);
+      take(sdBox(al - 16, h - 0.5 * H, a - 20 * c - 10, 6, 0.5 * H, 8), 1);
+    }
+    if (!yard(ti, a)) {
+      var qz = mod(a, 12) - 6;
+      take(sdBox(al - 4.6, h - 2.2, qz, 0.08, 2.2, 0.08), 3);
+      take(sdBox(al - 4.6, h - 4.5, qz, 0.25, 0.14, 0.25), 4);
+      take(sdBox(al - 6.3, h - 0.5, mod(a, 6) - 3, 0.5, 0.5, 0.5), 5);
+    }
+    var tz = mod(a + 12, 24) - 12;
+    take(sdBox(al - 8.7, h - 1.3, tz, 0.175, 1.3, 0.175), 7);
+    take(sdBox(al - 8.7, h - 4.0, tz, 1.3, 1.3, 1.3), 8);
+    take(Math.min(sdBox(al - 5.2, h - 3.5, a, 0.15, 3.5, 0.15), sdBox(l, h - 6.85, a, 5.35, 0.15, 0.15)), 3);
+    take(Math.max(Math.hypot(l, h - 5.4) - 1.25, Math.abs(a) - 0.06), 9);
+    if (ti === 0) {
+      take(sdBox(l, h - 25, a - 40, 1.5, 25, 1.5), 10);
+      take(Math.max(sdBox(l, h - 1.5, a + 20, 10, 1.5, 0.2), -sdBox(al - 1.5, h - 1.5, a + 20, 0.6, 2, 1)), 11);
+      take(sdBox(l - 1.5, h - 3.25, a + 20, 0.3, 0.2, 0.3), 12);
+    }
+    return { d: d, mat: mat };
+  }
+
+  // From a direction in the walker's frame to the frame of someone standing still there (inverse aberration).
+  function deaberrate(np, beta) {
+    var b2 = dot(beta, beta);
+    if (b2 === 0) return { n: np.slice(), D: 1 };
+    var g = 1 / Math.sqrt(1 - b2), nb = dot(np, beta), b = Math.sqrt(b2), k = ((g - 1) * nb / b - g * b) / b, den = g * (1 - nb);
+    return { n: [(np[0] + k * beta[0]) / den, (np[1] + k * beta[1]) / den, (np[2] + k * beta[2]) / den], D: 1 / den };
+  }
+
+  /* The shader's light-ray march, step for step, keeping the path. Returns what the ray hit (kind 1),
+   * or the sky (kind 2), with c × travel time ct and the path points. */
+  function march(eye, n, rs, keep) {
+    var re = len(eye), u = [eye[0] / re, eye[1] / re, eye[2] / re], x = eye.slice(), r = re, ct = 0, s = 0, mat = 0, kind = 0;
+    var nu = dot(n, u), f = 1 / Math.sqrt(1 - rs / re), v = [0, 1, 2].map(function (i) { return nu * u[i] + (n[i] - nu * u[i]) * f; });
+    var Lv = cross(x, v), k = -1.5 * rs * dot(Lv, Lv), acc = x.map(function (c) { return k * c / Math.pow(r, 5); });
+    var path = keep ? [x.slice()] : null;
+    for (var i = 0; i < 260; i++) {
+      var h = r - R, d;
+      if (h < HMAX) { var sc = scene(x); d = sc.d; mat = sc.mat; if (d < 0.004 + 0.0015 * s) { kind = 1; break; } }
+      else d = h - HMAX + 0.5;
+      if (r > 30 * R) { kind = 2; break; }
+      var dl = Math.max(Math.min(0.8 * d, (h > 2 * HMAX ? 0.15 : 0.05) * r), 0.003 * s + 0.01), hs = dl / len(v);
+      var xn = [0, 1, 2].map(function (j) { return x[j] + v[j] * hs + 0.5 * acc[j] * hs * hs; });
+      var rn = len(xn), accn = xn.map(function (c) { return k * c / Math.pow(rn, 5); });
+      for (var j = 0; j < 3; j++) v[j] += 0.5 * (acc[j] + accn[j]) * hs;
+      ct += 0.5 * hs * (1 / (1 - rs / r) + 1 / (1 - rs / rn));
+      if (rn < R) {
+        var fr = (r - R) / Math.max(r - rn, 1e-6);
+        ct -= (1 - fr) * hs / (1 - rs / R);
+        x = [0, 1, 2].map(function (j) { return x[j] + (xn[j] - x[j]) * fr; }); s += fr * dl; mat = 0; kind = 1;
+        if (keep) path.push(x.slice());
+        break;
+      }
+      x = xn; r = rn; acc = accn; s += dl;
+      if (keep) path.push(x.slice());
+    }
+    return { kind: kind, mat: mat, x: x, v: v, ct: ct, s: s, path: path, n0: n };
+  }
+
   var api = {
     R: R, NT: NT, LT: LT, EYE: EYE, HMAX: HMAX, START: START, DOORS: DOORS, TOWER: TOWER, WALL: WALL,
     mod: mod, wrapA: wrapA, toWorld: toWorld, fromWorld: fromWorld, frame: frame, footprint: footprint,
-    launch: launch, trace: trace, horizon: horizon, clockRate: clockRate, dot: dot, cross: cross, len: len
+    launch: launch, trace: trace, horizon: horizon, clockRate: clockRate, dot: dot, cross: cross, len: len,
+    houseHeight: houseHeight, scene: scene, MATS: MATS, deaberrate: deaberrate, march: march
   };
   root.CGH = root.CGH || {};
   root.CGH.geo = api;
@@ -1124,8 +1326,8 @@ in vec2 vUV;
 out vec4 outColor;
 uniform vec3 uEye, uFwd, uRight, uUp, uBeta;
 uniform vec2 uTan;
-uniform float uRs, uC, uT, uExposure;
-uniform int uDoppler, uBeam;
+uniform float uRsRay, uRsShift, uRsClock, uC, uCdelay, uT, uExposure, uBell;
+uniform int uDoppler, uBeam, uAberr;
 const float R = ${F(g.R)};
 const float HMAX = ${F(g.HMAX)};
 const vec3 SUN = vec3(0.3015, 0.9045, 0.3015);
@@ -1133,7 +1335,7 @@ const vec3 SUN = vec3(0.3015, 0.9045, 0.3015);
 float hash1(float n) { return fract(sin(n * 12.9898) * 43758.5453); }
 float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float sdBox(vec3 p, vec3 b) { vec3 q = abs(p) - b; return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0); }
-float houseH(float cell, float side) { return 9.0 + 3.0 * floor(6.0 * hash1(mod(cell, 120.0) * 2.0 + side + 0.5)); }
+float houseH(float cell, float side) { return 9.0 + 3.0 * mod(cell * 7.0 + side * 3.0 + 5.0, 6.0); }
 
 // Street coordinates (across, height, along within the block) and the block index.
 vec3 street(vec3 x, out float ti) {
@@ -1156,10 +1358,12 @@ float scene(vec3 x, out float mat) {
     e = sdBox(vec3(al - 16.0, h - 0.5 * H, a - 20.0 * c - 10.0), vec3(6.0, 0.5 * H, 8.0));
     if (e < d) { d = e; mat = 1.0; }
   }
-  vec3 q = vec3(al - 4.6, h, mod(a, 12.0) - 6.0);
-  e = sdBox(q - vec3(0.0, 2.2, 0.0), vec3(0.08, 2.2, 0.08)); if (e < d) { d = e; mat = 3.0; }
-  e = sdBox(q - vec3(0.0, 4.5, 0.0), vec3(0.25, 0.14, 0.25)); if (e < d) { d = e; mat = 4.0; }
-  e = sdBox(vec3(al - 6.3, h - 0.5, mod(a, 6.0) - 3.0), vec3(0.5)); if (e < d) { d = e; mat = 5.0; }
+  if (!(ti == 0.0 && a < -19.5 && a > -38.5)) {          // the yard behind the two doors is kept empty
+    vec3 q = vec3(al - 4.6, h, mod(a, 12.0) - 6.0);
+    e = sdBox(q - vec3(0.0, 2.2, 0.0), vec3(0.08, 2.2, 0.08)); if (e < d) { d = e; mat = 3.0; }
+    e = sdBox(q - vec3(0.0, 4.5, 0.0), vec3(0.25, 0.14, 0.25)); if (e < d) { d = e; mat = 4.0; }
+    e = sdBox(vec3(al - 6.3, h - 0.5, mod(a, 6.0) - 3.0), vec3(0.5)); if (e < d) { d = e; mat = 5.0; }
+  }
   vec3 t = vec3(al - 8.7, h, mod(a + 12.0, 24.0) - 12.0);
   e = sdBox(t - vec3(0.0, 1.3, 0.0), vec3(0.175, 1.3, 0.175)); if (e < d) { d = e; mat = 7.0; }
   e = sdBox(t - vec3(0.0, 4.0, 0.0), vec3(1.3)); if (e < d) { d = e; mat = 8.0; }
@@ -1170,6 +1374,7 @@ float scene(vec3 x, out float mat) {
     e = sdBox(vec3(l, h - 25.0, a - 40.0), vec3(1.5, 25.0, 1.5)); if (e < d) { d = e; mat = 10.0; }
     e = max(sdBox(vec3(l, h - 1.5, a + 20.0), vec3(10.0, 1.5, 0.2)), -sdBox(vec3(al - 1.5, h - 1.5, a + 20.0), vec3(0.6, 2.0, 1.0)));
     if (e < d) { d = e; mat = 11.0; }
+    e = sdBox(vec3(l - 1.5, h - 3.25, a + 20.0), vec3(0.3, 0.2, 0.3)); if (e < d) { d = e; mat = 12.0; }
   }
   return d;
 }
@@ -1227,15 +1432,15 @@ void main() {
   if (b2 > 0.0) {
     float gm = inversesqrt(1.0 - b2), nb = dot(np, uBeta);
     vec3 bh = uBeta * inversesqrt(b2);
-    n = (np + ((gm - 1.0) * dot(np, bh) - gm * sqrt(b2)) * bh) / (gm * (1.0 - nb));
+    if (uAberr == 1) n = (np + ((gm - 1.0) * dot(np, bh) - gm * sqrt(b2)) * bh) / (gm * (1.0 - nb));
     Ddop = 1.0 / (gm * (1.0 - nb));
   }
   // follow the light back along its curved path
   float re = length(uEye), r = re, ct = 0.0, s = 0.0, mat = 0.0;
   vec3 u = uEye / re, x = uEye;
-  vec3 v = dot(n, u) * u + (n - dot(n, u) * u) * inversesqrt(1.0 - uRs / re);
+  vec3 v = dot(n, u) * u + (n - dot(n, u) * u) * inversesqrt(1.0 - uRsRay / re);
   vec3 Lv = cross(x, v);
-  float k = -1.5 * uRs * dot(Lv, Lv);
+  float k = -1.5 * uRsRay * dot(Lv, Lv);
   vec3 acc = k * x / pow(r, 5.0);
   int kind = 0;
   for (int i = 0; i < 260; i++) {
@@ -1249,10 +1454,10 @@ void main() {
     float rn = length(xn);
     vec3 accn = k * xn / pow(rn, 5.0);
     v += 0.5 * (acc + accn) * hs;
-    ct += 0.5 * hs * (1.0 / (1.0 - uRs / r) + 1.0 / (1.0 - uRs / rn));
+    ct += 0.5 * hs * (1.0 / (1.0 - uRsRay / r) + 1.0 / (1.0 - uRsRay / rn));
     if (rn < R) {
       float f = (r - R) / max(r - rn, 1e-6);
-      ct -= (1.0 - f) * hs / (1.0 - uRs / R);
+      ct -= (1.0 - f) * hs / (1.0 - uRsRay / R);
       x = mix(x, xn, f); s += f * dl; r = R; mat = 0.0; kind = 1; break;
     }
     x = xn; r = rn; acc = accn; s += dl;
@@ -1261,11 +1466,11 @@ void main() {
   vec3 col; float ir = -1.0, uvl = -1.0, Dg;
   if (kind != 1) {
     col = kind == 2 ? sky(normalize(v), ir, uvl) : vec3(0.05, 0.06, 0.08);
-    Dg = inversesqrt(1.0 - uRs / re);                    // starlight falling in is blueshifted
+    Dg = inversesqrt(1.0 - uRsShift / re);                    // starlight falling in is blueshifted
   } else {
     r = length(x);
-    Dg = sqrt((1.0 - uRs / r) / (1.0 - uRs / re));
-    float tau = sqrt(1.0 - uRs / r) * (uT - ct / uC);    // the emitter's own clock when this light left it
+    Dg = sqrt((1.0 - uRsShift / r) / (1.0 - uRsShift / re));
+    float tau = sqrt(1.0 - uRsClock / r) * (uT - ct / uCdelay);    // the emitter's own clock when this light left it
     float ti; vec3 p = street(x, ti);
     float l = p.x, h = p.y, a = p.z, ag = a + 120.0 * ti;
     vec3 up = x / r, along = normalize(vec3(0.0, -x.z, x.y)), across = cross(along, up);
@@ -1314,7 +1519,8 @@ void main() {
         vec2 q = vec2(fu, h - (c == 0 ? 46.0 : 3.0)) / 1.3;
         if (abs(dot(nr, up)) < 0.5 && length(q) < 1.0) { col = dial(q, tau); lit = 0.0; }
       }
-    } else if (mat == 11.0) col = abs(h - 2.2) < 0.15 ? vec3(0.15, 0.35, 0.75) : vec3(0.86, 0.85, 0.82);
+    } else if (mat == 12.0) { col = uBell > 0.5 ? vec3(0.5, 1.6, 1.9) : vec3(0.25, 0.27, 0.30); lit = uBell > 0.5 ? 0.0 : 1.0; }
+    else if (mat == 11.0) col = abs(h - 2.2) < 0.15 ? vec3(0.15, 0.35, 0.75) : vec3(0.86, 0.85, 0.82);
     float lum = dot(col, vec3(0.3, 0.55, 0.15));
     if (ir < 0.0) { ir = lum; uvl = lum * 0.7; }
     if (lit > 0.0) { float sh = 0.30 + 0.75 * max(dot(nr, SUN), 0.0); col *= sh; ir *= sh; uvl *= sh; }
@@ -1535,30 +1741,41 @@ void main() {
   };
 })();
 
-/* cGħ World — you, as a wave.
- * Your position on the ground is a 2-D wavefunction, solved on a 32 m × 32 m window that follows you.
- * Everything standing on the ground is a wall. Your legs act as a uniform force: they shift the whole
- * momentum distribution toward the speed you are trying to walk at. Each frame the camera is placed at
- * one position drawn from |ψ|², and the screen keeps a running average: every place you might be.
+/* cGħ World — you, as a wave, and what it means to measure you.
+ *
+ * Your position on the ground is a 2-D wavefunction on a 32 m × 32 m window that follows you.
+ * Everything standing on the ground is a wall. Your legs act as a uniform force (they shift the
+ * whole momentum distribution). Each frame the camera stands at one place drawn from |ψ|².
+ *
+ * Measurement, three ways:
+ *  - look(σ): a position measurement of width σ. The outcome is random with probability |ψ|²; the wave
+ *    is then multiplied by a Gaussian of width σ around it. A narrow look gives a wide momentum spread.
+ *  - the bell: a detector at the left door. Passing near it rotates your state from "bell silent" (ψ0)
+ *    into "bell rang" (ψ1). Nobody has to read the bell: the two parts no longer interfere.
+ *  - erase(): measure the bell in the basis (silent ± rang)/√2. That removes the record and brings the
+ *    stripes back (shifted, for the minus outcome).
  */
 (function () {
   'use strict';
   var G = CGH.geo, QC = CGH.qcore;
   var N = 128, L = 32, M = 70, dx = L / N, EDGE = 2.5, BODY = 0.2, AMAX = 4;
-  var W = { sim: null, ca: 0, cl: 0, hbar: 0, c: 0, on: false, cum: new Float64Array(N * N), spread: 0, mean: null };
+  var BELL = { a: G.WALL.a, l: G.WALL.door, ha: 0.7, hl: 0.75 };
+  var W = { sim: null, sim1: null, ca: 0, cl: 0, hbar: 0, c: 0, on: false, bell: 0, rang: 0,
+            cum: new Float64Array(N * N), spread: 0, mean: null, vel: [0, 0], marks: [], saved: null, stats: null };
 
   function toStreet(x, y) { return { a: G.wrapA(W.ca + y - L / 2), l: W.cl + x - L / 2 }; }
+  function toGrid(a, l) { return { x: l - W.cl + L / 2, y: G.wrapA(a - W.ca) + L / 2 }; }
+  function both(fn) { fn(W.sim); if (W.sim1) fn(W.sim1); }
   function walls() {
-    var s = W.sim;
-    s.build(function (x, y) {
+    var build = function (x, y) {
       var e = Math.min(x, L - x, y, L - y), p = toStreet(x, y);
       return { wall: G.footprint(p.a, p.l) < BODY, damp: e < EDGE ? 6 * Math.pow((EDGE - e) / EDGE, 2) : 0 };
-    });
+    };
+    both(function (s) { s.build(build); });
   }
 
-  // Start (or restart) as a packet of width sigma at street point (a, l), moving at (va, vl).
   function start(a, l, va, vl, hbar, c, sigma) {
-    W.hbar = hbar; W.c = c; W.ca = a; W.cl = l; W.on = true; W.vel = [va, vl];
+    W.hbar = hbar; W.c = c; W.ca = a; W.cl = l; W.on = true; W.vel = [va, vl]; W.sim1 = null; W.rang = 0; W.saved = null;
     W.sim = new QC.Sim({ N: N, L: L, m: M, hbar: hbar, c: c });
     walls();
     W.sim.gaussian(L / 2, L / 2, sigma, sigma, 0, 0);
@@ -1566,78 +1783,190 @@ void main() {
     W.sim.kick(k[0], k[1]);
     measure();
   }
-  function stop() { W.on = false; W.sim = null; }
+  function stop() { W.on = false; W.sim = null; W.sim1 = null; }
 
-  // Wavenumber of someone walking at (va, vl): p = γ m v, capped well inside what the grid can hold.
   function momentumK(va, vl) {
     var v2 = va * va + vl * vl, g = W.c ? 1 / Math.sqrt(Math.max(1e-6, 1 - v2 / (W.c * W.c))) : 1;
     var kx = g * M * vl / W.hbar, ky = g * M * va / W.hbar, kk = Math.hypot(kx, ky), cap = 0.45 * Math.PI / dx;
     return kk > cap ? [kx * cap / kk, ky * cap / kk] : [kx, ky];
   }
-  function topSpeed() {                                   // the fastest walk the window can represent
+  function topSpeed() {
     var p = 0.45 * Math.PI / dx * W.hbar;
     return W.c ? p * W.c / Math.sqrt(p * p + M * M * W.c * W.c) : p / M;
   }
 
+  // Position statistics over both parts of the wave.
   function measure() {
-    var m = W.sim.moments(), p = toStreet(m.x, m.y);
-    W.mean = p; W.spread = Math.hypot(m.sx, m.sy);
+    var m0 = W.sim.moments(), n0 = m0.norm, m = m0;
+    if (W.sim1) {
+      var m1 = W.sim1.moments(), n1 = m1.norm, t = n0 + n1 || 1;
+      var x = (m0.x * n0 + m1.x * n1) / t, y = (m0.y * n0 + m1.y * n1) / t;
+      var vx = ((m0.sx * m0.sx + m0.x * m0.x) * n0 + (m1.sx * m1.sx + m1.x * m1.x) * n1) / t - x * x;
+      var vy = ((m0.sy * m0.sy + m0.y * m0.y) * n0 + (m1.sy * m1.sy + m1.y * m1.y) * n1) / t - y * y;
+      m = { x: x, y: y, sx: Math.sqrt(Math.max(vx, 0)), sy: Math.sqrt(Math.max(vy, 0)), norm: t };
+      W.rang = n1 / t;
+    }
+    W.mean = toStreet(m.x, m.y); W.spread = Math.hypot(m.sx, m.sy); W.pos = m;
     return m;
   }
+  // Momentum statistics over both parts: mean wavenumber and spreads.
+  function kstats() {
+    var a = W.sim.kStats(), out = a;
+    if (W.sim1) {
+      var b = W.sim1.kStats(), t = a[4] + b[4] || 1;
+      out = [0, 1, 2, 3].map(function (i) { return (a[i] * a[4] + b[i] * b[4]) / t; });
+    }
+    return { k: [out[0], out[1]], dk: [Math.sqrt(Math.max(0, out[2] - out[0] * out[0])), Math.sqrt(Math.max(0, out[3] - out[1] * out[1]))] };
+  }
+  function normalise() {
+    var t = W.sim.norm() + (W.sim1 ? W.sim1.norm() : 0), f = 1 / Math.sqrt(t || 1);
+    both(function (s) { for (var q = 0; q < s.re.length; q++) { s.re[q] *= f; s.im[q] *= f; } });
+  }
 
-  // Advance by dt seconds of your own time while trying to walk at (va, vl).
-  function step(dt, va, vl) {
-    var s = W.sim, k = s.meanK(), kt = momentumK(va, vl);
-    var lim = M * AMAX * dt / W.hbar, dkx = kt[0] - k[0], dky = kt[1] - k[1], dk = Math.hypot(dkx, dky);
-    if (dk > lim) { dkx *= lim / dk; dky *= lim / dk; }
-    if (dk > 1e-9) s.kick(dkx, dky);
-    // group velocity of the mean momentum: c²p/E, or p/m without relativity
-    var kx = k[0] + dkx, ky = k[1] + dky, px = W.hbar * kx, py = W.hbar * ky;
-    var inv = W.c ? W.c * W.c / Math.sqrt((px * px + py * py) * W.c * W.c + Math.pow(M * W.c * W.c, 2)) : 1 / M;
-    W.vel = [py * inv, px * inv];
-    // walls must stand far above your energy: their height is wallPhase·ħ/dt, so take short steps
-    var v2 = va * va + vl * vl, E = 0.5 * M * Math.max(v2, 1) + W.hbar * W.hbar / (2 * M * 0.25);
-    var n = Math.max(1, Math.min(6, Math.ceil(dt * 10 * E / W.hbar)));
-    for (var i = 0; i < n; i++) s.step(dt / n);
-    s.normalise();
-    var m = measure();
-    // keep the wave in the middle of the window
-    var di = Math.round((m.x - L / 2) / dx), dj = Math.round((m.y - L / 2) / dx);
-    if (Math.abs(di) > 12 || Math.abs(dj) > 12) {
-      s.shift(di, dj); W.cl += di * dx; W.ca = G.wrapA(W.ca + dj * dx); walls(); measure();
+  // The bell: inside the zone by the left door, rotate (silent, rang) at a rate set by the walking speed,
+  // so that walking through it at a steady pace turns `strength` of a full record.
+  function ring(dt, speed) {
+    if (!W.bell) return;
+    if (!W.sim1) { W.sim1 = new QC.Sim({ N: N, L: L, m: M, hbar: W.hbar, c: W.c }); walls(); W.sim1.re.fill(0); W.sim1.im.fill(0); }
+    var g = toGrid(BELL.a, BELL.l);
+    var i0 = Math.max(0, Math.floor((g.x - BELL.hl) / dx)), i1 = Math.min(N - 1, Math.ceil((g.x + BELL.hl) / dx));
+    var y0 = g.y - BELL.ha, y1 = g.y + BELL.ha;
+    if (i1 < 0 || i0 > N - 1 || y1 < 0 || y0 > L) return;
+    var th = W.bell * (Math.PI / 2) * Math.max(speed, 0.8) * dt / (2 * BELL.ha), c = Math.cos(th), s = Math.sin(th);
+    var a = W.sim, b = W.sim1;
+    for (var j = 0; j < N; j++) {
+      var y = a.y(j); if (y < y0 || y > y1) continue;
+      for (var i = i0; i <= i1; i++) {
+        var q = j * N + i, ar = a.re[q], ai = a.im[q], br = b.re[q], bi = b.im[q];
+        a.re[q] = c * ar - s * br; a.im[q] = c * ai - s * bi;
+        b.re[q] = s * ar + c * br; b.im[q] = s * ai + c * bi;
+      }
     }
   }
 
-  // One place you might be, drawn from |ψ|².
-  function sample(rand) {
-    var re = W.sim.re, im = W.sim.im, cum = W.cum, tot = 0, q;
-    for (q = 0; q < re.length; q++) { tot += re[q] * re[q] + im[q] * im[q]; cum[q] = tot; }
-    var t = rand() * tot, lo = 0, hi = re.length - 1;
+  function step(dt, va, vl) {
+    var st = kstats(), k = st.k, kt = momentumK(va, vl);
+    var lim = M * AMAX * dt / W.hbar, dkx = kt[0] - k[0], dky = kt[1] - k[1], dk = Math.hypot(dkx, dky);
+    if (dk > lim) { dkx *= lim / dk; dky *= lim / dk; }
+    if (dk > 1e-9) both(function (s) { s.kick(dkx, dky); });
+    var kx = k[0] + dkx, ky = k[1] + dky, px = W.hbar * kx, py = W.hbar * ky;
+    var inv = W.c ? W.c * W.c / Math.sqrt((px * px + py * py) * W.c * W.c + Math.pow(M * W.c * W.c, 2)) : 1 / M;
+    W.vel = [py * inv, px * inv];
+    W.stats = { dk: st.dk };
+    var v2 = va * va + vl * vl, E = 0.5 * M * Math.max(v2, 1) + W.hbar * W.hbar / (2 * M * 0.25);
+    var n = Math.max(1, Math.min(6, Math.ceil(dt * 10 * E / W.hbar)));
+    for (var i = 0; i < n; i++) { both(function (s) { s.step(dt / n); }); ring(dt / n, Math.hypot(va, vl)); }
+    normalise();
+    var m = measure();
+    var di = Math.round((m.x - L / 2) / dx), dj = Math.round((m.y - L / 2) / dx);
+    if (Math.abs(di) > 12 || Math.abs(dj) > 12) {
+      both(function (s) { s.shift(di, dj); });
+      W.cl += di * dx; W.ca = G.wrapA(W.ca + dj * dx); walls(); measure();
+    }
+  }
+
+  // The yard behind the two doors: where a detector screen would catch you.
+  function behind(x, y) { var p = toStreet(x, y); return p.a < G.WALL.a - G.WALL.half - 0.3 && p.a > -38 && Math.abs(p.l) < 10; }
+  function chanceBehind() {
+    var a = W.sim, b = W.sim1, s = 0, t = 0;
+    for (var j = 0; j < N; j++) {
+      var y = a.y(j), rowIn = behind(L / 2, y), rs = 0;
+      for (var i = 0; i < N; i++) {
+        var q = j * N + i, p = a.re[q] * a.re[q] + a.im[q] * a.im[q] + (b ? b.re[q] * b.re[q] + b.im[q] * b.im[q] : 0);
+        t += p; if (rowIn && behind(a.x(i), y)) rs += p;
+      }
+      s += rs;
+    }
+    return t ? s / t : 0;
+  }
+  // Draw one place from the combined probability |ψ0|² + |ψ1|², optionally only from the yard behind the doors.
+  function pick(rand, screen) {
+    var a = W.sim, b = W.sim1, cum = W.cum, tot = 0, q;
+    for (q = 0; q < cum.length; q++) {
+      var i0 = q % N, j0 = (q - i0) / N;
+      if (!screen || behind(a.x(i0), a.y(j0))) {
+        tot += a.re[q] * a.re[q] + a.im[q] * a.im[q];
+        if (b) tot += b.re[q] * b.re[q] + b.im[q] * b.im[q];
+      }
+      cum[q] = tot;
+    }
+    if (tot <= 1e-12) return null;
+    var t = rand() * tot, lo = 0, hi = cum.length - 1;
     while (lo < hi) { var mid = (lo + hi) >> 1; if (cum[mid] < t) lo = mid + 1; else hi = mid; }
     var i = lo % N, j = (lo - i) / N;
-    return toStreet((i + rand()) * dx, L - (j + rand()) * dx);
+    return { x: (i + rand()) * dx, y: L - (j + rand()) * dx };
+  }
+  function sample(rand) { var p = pick(rand); return toStreet(p.x, p.y); }
+
+  function snapshot() {
+    var copy = function (s) { return s ? { re: Float64Array.from(s.re), im: Float64Array.from(s.im) } : null; };
+    return { s0: copy(W.sim), s1: copy(W.sim1), ca: W.ca, cl: W.cl };
+  }
+  function restore(snap) {
+    W.ca = snap.ca; W.cl = snap.cl; walls();
+    W.sim.re = Float64Array.from(snap.s0.re); W.sim.im = Float64Array.from(snap.s0.im);
+    if (snap.s1) {
+      if (!W.sim1) { W.sim1 = new QC.Sim({ N: N, L: L, m: M, hbar: W.hbar, c: W.c }); walls(); }
+      W.sim1.re = Float64Array.from(snap.s1.re); W.sim1.im = Float64Array.from(snap.s1.im);
+    } else W.sim1 = null;
   }
 
-  // Find out where you are: keep only the part of the wave near one outcome.
-  function look(sigma, rand) {
-    var spot = W.sim.measure(sigma, rand);
-    measure();
-    return toStreet(spot.x, spot.y);
+  // Look where you are, with a microscope of resolution sigma (m). Returns the outcome.
+  function look(sigma, rand, screen) {
+    var snap = snapshot(), p = pick(rand, screen);
+    if (!p) return null;
+    W.saved = snap;
+    both(function (s) {
+      for (var j = 0; j < N; j++) for (var i = 0; i < N; i++) {
+        var ex = s.x(i) - p.x, ey = s.y(j) - p.y, w = Math.exp(-(ex * ex + ey * ey) / (4 * sigma * sigma)), q = j * N + i;
+        s.re[q] *= w; s.im[q] *= w;
+      }
+    });
+    normalise(); measure();
+    var out = toStreet(p.x, p.y);
+    W.marks.push(out); if (W.marks.length > 600) W.marks.shift();
+    return out;
+  }
+  // The same experiment again: go back to the wave just before the last look, and look again.
+  function relook(sigma, rand, screen) {
+    if (!W.saved) return null;
+    var snap = W.saved; restore(snap);
+    var out = look(sigma, rand, screen); W.saved = snap;
+    return out;
   }
 
-  CGH.wave = { W: W, N: N, L: L, M: M, dx: dx, start: start, stop: stop, step: step, sample: sample, look: look, topSpeed: topSpeed, toStreet: toStreet };
+  // Erase the bell's record: read the bell in the basis (silent ± rang)/√2. Returns +1 or -1.
+  function erase(rand) {
+    if (!W.sim1) return 0;
+    var a = W.sim, b = W.sim1, n = a.re.length, pp = 0, pm = 0, q;
+    for (q = 0; q < n; q++) {
+      var sr = a.re[q] + b.re[q], si = a.im[q] + b.im[q], dr = a.re[q] - b.re[q], di = a.im[q] - b.im[q];
+      pp += sr * sr + si * si; pm += dr * dr + di * di;
+    }
+    var sign = rand() * (pp + pm) < pp ? 1 : -1;
+    for (q = 0; q < n; q++) { a.re[q] += sign * b.re[q]; a.im[q] += sign * b.im[q]; }
+    W.sim1 = null; normalise(); measure();
+    return sign;
+  }
+
+  CGH.wave = {
+    W: W, N: N, L: L, M: M, dx: dx, BELL: BELL, start: start, stop: stop, step: step, sample: sample,
+    look: look, relook: relook, erase: erase, chanceBehind: chanceBehind, topSpeed: topSpeed, toStreet: toStreet, toGrid: toGrid, kstats: kstats
+  };
 })();
 
-/* cGħ World — the first-person engine: walking, the camera, three GPU passes and the head-up display. */
+/* cGħ World — the first-person engine: walking and flying, the camera, the GPU passes, the head-up display and the map. */
 (function () {
   'use strict';
   var G = CGH.geo, P = CGH.physics, A = CGH.app, SH = CGH.shaders, WV = CGH.wave, $ = A.$;
-  var EFFORT_MAX = 20, FOV = 1.2, CLOCK_TOP = 46;
+  var EFFORT_MAX = 20, FOV = 1.2, CLOCK_TOP = 46, CLIMB = 3, TOP_EYE = 80;
+  var FX = ['bend', 'delay', 'aberr', 'doppler', 'gshift', 'beam', 'rates'];
   var canvas, gl, prog = {}, fmt, scene = null, acc = [], size = [0, 0], vao, raf = 0, last = 0, ok = false;
   var S = {
-    a: G.START.a, l: G.START.l, heading: 0, lookYaw: 0, lookPitch: 0.04, effort: 0, T: 0, tau: 0,
-    street: 0, top: 0, newton: false, doppler: true, beam: true, exposure: 1, keys: {}, scale: 0.6, fixedScale: 0, ms: 16,
-    view: { a: G.START.a, l: G.START.l }, frame: 0, fresh: true, watched: false, lookTimer: 0, hint: 12, found: null
+    a: G.START.a, l: G.START.l, h: G.EYE, heading: 0, lookYaw: 0, lookPitch: 0.04, effort: 0,
+    T: 0, tau: 0, street: 0, top: 0, exposure: 1, keys: {}, scale: 0.6, fixedScale: 0, ms: 16,
+    fx: { bend: true, delay: true, aberr: true, doppler: true, gshift: true, beam: true, rates: true },
+    view: { a: G.START.a, l: G.START.l }, frame: 0, fresh: true, envRate: 0, envTimer: 0, sharp: 0.5, screen: false, hint: 12, q: null, cam: null
   };
 
   /* ---------- GL plumbing ---------- */
@@ -1657,8 +1986,8 @@ void main() {
   function target(w, h) {
     var t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
     gl.texImage2D(gl.TEXTURE_2D, 0, fmt.internal, w, h, 0, gl.RGBA, fmt.type, null);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER].forEach(function (k) { gl.texParameteri(gl.TEXTURE_2D, k, gl.LINEAR); });
+    [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T].forEach(function (k) { gl.texParameteri(gl.TEXTURE_2D, k, gl.CLAMP_TO_EDGE); });
     var f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
     return { t: t, f: f };
@@ -1669,7 +1998,8 @@ void main() {
     gl = canvas.getContext('webgl2', { antialias: false, alpha: false });
     if (!gl) return false;
     fmt = gl.getExtension('EXT_color_buffer_float') ? { internal: gl.RGBA16F, type: gl.HALF_FLOAT } : { internal: gl.RGBA8, type: gl.UNSIGNED_BYTE };
-    prog.march = program(SH.MARCH, ['uEye', 'uFwd', 'uRight', 'uUp', 'uBeta', 'uTan', 'uRs', 'uC', 'uT', 'uExposure', 'uDoppler', 'uBeam']);
+    prog.march = program(SH.MARCH, ['uEye', 'uFwd', 'uRight', 'uUp', 'uBeta', 'uTan', 'uRsRay', 'uRsShift', 'uRsClock', 'uCdelay', 'uT',
+      'uExposure', 'uDoppler', 'uBeam', 'uAberr', 'uBell']);
     prog.accum = program(SH.ACCUM, ['uNew', 'uOld', 'uK']);
     prog.show = program(SH.SHOW, ['uImg', 'uPhotons', 'uSeed']);
     vao = gl.createVertexArray();
@@ -1679,41 +2009,45 @@ void main() {
   /* ---------- moving ---------- */
   function dials() {
     var d = A.derived(), st = A.state;
-    return { c: S.newton ? 1e12 : d.c, rs: S.newton ? 0 : d.rs, hbar: d.hbar, quantum: st.lam >= 0.5, photons: st.photons };
+    return { c: d.c, rs: d.rs, hbar: d.hbar, quantum: st.lam >= 0.5, photons: st.photons };
+  }
+  // Is there room for a body with its eyes at (a, l, h)? Checks at eye and knee height.
+  function room(a, l, h) {
+    return G.scene(G.toWorld(a, l, h)).d > 0.25 && G.scene(G.toWorld(a, l, Math.max(h - 1.2, 0.5))).d > 0.25;
   }
   function update(dtau) {
-    var k = S.keys, q = dials(), re = G.R + G.EYE;
+    var k = S.keys, q = dials();
     if (k.faster) { S.effort = Math.min(EFFORT_MAX, S.effort + 6 * dtau); syncEffort(); }
     if (k.slower) { S.effort = Math.max(0, S.effort - 8 * dtau); syncEffort(); }
     if (k.left) S.heading -= 1.3 * dtau;
     if (k.right) S.heading += 1.3 * dtau;
+    if (q.quantum) S.h = G.EYE;                               // the wave lives on the ground
+    q.vz = q.quantum ? 0 : CLIMB * ((k.up ? 1 : 0) - (k.down ? 1 : 0));
+    if ((S.h <= G.EYE && q.vz < 0) || (S.h >= TOP_EYE && q.vz > 0)) q.vz = 0;
     var v = P.speedFromEffort(S.effort, q.c), va = v * Math.cos(S.heading), vl = v * Math.sin(S.heading);
-    q.lapse = Math.sqrt(1 - q.rs / re);
+    q.re = G.R + S.h; q.lapse = Math.sqrt(1 - q.rs / q.re);
     if (q.quantum) {
-      var W = WV.W, c = S.newton ? 0 : q.c;
-      if (!W.on || W.hbar !== q.hbar || W.c !== c) { WV.start(S.a, S.l, va, vl, q.hbar, c, 0.6); S.fresh = true; }
-      var top = WV.topSpeed();
-      if (v > top) { va *= top / v; vl *= top / v; }
+      var W = WV.W;
+      if (!W.on || W.hbar !== q.hbar || W.c !== q.c) { WV.start(S.a, S.l, va, vl, q.hbar, q.c, 0.6); S.fresh = true; }
+      var top = WV.topSpeed(); if (v > top) { va *= top / v; vl *= top / v; }
       q.top = top;
     } else if (WV.W.on) { WV.stop(); S.fresh = true; }
-    // your own velocity relative to the ground decides the clocks and the aberration
     var vel = q.quantum ? WV.W.vel || [0, 0] : [va, vl];
-    var sp = Math.hypot(vel[0], vel[1]);
+    var sp = Math.min(Math.hypot(vel[0], vel[1], q.vz), 0.9999 * q.c);
     q.v = sp; q.beta = sp / q.c; q.gamma = 1 / Math.sqrt(1 - q.beta * q.beta); q.vel = vel;
-    var dtLocal = q.gamma * dtau;                      // time for someone standing where you are
-    var dT = dtLocal / q.lapse;                         // far-away (coordinate) time
-    S.T += dT; S.tau += dtau;
-    S.street += dT * Math.sqrt(1 - q.rs / G.R); S.top += dT * Math.sqrt(1 - q.rs / (G.R + CLOCK_TOP));
+    var dtLocal = q.gamma * dtau, dT = dtLocal / q.lapse;    // time for someone standing here; far-away time
+    S.T += dT;
+    if (S.fx.rates) { S.tau += dtau; S.street += dT * Math.sqrt(1 - q.rs / G.R); S.top += dT * Math.sqrt(1 - q.rs / (G.R + CLOCK_TOP)); }
+    else { S.tau += dT; S.street += dT; S.top += dT; }
     if (q.quantum) {
       WV.step(dtLocal, va, vl);
-      if (S.watched) { S.lookTimer -= dtau; if (S.lookTimer <= 0) { S.lookTimer = 0.25; WV.look(0.5, Math.random); } }
+      if (S.envRate) { S.envTimer -= dtau; if (S.envTimer <= 0) { S.envTimer = 1 / S.envRate; WV.look(0.5, Math.random); } }
       S.a = WV.W.mean.a; S.l = WV.W.mean.l;
       S.view = WV.sample(Math.random);
     } else {
-      var na = G.wrapA(S.a + va * dtLocal), nl = S.l + vl * dtLocal;
-      if (G.footprint(na, nl) > 0.25) { S.a = na; S.l = nl; }
-      else if (G.footprint(na, S.l) > 0.25) S.a = na;
-      else if (G.footprint(S.a, nl) > 0.25) S.l = nl;
+      var na = G.wrapA(S.a + va * dtLocal), nl = S.l + vl * dtLocal, nh = Math.max(G.EYE, Math.min(TOP_EYE, S.h + q.vz * dtLocal));
+      if (room(na, nl, S.h)) { S.a = na; S.l = nl; } else if (room(na, S.l, S.h)) S.a = na; else if (room(S.a, nl, S.h)) S.l = nl;
+      if (nh !== S.h && room(S.a, S.l, nh)) S.h = nh;
       S.view = { a: S.a, l: S.l };
     }
     if (S.hint > 0) S.hint -= dtau;
@@ -1725,32 +2059,33 @@ void main() {
     for (var i = 0; i < 3; i++) {
       fwd.push(cp * (cy * f.along[i] + sy * f.across[i]) + sp * f.up[i]);
       right.push(cy * f.across[i] - sy * f.along[i]);
-      beta.push(S.newton ? 0 : (q.vel[0] * f.along[i] + q.vel[1] * f.across[i]) / q.c);
+      beta.push((q.vel[0] * f.along[i] + q.vel[1] * f.across[i] + q.vz * f.up[i]) / q.c);
     }
-    return { eye: G.toWorld(S.view.a, S.view.l, G.EYE), fwd: fwd, right: right, up: G.cross(right, fwd), beta: beta };
+    return { eye: G.toWorld(S.view.a, S.view.l, S.h), fwd: fwd, right: right, up: G.cross(right, fwd), beta: beta };
   }
 
   /* ---------- drawing ---------- */
   function draw(q, cam) {
-    var f = A.fit(canvas, 1.5), w = canvas.width, h = canvas.height;
+    var f = A.fit(canvas, 1.5), w = canvas.width, h = canvas.height, fx = S.fx;
     var sc = S.fixedScale || S.scale, rw = Math.max(64, Math.round(w * sc)), rh = Math.max(36, Math.round(h * sc));
     if (rw !== size[0] || rh !== size[1]) {
       free(scene); free(acc[0]); free(acc[1]);
       scene = target(rw, rh); acc = [target(rw, rh), target(rw, rh)]; size = [rw, rh]; S.fresh = true;
     }
     var Dc = 1 / (q.gamma * (1 - G.dot(cam.fwd, cam.beta)));
-    var aim = S.beam && !S.newton ? Math.max(0.02, Math.min(60, Math.pow(Dc, -2.7))) : 1;
+    var aim = fx.beam ? Math.max(0.02, Math.min(60, Math.pow(Dc, -2.7))) : 1;
     S.exposure += (aim - S.exposure) * 0.15;
     gl.bindVertexArray(vao);
 
-    var m = prog.march;
+    var m = prog.march, u = m.u;
     gl.bindFramebuffer(gl.FRAMEBUFFER, scene.f); gl.viewport(0, 0, rw, rh); gl.useProgram(m.p);
-    gl.uniform3fv(m.u.uEye, cam.eye); gl.uniform3fv(m.u.uFwd, cam.fwd); gl.uniform3fv(m.u.uRight, cam.right);
-    gl.uniform3fv(m.u.uUp, cam.up); gl.uniform3fv(m.u.uBeta, cam.beta);
-    gl.uniform2f(m.u.uTan, Math.tan(FOV / 2) * f.w / f.h, Math.tan(FOV / 2));
-    gl.uniform1f(m.u.uRs, q.rs); gl.uniform1f(m.u.uC, q.c); gl.uniform1f(m.u.uT, S.T % 1e5);
-    gl.uniform1f(m.u.uExposure, S.exposure);
-    gl.uniform1i(m.u.uDoppler, S.doppler && !S.newton ? 1 : 0); gl.uniform1i(m.u.uBeam, S.beam && !S.newton ? 1 : 0);
+    gl.uniform3fv(u.uEye, cam.eye); gl.uniform3fv(u.uFwd, cam.fwd); gl.uniform3fv(u.uRight, cam.right);
+    gl.uniform3fv(u.uUp, cam.up); gl.uniform3fv(u.uBeta, cam.beta);
+    gl.uniform2f(u.uTan, Math.tan(FOV / 2) * f.w / f.h, Math.tan(FOV / 2));
+    gl.uniform1f(u.uRsRay, fx.bend ? q.rs : 0); gl.uniform1f(u.uRsShift, fx.gshift ? q.rs : 0); gl.uniform1f(u.uRsClock, fx.rates ? q.rs : 0);
+    gl.uniform1f(u.uCdelay, fx.delay ? q.c : 1e12); gl.uniform1f(u.uT, S.T % 1e5); gl.uniform1f(u.uExposure, S.exposure);
+    gl.uniform1i(u.uDoppler, fx.doppler ? 1 : 0); gl.uniform1i(u.uBeam, fx.beam ? 1 : 0); gl.uniform1i(u.uAberr, fx.aberr ? 1 : 0);
+    gl.uniform1f(u.uBell, q.quantum && WV.W.bell > 0 ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
     var k = S.fresh ? 1 : q.quantum ? (WV.W.spread > 0.12 ? 0.08 : 0.35) : 1;
@@ -1769,47 +2104,75 @@ void main() {
     S.frame++; S.fresh = false;
   }
 
+  // Top-down map of your wave: magenta where the bell is silent, cyan where it rang, yellow dots for past looks.
   function waveMap(q) {
     var el = $('wave-map');
     el.hidden = !q.quantum;
     if (!q.quantum || !WV.W.sim) return;
-    var N = WV.N, sim = WV.W.sim, ctx = el.getContext('2d');
-    if (el.width !== N) { el.width = N; el.height = N; }
-    var img = ctx.createImageData(N, N), d = img.data, mx = 0, n, re = sim.re, im = sim.im;
-    for (n = 0; n < N * N; n++) mx = Math.max(mx, re[n] * re[n] + im[n] * im[n]);
+    var N = WV.N, a = WV.W.sim, b = WV.W.sim1, ctx = el.getContext('2d');
+    if (el.width !== 2 * N) { el.width = 2 * N; el.height = 2 * N; }
+    var img = ctx.createImageData(N, N), d = img.data, mx = 0, n;
+    for (n = 0; n < N * N; n++) mx = Math.max(mx, a.re[n] * a.re[n] + a.im[n] * a.im[n] + (b ? b.re[n] * b.re[n] + b.im[n] * b.im[n] : 0));
     for (n = 0; n < N * N; n++) {
-      var p = Math.sqrt((re[n] * re[n] + im[n] * im[n]) / (mx || 1)), o = 4 * n;
-      if (sim.wall[n]) { d[o] = d[o + 1] = d[o + 2] = 150; } else { d[o] = 14 + 218 * p; d[o + 1] = 18 + 102 * p; d[o + 2] = 26 + 168 * p; }
+      var p0 = Math.sqrt((a.re[n] * a.re[n] + a.im[n] * a.im[n]) / (mx || 1)), p1 = b ? Math.sqrt((b.re[n] * b.re[n] + b.im[n] * b.im[n]) / (mx || 1)) : 0, o = 4 * n;
+      if (a.wall[n]) { d[o] = d[o + 1] = d[o + 2] = 150; }
+      else { d[o] = Math.min(255, 14 + 218 * p0 + 40 * p1); d[o + 1] = Math.min(255, 18 + 102 * p0 + 200 * p1); d[o + 2] = Math.min(255, 26 + 168 * p0 + 230 * p1); }
       d[o + 3] = 255;
     }
-    ctx.putImageData(img, 0, 0);
-    var x = (S.view.l - WV.W.cl) / WV.dx + N / 2, y = N / 2 - G.wrapA(S.view.a - WV.W.ca) / WV.dx;
-    ctx.fillStyle = '#ffd27a'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
-    ctx.strokeStyle = '#ffd27a'; ctx.beginPath(); ctx.moveTo(x, y);
-    ctx.lineTo(x + 9 * Math.sin(S.heading + S.lookYaw), y - 9 * Math.cos(S.heading + S.lookYaw)); ctx.stroke();
+    var tmp = waveMap.tmp || (waveMap.tmp = document.createElement('canvas'));
+    tmp.width = N; tmp.height = N; tmp.getContext('2d').putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = false; ctx.drawImage(tmp, 0, 0, 2 * N, 2 * N);
+    function px(p) { return [2 * (p.l - WV.W.cl + WV.L / 2) / WV.dx, 2 * (WV.L / 2 - G.wrapA(p.a - WV.W.ca)) / WV.dx]; }
+    if (WV.W.bell > 0) {
+      var bz = px({ a: WV.BELL.a + WV.BELL.ha, l: WV.BELL.l - WV.BELL.hl });
+      ctx.strokeStyle = '#5fd7ff'; ctx.lineWidth = 1.5; ctx.strokeRect(bz[0], bz[1], 4 * WV.BELL.hl / WV.dx, 4 * WV.BELL.ha / WV.dx);
+    }
+    ctx.fillStyle = '#ffd27a';
+    WV.W.marks.forEach(function (mk) { var p = px(mk); ctx.fillRect(p[0] - 1.5, p[1] - 1.5, 3, 3); });
+    var me = px(S.view);
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(me[0], me[1], 4, 0, 6.2832); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(me[0], me[1]);
+    ctx.lineTo(me[0] + 16 * Math.sin(S.heading + S.lookYaw), me[1] - 16 * Math.cos(S.heading + S.lookYaw)); ctx.stroke();
   }
 
+  function row(dt, dd) { return '<div class="readout"><dt>' + dt + '</dt><dd>' + dd + '</dd></div>'; }
   function hud(q) {
-    var n = A.num, rs = q.rs, re = G.R + G.EYE;
-    $('w-hud-l').innerHTML = 'speed <b>' + n(q.v) + ' m/s</b> = ' + (q.beta < 1e-3 ? n(q.beta, 2) : q.beta.toFixed(3)) + ' c<br>γ = ' + (q.gamma < 1.0001 ? '1.000' : q.gamma.toFixed(3));
+    var n = A.num, rs = q.rs;
+    $('w-hud-l').innerHTML = 'speed <b>' + n(q.v) + ' m/s</b> = ' + (q.beta < 1e-3 ? n(q.beta, 2) : q.beta.toFixed(3)) + ' c<br>γ = ' +
+      (q.gamma < 1.0001 ? '1.000' : q.gamma.toFixed(3)) + '<br>eyes <b>' + n(S.h, 3) + ' m</b> up';
     $('w-hud-r').innerHTML = 'your watch <b>' + A.clock(S.tau) + '</b><br>street clocks <b>' + A.clock(S.street) + '</b><br>tower top <b>' + A.clock(S.top) + '</b>';
-    var msg = S.newton ? 'Newton’s view: light instant and straight' : '';
-    if (!msg && q.quantum) msg = WV.W.spread > 0.5 ? 'You are spread over ' + n(WV.W.spread, 2) + ' m. Every place you might be is overlaid. Press F to look.' : 'You are a narrow wave. Walk, and watch the map.';
-    if (!msg) msg = 'Drag to look around';
-    if (S.hint > 0 && canvas.clientWidth > 640) msg += '<br>W S effort · A D steer · F look · Space stop';
+    var msg = '';
+    if (q.quantum) msg = WV.W.spread > 0.5 ? 'You are spread over ' + n(WV.W.spread, 2) + ' m: every place you might be is overlaid. F looks.' : 'You are a narrow wave. Walk, and watch the map.';
+    else if (S.h > G.EYE + 0.5) msg = 'Q to go down, E to go up';
+    else msg = 'Drag to look around · E to fly up';
+    if (S.hint > 0 && canvas.clientWidth > 640) msg += '<br>W S effort · A D steer · E Q up and down · F look · Space stop';
     $('w-hud-b').innerHTML = msg;
-
-    var el = G.horizon(rs, G.R, re) * 180 / Math.PI, rows = [];
-    rows.push([el < 0 ? 'Horizon, below your eye level' : 'Horizon, above your eye level', Math.abs(el).toFixed(1) + '°' + (el > 0 ? ' (sky is a cone ' + (2 * (90 - el)).toFixed(0) + '° wide)' : '')]);
-    rows.push(['Tower-top clock runs, against yours', '×' + G.clockRate(rs, CLOCK_TOP).toFixed(rs > 0.01 * G.R ? 3 : 6)]);
-    rows.push(['Light crosses the planet in', A.duration(2 * G.R / q.c * (1 + rs / G.R), 2)]);
-    if (q.quantum) rows.push(['Your spread / top speed here', n(WV.W.spread, 2) + ' m / ' + n(q.top, 2) + ' m/s']);
-    else rows.push(['Your wavelength now', A.length(2 * Math.PI * q.hbar / (A.MASS * Math.max(q.v, A.WALK) * q.gamma), 2)]);
-    rows.push(['Photons per pixel per frame', n(q.photons, 2)]);
-    $('w-readouts').innerHTML = rows.map(function (r) { return '<div class="readout"><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; }).join('');
+    var el = G.horizon(rs, G.R, q.re) * 180 / Math.PI;
+    $('w-readouts').innerHTML = [
+      row(el < 0 ? 'Horizon, below your eye level' : 'Horizon, above your eye level', Math.abs(el).toFixed(1) + '°' + (el > 0 ? ' (sky is a cone ' + (2 * (90 - el)).toFixed(0) + '° wide)' : '')),
+      row('Tower-top clock against yours', '×' + Math.sqrt((1 - rs / (G.R + CLOCK_TOP)) / (1 - rs / q.re)).toFixed(rs > 0.01 * G.R ? 3 : 6)),
+      row('Light crosses the planet in', A.duration(2 * G.R / q.c * (1 + rs / G.R), 2)),
+      q.quantum ? row('Your spread / top speed here', n(WV.W.spread, 2) + ' m / ' + n(q.top, 2) + ' m/s')
+                : row('Your wavelength now', A.length(2 * Math.PI * q.hbar / (A.MASS * Math.max(q.v, A.WALK) * q.gamma), 2)),
+      row('Photons per pixel per frame', n(q.photons, 2))
+    ].join('');
+    measurePanel(q);
+  }
+  function measurePanel(q) {
+    $('m-off').hidden = q.quantum; $('m-on').hidden = !q.quantum;
+    if (!q.quantum || !WV.W.sim) return;
+    var W = WV.W, ks = WV.kstats(), hb = W.hbar, m = W.pos;
+    var px = m.sx * hb * ks.dk[0] / (hb / 2), pa = m.sy * hb * ks.dk[1] / (hb / 2);
+    $('m-dx').textContent = A.num(m.sx, 2) + ' m across · ' + A.num(m.sy, 2) + ' m along';
+    $('m-dp').textContent = A.num(hb * ks.dk[0] / A.MASS, 2) + ' m/s across · ' + A.num(hb * ks.dk[1] / A.MASS, 2) + ' m/s along';
+    $('m-prod').textContent = A.num(px, 3) + ' × ħ/2 across · ' + A.num(pa, 3) + ' × ħ/2 along';
+    $('m-bar').style.width = Math.min(100, 100 / Math.max(1, Math.min(px, pa))) + '%';
+    $('m-rang').textContent = W.bell > 0 ? Math.round(100 * W.rang) + '% of you rang it' : 'no bell';
+    $('m-marks').textContent = W.marks.length + (W.marks.length === 1 ? ' look' : ' looks') + ' so far';
+    $('m-behind').textContent = Math.round(100 * WV.chanceBehind()) + '%';
   }
 
-  var hudT = 0;
+  var hudT = 0, probeT = 0;
   function frame(now) {
     raf = requestAnimationFrame(frame);
     var dt = Math.min(0.05, (now - last) / 1000 || 0);
@@ -1818,36 +2181,47 @@ void main() {
       if (S.ms > 42 && S.scale > 0.3) S.scale *= 0.85; else if (S.ms < 22 && S.scale < 1) S.scale = Math.min(1, S.scale * 1.1);
     }
     var q = update(dt), cam = camera(q);
+    S.q = q; S.cam = cam;
     draw(q, cam);
-    hudT += dt;
+    hudT += dt; probeT += dt;
     if (hudT > 0.12) { hudT = 0; hud(q); waveMap(q); }
+    if (probeT > 0.25 && CGH.probe) { probeT = 0; CGH.probe.update(); }
   }
 
   /* ---------- input ---------- */
   function syncEffort() { $('effort').value = S.effort; $('effort-out').textContent = S.effort.toFixed(1) + ' m/s'; }
+  function restartClocks() { S.T = 0; S.tau = 0; S.street = 0; S.top = 0; }
+  function place(a, l, heading, h) {
+    S.a = a; S.l = l; S.view = { a: a, l: l }; S.h = h || G.EYE; S.heading = heading; S.lookYaw = 0; S.lookPitch = 0.04;
+    S.effort = 0; syncEffort(); WV.stop(); WV.W.marks = []; restartClocks(); S.fresh = true;
+  }
   function look() {
     if (!WV.W.on) return;
-    S.found = WV.look(0.45, Math.random); S.fresh = true;
+    if (WV.look(S.sharp, Math.random, S.screen)) S.fresh = true;
+    else $('m-note').textContent = 'None of you has reached the yard behind the wall yet.';
   }
-  function restartClocks() { S.T = 0; S.tau = 0; S.street = 0; S.top = 0; }
-  function place(a, l, heading) {
-    S.a = a; S.l = l; S.view = { a: a, l: l }; S.heading = heading; S.lookYaw = 0; S.lookPitch = 0.04;
-    S.effort = 0; syncEffort(); WV.stop(); restartClocks(); S.fresh = true;
-  }
+  function setFx(all) { FX.forEach(function (k) { S.fx[k] = all; $('fx-' + k).checked = all; }); S.fresh = true; }
   function bind() {
     $('effort').addEventListener('input', function (e) { S.effort = Number(e.target.value); syncEffort(); });
     syncEffort();
     $('w-stop').addEventListener('click', function () { S.effort = 0; syncEffort(); });
     $('w-turn').addEventListener('click', function () { S.heading += Math.PI; S.lookYaw = 0; });
     $('w-home').addEventListener('click', function () { place(G.START.a, G.START.l, 0); });
+    $('w-tower').addEventListener('click', function () { place(G.TOWER.a - 4, 0, 0, CLOCK_TOP); });
     document.addEventListener('cgh-pose', function (e) { if (e.detail === 'doors') place(G.DOORS.a, G.DOORS.l, G.DOORS.heading); });
-    $('w-look').addEventListener('click', look);
-    $('w-watched').addEventListener('change', function (e) { S.watched = e.target.checked; });
-    $('w-newton').addEventListener('change', function (e) { S.newton = e.target.checked; S.fresh = true; });
-    $('w-doppler').addEventListener('change', function (e) { S.doppler = e.target.checked; });
-    $('w-beam').addEventListener('change', function (e) { S.beam = e.target.checked; });
+    FX.forEach(function (k) { $('fx-' + k).addEventListener('change', function (e) { S.fx[k] = e.target.checked; S.fresh = true; }); });
+    $('fx-none').addEventListener('click', function () { setFx(false); });
+    $('fx-all').addEventListener('click', function () { setFx(true); });
+    $('m-look').addEventListener('click', look);
+    $('m-relook').addEventListener('click', function () { if (WV.W.on && WV.relook(S.sharp, Math.random, S.screen)) S.fresh = true; });
+    $('m-screen').addEventListener('change', function (e) { S.screen = e.target.checked; });
+    $('m-sharp').addEventListener('change', function (e) { S.sharp = Number(e.target.value); });
+    $('m-env').addEventListener('change', function (e) { S.envRate = Number(e.target.value); S.envTimer = 0; });
+    $('m-bell').addEventListener('input', function (e) { WV.W.bell = Number(e.target.value) / 100; $('m-bell-out').textContent = e.target.value + '%'; });
+    $('m-erase').addEventListener('click', function () { if (WV.W.on && WV.erase(Math.random)) S.fresh = true; });
+    $('m-clear').addEventListener('click', function () { WV.W.marks = []; });
 
-    var KEYS = { w: 'faster', ArrowUp: 'faster', s: 'slower', ArrowDown: 'slower', a: 'left', ArrowLeft: 'left', d: 'right', ArrowRight: 'right' };
+    var KEYS = { w: 'faster', ArrowUp: 'faster', s: 'slower', ArrowDown: 'slower', a: 'left', ArrowLeft: 'left', d: 'right', ArrowRight: 'right', e: 'up', q: 'down' };
     function key(ev, down) {
       if (!ev.key) return;
       var t = ev.target, onCanvas = t === canvas;
@@ -1867,7 +2241,7 @@ void main() {
     canvas.addEventListener('pointermove', function (e) {
       if (!drag) return;
       S.lookYaw += (e.clientX - drag[0]) * 0.005;
-      S.lookPitch = Math.max(-1.3, Math.min(1.4, S.lookPitch - (e.clientY - drag[1]) * 0.005));
+      S.lookPitch = Math.max(-1.5, Math.min(1.5, S.lookPitch - (e.clientY - drag[1]) * 0.005));
       drag = [e.clientX, e.clientY];
     });
     canvas.addEventListener('pointerup', function () { drag = null; });
@@ -1888,15 +2262,132 @@ void main() {
       bind();
       try { ok = setup(); } catch (e) { ok = false; console.error(e); }
       if (!ok) { $('w-hud-b').textContent = 'This view needs WebGL 2, which this browser did not provide.'; return; }
-      A.onChange(function () { S.fresh = true; restartClocks(); });   // a new world: every clock starts together
+      A.onChange(function () { S.fresh = true; restartClocks(); });
       document.addEventListener('visibilitychange', function () {
         cancelAnimationFrame(raf);
         if (!document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); }
       });
       last = performance.now(); raf = requestAnimationFrame(frame);
     },
-    state: S
+    state: S, place: place
   };
+})();
+
+/* cGħ World — the light probe. For the pixel under the crosshair it re-traces the light ray in JavaScript
+ * (the same steps the GPU takes), draws the path in a slice through the planet, and reads off where the
+ * light came from, when it left, how much it bent and how its colour changed on the way. */
+(function () {
+  'use strict';
+  var G = CGH.geo, A = CGH.app, $ = A.$;
+  var SODIUM = 589, GREEN = 550;
+  var last = null;
+
+  function rgbOf(nm) {                                  // rough visible-spectrum colour for the scale
+    var h = nm < 440 ? 270 - (nm - 380) / 60 * 30 : nm < 490 ? 240 - (nm - 440) / 50 * 60 : nm < 580 ? 180 - (nm - 490) / 90 * 120 : 60 - Math.min(60, (nm - 580) / 70 * 60);
+    var light = nm < 420 ? 30 + (nm - 380) / 40 * 20 : nm > 700 ? 50 - (nm - 700) / 60 * 25 : 50;
+    return 'hsl(' + h.toFixed(0) + ',90%,' + light.toFixed(0) + '%)';
+  }
+  function name(m) {
+    if (m.kind !== 1) return 'the sky: starlight from far away';
+    if (m.mat === 0) { var p = G.fromWorld(m.x); return Math.abs(p.l) < 7.7 ? 'the street' : 'the ground'; }
+    return G.MATS[m.mat] || 'something';
+  }
+
+  function update() {
+    var S = CGH.world.state, q = S.q, cam = S.cam;
+    if (!q || !cam || $('probe').hidden) return;
+    var fx = S.fx, rsRay = fx.bend ? q.rs : 0, rsS = fx.gshift ? q.rs : 0, rsC = fx.rates ? q.rs : 0;
+    var nb = G.dot(cam.fwd, cam.beta);
+    var ab = fx.aberr ? G.deaberrate(cam.fwd, cam.beta) : { n: cam.fwd, D: 1 / (q.gamma * (1 - nb)) };
+    var re = G.len(cam.eye), m = G.march(cam.eye, ab.n, rsRay, true), r = G.len(m.x), hit = m.kind === 1;
+    var Dg = hit ? Math.sqrt((1 - rsS / r) / (1 - rsS / re)) : 1 / Math.sqrt(1 - rsS / re);
+    var D = fx.doppler ? ab.D * Dg : 1, t = fx.delay ? m.ct / q.c : 0;
+    var chord = [m.x[0] - cam.eye[0], m.x[1] - cam.eye[1], m.x[2] - cam.eye[2]], cl = G.len(chord);
+    var ref = hit ? chord.map(function (c) { return c / (cl || 1); }) : m.v.map(function (c) { return c / G.len(m.v); });
+    var bend = Math.acos(Math.max(-1, Math.min(1, G.dot(ab.n, ref)))) * 180 / Math.PI;
+    var lamp = hit && m.mat === 4, nm0 = lamp ? SODIUM : GREEN, nm = nm0 / D;
+    last = { m: m, n: ab.n, eye: cam.eye, re: re, rs: rsRay, hit: hit };
+
+    var n = A.num, rows = [];
+    rows.push(['Looking at', name(m) + (hit ? ', ' + n(m.s, 3) + ' m along the light’s path' + (Math.abs(m.s - cl) > 0.01 * cl + 0.05 ? ' (' + n(cl, 3) + ' m straight)' : '') : '')]);
+    rows.push(['Its light left', fx.delay ? A.duration(t, 3) + ' ago, far-away time' : 'just now (light delay switched off)']);
+    rows.push(['Bent on the way by', bend < 0.05 ? 'nothing you could see' : n(bend, 3) + '°']);
+    rows.push(['Gravity shifts it', Math.abs(Dg - 1) < 1e-4 ? 'not at all' : '×' + Dg.toFixed(4) + (Dg > 1 ? ' (bluer: the light fell to you)' : ' (redder: the light climbed to you)')]);
+    rows.push(['Your motion shifts it', Math.abs(ab.D - 1) < 1e-4 ? 'not at all' : '×' + ab.D.toFixed(4) + (ab.D > 1 ? ' (you move toward where it came from)' : ' (you move away)')]);
+    rows.push(['Together', fx.doppler ? '×' + D.toFixed(4) + ' in frequency, ×' + (fx.beam ? (D * D * D).toFixed(3) : '1') + ' in brightness' : 'colour shift switched off']);
+    if (hit && (m.mat === 9 || m.mat === 10 || m.mat === 4)) {
+      var tau = Math.sqrt(1 - rsC / r) * (S.T - (fx.delay ? m.ct / q.c : 0));
+      rows.push(['Its clock read, when the light left', A.clock(tau) + ' (yours now: ' + A.clock(S.tau) + ')']);
+    }
+    $('probe-info').innerHTML = rows.map(function (rw) { return '<div><dt>' + rw[0] + '</dt><dd>' + rw[1] + '</dd></div>'; }).join('');
+    drawPath();
+    drawSpectrum(nm0, nm, lamp);
+  }
+
+  // A slice through the planet containing you, its centre and the ray (light paths here stay in one plane).
+  function drawPath() {
+    if (!last) return;
+    var cv = $('probe-path'), f = A.fit(cv, 2), ctx = cv.getContext('2d'), w = f.w, h = f.h;
+    ctx.setTransform(f.dpr, 0, 0, f.dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    var er = last.eye.map(function (c) { return c / last.re; }), nn = last.n, nr = G.dot(nn, er);
+    var et = [nn[0] - nr * er[0], nn[1] - nr * er[1], nn[2] - nr * er[2]], tl = G.len(et);
+    if (tl < 1e-6) { var fr = G.frame(0, 0).along; et = fr.slice(); tl = 1; }
+    et = et.map(function (c) { return c / tl; });
+    var pts = last.m.path.map(function (p) { return [G.dot(p, et), G.dot(p, er)]; });
+    var eye = [0, last.re], span = 3 * G.R;
+    pts = pts.filter(function (p) { return Math.hypot(p[0] - eye[0], p[1] - eye[1]) < span; });
+    var xs = pts.map(function (p) { return p[0]; }).concat([eye[0]]), ys = pts.map(function (p) { return p[1]; }).concat([eye[1]]);
+    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+    var size = Math.max(x1 - x0, (y1 - y0) * w / h, 12), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, sc = 0.86 * w / size;
+    function P(x, y) { return [w / 2 + (x - cx) * sc, h / 2 - (y - cy) * sc]; }
+    var ink = A.css('--ink'), muted = A.css('--muted'), line = A.css('--line'), sunk = A.css('--sunk'), accent = A.css('--c');
+    var c0 = P(0, 0);
+    ctx.beginPath(); ctx.arc(c0[0], c0[1], G.R * sc, 0, 6.2832); ctx.fillStyle = sunk; ctx.fill(); ctx.strokeStyle = muted; ctx.lineWidth = 1.5; ctx.stroke();
+    if (last.rs > 0) {
+      ctx.setLineDash([4, 4]); ctx.strokeStyle = A.css('--g');
+      ctx.beginPath(); ctx.arc(c0[0], c0[1], 1.5 * last.rs * sc, 0, 6.2832); ctx.stroke(); ctx.setLineDash([]);
+    }
+    var e = P(eye[0], eye[1]), straight = Math.max(size, 20), sd = [G.dot(nn, et), G.dot(nn, er)];
+    ctx.setLineDash([5, 4]); ctx.strokeStyle = line; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(e[0], e[1]); var se = P(eye[0] + sd[0] * straight, eye[1] + sd[1] * straight); ctx.lineTo(se[0], se[1]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = accent; ctx.lineWidth = 2.5; ctx.beginPath();
+    pts.forEach(function (p, i) { var s = P(p[0], p[1]); if (i) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); });
+    ctx.stroke();
+    ctx.fillStyle = ink; ctx.beginPath(); ctx.arc(e[0], e[1], 4, 0, 6.2832); ctx.fill();
+    ctx.font = '12px ' + A.css('--font-text'); ctx.textBaseline = 'bottom'; ctx.textAlign = 'left';
+    ctx.fillText('you', e[0] + 6, e[1] - 4);
+    if (last.hit && pts.length) {
+      var hp = P(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+      ctx.strokeStyle = ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(hp[0], hp[1], 5, 0, 6.2832); ctx.stroke();
+    }
+    ctx.fillStyle = muted; ctx.textBaseline = 'top';
+    ctx.fillText('slice through the planet · ' + A.length(size, 2) + ' across', 6, 6);
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('solid: the light’s path · dashed: a straight line' + (last.rs > 0 ? ' · green: photon orbit' : ''), 6, h - 4);
+  }
+
+  function drawSpectrum(nm0, nm, lamp) {
+    var cv = $('probe-spec'), f = A.fit(cv, 2), ctx = cv.getContext('2d'), w = f.w, h = f.h, lo = 380, hi = 760;
+    ctx.setTransform(f.dpr, 0, 0, f.dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    var x0 = 14, x1 = w - 14, by = 18, bh = 16;
+    for (var x = x0; x < x1; x++) { ctx.fillStyle = rgbOf(lo + (hi - lo) * (x - x0) / (x1 - x0)); ctx.fillRect(x, by, 1, bh); }
+    function X(v) { return x0 + (x1 - x0) * (v - lo) / (hi - lo); }
+    var ink = A.css('--ink'), muted = A.css('--muted');
+    ctx.font = '12px ' + A.css('--font-text'); ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = muted;
+    [400, 500, 600, 700].forEach(function (v) { ctx.fillText(v + ' nm', X(v), by + bh + 4); });
+    ctx.strokeStyle = muted; ctx.lineWidth = 2; ctx.setLineDash([3, 2]);
+    ctx.beginPath(); ctx.moveTo(X(nm0), by - 4); ctx.lineTo(X(nm0), by + bh + 2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.textBaseline = 'bottom'; ctx.fillText(lamp ? 'sodium lamp sends 589' : 'green 550 sent', X(nm0), by - 4);
+    ctx.fillStyle = ink; ctx.strokeStyle = ink; ctx.lineWidth = 3;
+    var xr = X(Math.max(lo, Math.min(hi, nm)));
+    ctx.beginPath(); ctx.moveTo(xr, by - 2); ctx.lineTo(xr, by + bh + 2); ctx.stroke();
+    ctx.textBaseline = 'top';
+    var label = 'you see ' + A.num(nm, 3) + ' nm' + (nm < lo ? ' ← ultraviolet' : nm > hi ? ' infrared →' : '');
+    ctx.textAlign = xr < w / 3 ? 'left' : xr > 2 * w / 3 ? 'right' : 'center';
+    ctx.fillText(label, xr, by + bh + 18);
+  }
+
+  CGH.probe = { update: update };
 })();
 
 /* cGħ World — start-up. */

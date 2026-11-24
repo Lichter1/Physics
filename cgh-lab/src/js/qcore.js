@@ -234,6 +234,22 @@
     this.re = re0; this.im = im0;
     return [sx / s, sy / s];
   };
+  // Momentum statistics: [<kx>, <ky>, <kx²>, <ky²>, norm] from |ψ(k)|². y grows upward.
+  Sim.prototype.kStats = function () {
+    var N = this.N, L = this.L, sx = 0, sy = 0, sxx = 0, syy = 0, s = 0, re0 = this.re, im0 = this.im;
+    this.re = Float64Array.from(re0); this.im = Float64Array.from(im0);
+    this._fft2(false);
+    for (var j = 0; j < N; j++) {
+      var ky = -2 * Math.PI * (j < N / 2 ? j : j - N) / L;
+      for (var i = 0; i < N; i++) {
+        var kx = 2 * Math.PI * (i < N / 2 ? i : i - N) / L, q = j * N + i, p = this.re[q] * this.re[q] + this.im[q] * this.im[q];
+        sx += p * kx; sy += p * ky; sxx += p * kx * kx; syy += p * ky * ky; s += p;
+      }
+    }
+    this.re = re0; this.im = im0;
+    var norm = s * this.dx * this.dx / (N * N);         // Parseval: Σ|ψ(k)|² = N² Σ|ψ(x)|²
+    return [sx / s, sy / s, sxx / s, syy / s, norm];
+  };
   // Move the whole wave by whole cells (di right, dj up). What slides off is dropped, new cells are empty.
   Sim.prototype.shift = function (di, dj) {
     var N = this.N, re = new Float64Array(N * N), im = new Float64Array(N * N);

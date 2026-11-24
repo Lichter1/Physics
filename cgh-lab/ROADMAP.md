@@ -21,6 +21,12 @@ existing simulators.
 6. **New dials, later:** the fine-structure constant α (changes the colours of lamps and what atoms can
    exist), the cosmological constant Λ (a horizon in the distance), and a decoherence rate.
 
+## Status
+
+Phase 1 is built: flying up and down (E/Q, "Up to the tower clock"), seven effect switches, the light
+probe with a spectrometer, and a first version of measurement (section 9). Next: Phase 2, the mission
+framework.
+
 ## 1. What research says about teaching with simulations
 
 | Finding | Source | What it means here |
@@ -177,3 +183,38 @@ Each mission: a short brief → a prediction you commit to → exploration with 
 | 3 | Moving objects (thrown balls, orbits, satellite lamps); uncertainty meter and microscope; missions 6, 8, 9 | New physics, each piece testable against formulas |
 | 4 | α and Λ dials; two-staircase clock interferometer; lens object; mission 11 | The research frontier and new constants |
 | 5 | Try it on classmates: a short pre/post concept quiz and think-aloud sessions | The evidence base for this kind of tool is thin; your own data is worth having |
+
+## 9. Measurement: what students find hard, and how the world teaches it
+
+**What research finds.** Students of all levels struggle with quantum measurement. Common ideas are that
+measurement needs a conscious observer, that it reveals a value the particle already had, and that after a
+measurement the state stays collapsed or returns to the original if you wait
+([Zhu and Singh 2012](https://arxiv.org/pdf/1602.05720); tools that helped: [part 2](https://arxiv.org/pdf/1602.06926)).
+Two-state questionnaires on measurement now exist ([Bitzenbauer 2024](https://doaj.org/article/8e8dbaf6be6844fb973958b2a5f103b2)).
+QuVis found that how single-photon superposition is drawn changes what students take from it
+([Kohnle et al.](https://arxiv.org/pdf/1410.0867)).
+
+**Good explainers.** [PBS Space Time on decoherence](https://www.pbs.org/video/how-decoherence-splits-the-quantum-multiverse-b29lll)
+(addresses the conscious-observer idea head on); [Matt Strassler on why measurement destroys interference](https://profmattstrassler.com/?p=21478);
+[Hsu, "the missing lecture"](https://arxiv.org/pdf/2212.02391) for after a first course. Interactive:
+[Quantum Flytrap Virtual Lab](https://arxiv.org/abs/2203.13300) and QuVis cover photon interferometers,
+the eraser and the [Elitzur–Vaidman bomb tester](https://en.wikipedia.org/wiki/Elitzur%E2%80%93Vaidman_bomb_tester).
+None of these puts *you* in the interferometer, which is what the world can do.
+
+**The ideas, and the control that shows each**
+
+| Idea | In the world | Real experiment |
+|---|---|---|
+| Outcomes are random with probability \|ψ\|²; there was no single place before | Rewind and look again: marks pile up where the map is bright | Every single-particle double slit |
+| A measurement is any interaction that leaves a record; nobody needs to read it | The bell at the left door fades the stripes | Which-path experiments; heated C70 molecules lose fringes by emitting light ([Hackermüller et al. 2004](https://arxiv.org/abs/quant-ph/0402146)) |
+| How much you can know trades against how much interference survives, D² + V² ≤ 1 | Set the bell between 0 and 100% | [Schwindt, Kwiat and Englert 1999](https://arxiv.org/abs/quant-ph/9908072v1) |
+| Records can sometimes be undone | Erase the bell's record | Quantum eraser |
+| Measuring disturbs; Δx·Δp ≥ ħ/2 | Microscope sharpness, the live meter | Heisenberg's microscope (thought experiment) |
+| After a look the state is updated, then evolves | Look twice quickly, then wait | — |
+| Big things look definite because the world keeps measuring them | The world looks at you 16 times a second | Decoherence by collisions and thermal emission |
+| Which outcome happens is not explained by decoherence | Stated in the page; "Look" uses the textbook rule | Interpretations differ |
+
+**Still to do.** A real detector screen across the yard that records arrivals by itself; a visibility
+meter computed from the marks; a bomb-tester room (detect a bomb behind a door without touching it);
+and showing the bell's own state as part of the picture, so it is clear that you and the bell are now
+one entangled system.
