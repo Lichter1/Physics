@@ -44,6 +44,60 @@
   /** Show the summary step again (during the prediction), without moving the sky. */
   LEC.showSummary = function (m) { LEC.m = m; LEC.k = LEC.beats(m).length - 1; OBS.app.lectureMode(); render(false, true); };
 
+  // ------------------------------------------------------------------------------------------ figures
+  // fig: one or more of {img: id, caption} (a picture with its credit) or {chart: {...}, caption} (real data, live)
+  function figList(b) { return b.fig ? (Array.isArray(b.fig) ? b.fig : [b.fig]) : []; }
+  function src(file) { return (G.OBS_INLINE && G.OBS_INLINE[file]) || 'data/' + file; }
+  function figures(b) {
+    var f = figList(b); if (!f.length) return '';
+    return '<div class="lec-figs' + (f.length > 1 ? ' two' : '') + '">' + f.map(function (x, k) {
+      if (x.img) return '<figure class="lec-fig"><button type="button" class="lec-zoom" data-img="' + x.img + '" aria-label="Enlarge: ' + esc(x.caption || '') + '"><img src="' + src('img/lec/' + x.img + '.jpg') + '" alt="' + esc(x.caption || '') + '"></button>' +
+        '<figcaption>' + (x.caption || '') + ' <span class="credit" data-credit="' + x.img + '"></span></figcaption></figure>';
+      return '<figure class="lec-fig lec-chart"><div class="lec-chartwrap"><canvas id="lec-chart-' + k + '" role="img" aria-label="' + esc(x.alt || x.caption || 'Chart') + '"></canvas></div>' +
+        '<div class="lec-legend" id="lec-legend-' + k + '"></div><figcaption>' + (x.caption || '') + '</figcaption></figure>';
+    }).join('') + '</div>';
+  }
+  var credits = null;
+  function mountFigures(el, b) {
+    var f = figList(b);
+    if (!f.length) return;
+    (credits ? Promise.resolve(credits) : OBS.loadJSON('lecture_images').then(function (l) { credits = {}; l.forEach(function (x) { credits[x.id] = x.credit; }); return credits; }, function () { return (credits = {}); }))
+      .then(function (cr) { [].forEach.call(el.querySelectorAll('[data-credit]'), function (s) { s.textContent = cr[s.dataset.credit] ? 'Credit: ' + cr[s.dataset.credit] : ''; }); });
+    [].forEach.call(el.querySelectorAll('.lec-zoom'), function (bt) {
+      bt.addEventListener('click', function () {
+        var box = document.createElement('div'); box.className = 'lightbox'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', bt.getAttribute('aria-label'));
+        box.innerHTML = '<img src="' + src('img/lec/' + bt.dataset.img + '.jpg') + '" alt=""><button type="button" class="btn small" aria-label="Close">Close</button>';
+        function close() { box.remove(); document.removeEventListener('keydown', key); }
+        function key(e) { if (e.key === 'Escape') close(); }
+        box.addEventListener('click', close); document.addEventListener('keydown', key);
+        document.body.appendChild(box); box.querySelector('button').focus();
+      });
+    });
+    f.forEach(function (x, k) {
+      if (!x.chart) return;
+      var o = x.chart, cv = $('lec-chart-' + k);
+      OBS.open(o.ds).then(function (ds) {
+        if (!cv.isConnected) return;
+        var ch = new OBS.Chart(cv);
+        ch.setDataset(ds, o.sub);
+        if (o.filter) ch.setFilter(o.filter);
+        if (o.colourBy) ch.colourBy = o.colourBy;
+        if (o.palette) ch.palette = o.palette;
+        if (o.bins) ch.bins = o.bins;
+        ch.setAxes(o.x || ds.x, o.y || ds.y);
+        if (o.view) ch.setView(o.view);
+        var C = OBS.colours();
+        if (o.after) o.after(ch, C);
+        ch.draw();
+        var cats = ch.categories(), lg = $('lec-legend-' + k), pal = ch.pal(C);
+        if (cats && lg) lg.innerHTML = cats.cats.map(function (c, j) {
+          var name = ds.subset && ds.subset.col === ch.colourKey() && ds.subset.names ? ds.subset.names[c] || c : c;
+          return '<span><i style="background:' + pal[Math.min(7, j)] + '"></i>' + esc(String(name)) + '</span>';
+        }).join('');
+      });
+    });
+  }
+
   function cue(s) {
     if (!s) return;
     var sky = OBS.app.sky;
@@ -58,7 +112,9 @@
     el.innerHTML = '<header class="lec-head"><p class="eyebrow">Lecture · Mission ' + OBS.logbook.number(m) + ' · ' + esc(m.title) + '</p><h3>' + esc(b.h) + '</h3></header>' +
       (b.summary ? summary(m) : '<div class="lec-body prose">' + b.html + '</div>') +
       eqs.map(function (e) { return '<div class="lec-eq">\\[' + e + '\\]</div>'; }).join('') +
+      figures(b) +
       (b.ex ? '<div class="lec-ex" id="lec-ex"></div>' : '') +
+      (b.example ? '<div class="lec-example"><h4>Worked example</h4>' + b.example + '</div>' : '') +
       '<footer class="lec-foot"><span class="dots" aria-label="Step ' + (k + 1) + ' of ' + beats.length + '">' + beats.map(function (x, i) { return '<button type="button" class="dot' + (i === k ? ' on' : '') + '" data-k="' + i + '" aria-label="Step ' + (i + 1) + ': ' + esc(x.h) + '"></button>'; }).join('') + '</span>' +
       '<span class="lec-nav">' + (k ? '<button type="button" class="btn ghost" id="lec-back">Back</button>' : '') +
       (last ? '<button type="button" class="btn primary" id="lec-pred"' + (LEC.blocked(m) && !OBS.state.sandbox ? ' disabled' : '') + '>Make a prediction</button>' : '<button type="button" class="btn primary" id="lec-next">Next</button>') +
@@ -69,6 +125,7 @@
     if ($('lec-next')) $('lec-next').addEventListener('click', function () { LEC.go(k + 1); });
     if ($('lec-pred')) $('lec-pred').addEventListener('click', function () { OBS.logbook.toPredict(); });
     if (b.ex && OBS.EXPLAINERS[b.ex.id]) LEC.ex = OBS.EXPLAINERS[b.ex.id]($('lec-ex'), b.ex.opts || {});
+    mountFigures(el, b);
     OBS.typeset(el);
     if (quiet) return;
     if (b.sky) cue(b.sky);

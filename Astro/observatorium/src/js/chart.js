@@ -173,12 +173,14 @@
     this._catsKey = ck;
     return (this._cats = { col: col, cats: cats, cnt: cnt });
   };
+  /** Category colours: the theme's palette, unless a figure sets its own (chart.palette). */
+  P.pal = function (C) { return this.palette || [C.c1, C.c2, C.c3, C.c4, C.c5, C.c6, C.c7, C.c8]; };
   /** The colour a point is drawn in (shared with the sky). */
   P.colourOf = function (i, C) {
     var key = this.colourKey();
     if (key === '@gaia' || key === '@bv') return 'rgb(' + OBS.starRGB(OBS.column(this.ds, key === '@gaia' ? 'bp_rp' : 'ci')[i], key === '@bv' ? 'bv' : 'gaia', C.dark) + ')';
     var cats = this.categories();
-    if (cats) return [C.c1, C.c2, C.c3, C.c4, C.c5, C.c6, C.c7, C.c8][Math.min(7, cats.cats.indexOf(cats.col[i]))];
+    if (cats) return this.pal(C)[Math.min(7, cats.cats.indexOf(cats.col[i]))];
     return C.accent;
   };
 
@@ -222,12 +224,28 @@
     var xs = this.xs(), ys = this.ys(), m = this.mask, lx = this.logX(), ly = this.logY(), n = xs.length;
     var shown = 0; for (var i = 0; i < n; i++) shown += m[i];
     var s = shown > 20000 ? 1.4 : shown > 5000 ? 1.9 : shown > 800 ? 2.6 : 3.6, h = s / 2;
-    var key = this.colourKey(), cats = this.categories(), dark = C.dark, pal = [C.c1, C.c2, C.c3, C.c4, C.c5, C.c6, C.c7, C.c8];
+    var key = this.colourKey(), cats = this.categories(), dark = C.dark, pal = this.pal(C);
     var ccol = key === '@gaia' ? OBS.column(this.ds, 'bp_rp') : key === '@bv' ? OBS.column(this.ds, 'ci') : null;
     var cycles = this.fold ? 2 : 1, anySel = false;
     for (i = 0; i < n; i++) if (this.sel[i]) { anySel = true; break; }
     ctx.globalAlpha = shown > 20000 ? 0.55 : shown > 5000 ? 0.7 : 0.9;
     var err = this.ds.err && this.yid === 'Vobs' ? OBS.column(this.ds, 'Vobs') && this.ds.table.cols[this.ds.err] : null;
+    if (this.ds.connect && !this.fold && !anySel) {   // a spectrum or a time series: join the points, one line per category
+      ctx.globalAlpha = 1; ctx.lineWidth = 1.6; var prev = null, pc = null;
+      for (i = 0; i < n; i++) {
+        if (!m[i]) { prev = null; continue; }
+        var XX = ax(xs[i], lx), YY = ax(ys[i], ly), cc = cats ? cats.col[i] : null;
+        if (!isFinite(XX) || !isFinite(YY)) { prev = null; continue; }
+        var pt = [this.px(XX), this.py(YY)];
+        if (prev && cc === pc && XX >= prev[2]) {
+          ctx.strokeStyle = cats ? pal[Math.min(7, cats.cats.indexOf(cc))] : (this.pointColour || C.accent);
+          ctx.beginPath(); ctx.moveTo(prev[0], prev[1]); ctx.lineTo(pt[0], pt[1]); ctx.stroke();
+        }
+        prev = [pt[0], pt[1], XX]; pc = cc;
+      }
+      ctx.lineWidth = 1;
+      return;
+    }
     for (var pass = 0; pass < 2; pass++) {
       for (i = 0; i < n; i++) {
         if (!m[i] || (pass === 1) !== !!this.sel[i]) continue;
@@ -264,7 +282,8 @@
     for (var v = Math.ceil(a / step) * step; v <= b + step * 1e-9; v += step) out.push(+v.toPrecision(12));
     return out;
   }
-  function tickLabel(v, log) {
+  function tickLabel(v, log, plain) {
+    if (plain) return String(Math.round(v)).replace('-', '−');   // years: 1850, not 1,850
     if (!log) return OBS.fmt(v, 4);
     var p = Math.round(v), x = Math.pow(10, v);
     if (Math.abs(v - p) > 1e-6) return OBS.fmt(x, 2);
@@ -293,7 +312,7 @@
       var x = Math.round(self.px(t.v)) + 0.5;
       ctx.globalAlpha = t.major ? 1 : 0.45;
       ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, H - PAD.b); ctx.stroke();
-      if (t.major) ctx.fillText(self.fold ? OBS.fmt(t.v, 3) : tickLabel(t.v, lx), x, H - PAD.b + 5);
+      if (t.major) ctx.fillText(self.fold ? OBS.fmt(t.v, 3) : tickLabel(t.v, lx, !self.fold && self.xvar().plain), x, H - PAD.b + 5);
     });
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     yt.forEach(function (t) {
@@ -301,7 +320,7 @@
       var y = Math.round(self.py(t.v)) + 0.5;
       ctx.globalAlpha = t.major ? 1 : 0.45;
       ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W - PAD.r, y); ctx.stroke();
-      if (t.major) ctx.fillText(tickLabel(t.v, ly), PAD.l - 6, y);
+      if (t.major) ctx.fillText(tickLabel(t.v, ly, !self.hist() && self.yvar().plain), PAD.l - 6, y);
     });
     ctx.globalAlpha = 1;
     ctx.strokeStyle = C.rule; ctx.strokeRect(PAD.l + 0.5, PAD.t + 0.5, W - PAD.l - PAD.r - 1, H - PAD.t - PAD.b - 1);

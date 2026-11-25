@@ -41,6 +41,12 @@ TARGETS = [
     ('m87', 'M87, a giant elliptical', 187.706, 12.391, 0.2, 'ls'),
     ('m101', 'M101, a spiral', 210.802, 54.349, 0.4, 'sdss'),
     ('m51', 'M51, the Whirlpool', 202.470, 47.195, 0.2, 'sdss'),
+    # gravitational lenses, as a ground-based survey sees them (Hubble and Webb views are in the lectures)
+    ('horseshoe_ls', 'The Cosmic Horseshoe (an Einstein ring)', 177.13813, 19.50097, 0.03, 'ls'),
+    ('einstein_cross_ls', 'The Einstein Cross (Q2237+0305)', 340.12625, 3.35861, 0.02, 'ls'),
+    ('abell370_ls', 'Abell 370', 39.9696, -1.5779, 0.09, 'ls'),
+    ('abell1689_ls', 'Abell 1689', 197.8729, -1.3381, 0.1, 'ls'),
+    ('macs0416_ls', 'MACS J0416.1-2403', 64.0375, -24.0675, 0.08, 'ls'),
 ]
 PIX = 1600
 

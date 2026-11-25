@@ -292,13 +292,15 @@
 
   // ------------------------------------------------------------------------------------------ the distance ladder
   X.ladder = function (host, o) {
-    var s = stage(host, 0.42);
+    var s = stage(host, 0.6);
     function draw() {
       s.fit(); var c = s.ctx, C = s.C, pb = plotBox(s, 20, 8, s.W - 40, s.H - 40, [-6, 10.5], [0, 7], { logx: true, xl: 'distance [pc] (log scale)' });
       for (var e = -5; e <= 10; e += 1) { var x = pb.x(Math.pow(10, e)); line(c, [[x, pb.y0 + pb.h], [x, pb.y0 + pb.h - 5]], C['ink-3'], 1); if (e % 2 === 0) text(c, '10^' + e, x, pb.y0 + pb.h - 8, C['ink-3'], 'center'); }
-      var R = [['radar, Kepler’s laws', -6, -4.5, 6.2], ['parallax (Gaia)', 0, 4, 5.3], ['main-sequence fitting', 1, 4.5, 4.4], ['Cepheids', 3, 7.6, 3.5], ['Tully–Fisher, Faber–Jackson', 6, 8.5, 2.6], ['type Ia supernovae', 7, 9.8, 1.7], ['Hubble’s law', 7.5, 10.4, 0.8]];
+      var R = [['radar, Kepler’s laws', -6, -4.5], ['parallax (Gaia)', 0, 4], ['main-sequence fitting', 1, 4.5], ['Cepheids', 3, 7.6], ['tip of the red giant branch', 4.5, 7.4],
+        ['water masers (NGC 4258)', 6.75, 7.0], ['Tully–Fisher, Faber–Jackson, fundamental plane', 6, 8.5], ['type Ia supernovae', 7, 9.8], ['Hubble–Lemaître law', 7.5, 10.4]];
+      var hi = o && o.hi !== undefined ? [].concat(o.hi) : [];
       R.forEach(function (r, k) {
-        var x0 = pb.x(Math.pow(10, r[1])), x1 = pb.x(Math.pow(10, r[2])), y = pb.y(r[3]), on = o && o.hi === k;
+        var x0 = pb.x(Math.pow(10, r[1])), x1 = pb.x(Math.pow(10, r[2])), y = pb.y(6.5 - k * 0.74), on = hi.indexOf(k) >= 0;
         c.fillStyle = on ? C.accent : C['ink-3']; c.globalAlpha = on ? 0.9 : 0.45; c.fillRect(x0, y - 7, x1 - x0, 14); c.globalAlpha = 1;
         text(c, r[0], x0 + 4, y - 11, on ? C.accent : C['ink-2']);
       });

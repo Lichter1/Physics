@@ -33,8 +33,9 @@ writeFileSync(join(dist, 'index.html'), head + '\n' + body);
 writeFileSync(join(dist, 'preview.html'), '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n' + head + '\n<style>body{margin:0}</style>\n</head>\n<body>\n' + body + '</body>\n</html>\n');
 const files = readdirSync(join(root, 'data')).filter((f) => /\.(csv|json)$/.test(f));
 files.forEach((f) => copyFileSync(join(root, 'data', f), join(dist, 'data', f)));
-const images = readdirSync(join(root, 'data', 'img')).filter((f) => /\.jpg$/.test(f));
-mkdirSync(join(dist, 'data', 'img'), { recursive: true });
+const images = readdirSync(join(root, 'data', 'img')).filter((f) => /\.jpg$/.test(f))
+  .concat(readdirSync(join(root, 'data', 'img', 'lec')).filter((f) => /\.jpg$/.test(f)).map((f) => 'lec/' + f));
+mkdirSync(join(dist, 'data', 'img', 'lec'), { recursive: true });
 images.forEach((f) => copyFileSync(join(root, 'data', 'img', f), join(dist, 'data', 'img', f)));
 
 // 2. the stand-alone file

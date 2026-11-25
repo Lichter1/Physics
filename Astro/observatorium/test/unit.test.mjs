@@ -134,4 +134,35 @@ test('practice answers agree with the physics module', () => {
   near(ans('rotation', 0), A.massEnclosed(220, 8) / 1e10, 'enclosed mass');
   near(ans('zwicky', 0), A.virialMass(1000, 1.5) / 1e15, 'virial mass');
   near(ans('census', 1), 28.4 * Math.pow(4 / 365.25, -1 / 3), 'RV amplitude');
+  near(ans('census', 2), 30 / 40, 'angular separation');
+  near(ans('census', 3), Math.pow(20, 2.35), 'Salpeter ratio');
+  near(ans('kirkwood', 1), Math.pow(4300 / 5772, 4), 'sunspot flux');
+  near(ans('redblue', 1), A.C.c * 2 * 86400 / A.C.AU, 'light-crossing size (AU)');
+  near(ans('redblue', 2), 1e39 / 1.26e31 / 1e7, 'Eddington mass');
+  near(ans('zwicky', 1), 1150 / 70, 'Hubble distance');
+  near(ans('tully', 1), A.C.pc * 1e6 / 1e3 / 73 / (365.25 * 86400 * 1e9), 'Hubble time');
+});
+
+test('lecture figures point at real pictures and real datasets', () => {
+  const pics = JSON.parse(ctx.OBS_INLINE['lecture_images.json']);
+  const ids = new Set(pics.map((p) => p.id));
+  for (const p of pics) {
+    assert.ok(p.credit && p.source, p.id + ' has a credit and a source');
+    readFileSync(join(root, 'data', 'img', 'lec', p.id + '.jpg'));   // throws if the file is missing
+  }
+  let n = 0, used = new Set();
+  for (const m of OBS.MISSIONS) for (const b of m.lecture) {
+    for (const f of b.fig ? [].concat(b.fig) : []) {
+      n++;
+      assert.ok(f.caption, m.id + ': every figure has a caption');
+      if (f.img) { assert.ok(ids.has(f.img), m.id + ': picture ' + f.img + ' exists'); used.add(f.img); continue; }
+      const o = f.chart, ds = OBS.DATASETS[o.ds];
+      assert.ok(ds, m.id + ': chart dataset ' + o.ds);
+      for (const v of [o.x || ds.x, o.y || ds.y]) assert.ok(v === '#' || OBS.varOf(ds, v), m.id + ': chart variable ' + v);
+      if (o.sub) assert.ok(o.sub === '*' || ds.subset.names[o.sub], m.id + ': chart subset ' + o.sub);
+    }
+    if (b.example) assert.ok(!/\\\(([^)]*)$/.test(b.example), m.id + ': unclosed maths in an example');
+  }
+  assert.ok(n >= 25, 'the lectures carry figures (' + n + ')');
+  for (const id of ids) assert.ok(used.has(id), 'picture ' + id + ' is used by some lecture');
 });

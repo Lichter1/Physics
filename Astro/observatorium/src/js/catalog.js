@@ -248,6 +248,32 @@
     ]
   });
 
+  // ---------------------------------------------------------------------------------------------- small datasets used in the lectures
+  def({
+    id: 'spectra', file: 'spectra', level: 'stars', title: 'Star spectra (SDSS)', sub: 'One real spectrum for each spectral class, B to M (SDSS DR17)',
+    pos: false, x: 'lam', y: 'f', connect: true, colourBy: 'type', subset: { col: 'type', label: 'Class', def: '*', names: { '*': 'All six', B: 'B', A: 'A', F: 'F', G: 'G', K: 'K', M: 'M' } },
+    catOrder: { type: ['B', 'A', 'F', 'G', 'K', 'M'] }, name: function (c, i) { return c.name[i]; },
+    vars: [
+      v('lam', 'Wavelength λ', 'nm', col('lam')),
+      v('f', 'Brightness (scaled)', '', col('f'), { how: 'Flux per unit wavelength, scaled so the brightest part is 1.' }),
+      v('type', 'Spectral class', '', col('type'), { cat: true })
+    ]
+  });
+  def({
+    id: 'sunspots', file: 'sunspots', level: 'solar', title: 'Sunspots since 1700', sub: 'Yearly mean sunspot number (SILSO, Royal Observatory of Belgium)',
+    pos: false, x: 'year', y: 'sn', connect: true,
+    vars: [v('year', 'Year', '', col('year'), { plain: true }), v('sn', 'Sunspot number', '', col('sn'), { how: 'Spots counted on the Sun, averaged over the year (version 2 of the international series).' })]
+  });
+  def({
+    id: 'grbs', file: 'grbs', level: 'galaxies', title: 'Gamma-ray bursts', sub: 'Every burst in the Fermi GBM catalogue with a measured duration',
+    pos: false, x: 't90', y: '#', name: function (c, i) { return c.name[i]; },
+    vars: [
+      v('t90', 'Duration T₉₀', 's', col('t90'), { scale: 'log', how: 'Time over which 90% of the burst’s gamma-ray counts arrive.' }),
+      v('fluence', 'Fluence', 'erg/cm²', col('fluence'), { scale: 'log', how: 'Total energy received per unit area.' }),
+      v('kind', 'Short or long', '', function (c, i) { return c.t90[i] < 2 ? 'short (< 2 s)' : 'long'; }, { cat: true })
+    ]
+  });
+
   // ---------------------------------------------------------------------------------------------- galaxies
   def({
     id: 'rotation', file: 'rotation_curves', level: 'galaxies', title: 'Rotation curves', sub: 'SPARC: 175 disk galaxies (21-cm and Hα velocities)',
@@ -336,7 +362,7 @@
   }
   OBS.LEVELS = [
     { id: 'sky', label: 'The sky', scale: 'all directions', note: 'Positions, brightness and colour: what anyone can measure.' },
-    { id: 'solar', label: 'Solar system', scale: '1–100 AU', note: 'The Sun’s family.' },
+    { id: 'solar', label: 'Solar system', scale: '1–100 AU', note: 'The Sun and its family.' },
     { id: 'stars', label: 'Stars', scale: '1–100 pc', note: 'The solar neighbourhood: single stars, pairs, planets, corpses.' },
     { id: 'clusters', label: 'Star clusters', scale: '50 pc – 3 kpc', note: 'Stars born together.' },
     { id: 'galaxy', label: 'The Milky Way', scale: '1–30 kpc', note: 'Our galaxy and its halo.' },

@@ -262,6 +262,66 @@
    "file": "img/m51.jpg",
    "proj": "tan",
    "credit": "Sloan Digital Sky Survey (SDSS DR18 image cutout service)"
+  },
+  {
+   "id": "horseshoe_ls",
+   "label": "The Cosmic Horseshoe (an Einstein ring)",
+   "ra": 177.13813,
+   "dec": 19.50097,
+   "fov": 0.03,
+   "w": 1600,
+   "h": 1600,
+   "file": "img/horseshoe_ls.jpg",
+   "proj": "tan",
+   "credit": "DESI Legacy Imaging Surveys DR9 (legacysurvey.org)"
+  },
+  {
+   "id": "einstein_cross_ls",
+   "label": "The Einstein Cross (Q2237+0305)",
+   "ra": 340.12625,
+   "dec": 3.35861,
+   "fov": 0.02,
+   "w": 1600,
+   "h": 1600,
+   "file": "img/einstein_cross_ls.jpg",
+   "proj": "tan",
+   "credit": "DESI Legacy Imaging Surveys DR9 (legacysurvey.org)"
+  },
+  {
+   "id": "abell370_ls",
+   "label": "Abell 370",
+   "ra": 39.9696,
+   "dec": -1.5779,
+   "fov": 0.09,
+   "w": 1600,
+   "h": 1600,
+   "file": "img/abell370_ls.jpg",
+   "proj": "tan",
+   "credit": "DESI Legacy Imaging Surveys DR9 (legacysurvey.org)"
+  },
+  {
+   "id": "abell1689_ls",
+   "label": "Abell 1689",
+   "ra": 197.8729,
+   "dec": -1.3381,
+   "fov": 0.1,
+   "w": 1600,
+   "h": 1600,
+   "file": "img/abell1689_ls.jpg",
+   "proj": "tan",
+   "credit": "DESI Legacy Imaging Surveys DR9 (legacysurvey.org)"
+  },
+  {
+   "id": "macs0416_ls",
+   "label": "MACS J0416.1-2403",
+   "ra": 64.0375,
+   "dec": -24.0675,
+   "fov": 0.08,
+   "w": 1600,
+   "h": 1600,
+   "file": "img/macs0416_ls.jpg",
+   "proj": "tan",
+   "credit": "DESI Legacy Imaging Surveys DR9 (legacysurvey.org)"
   }
  ]
 }

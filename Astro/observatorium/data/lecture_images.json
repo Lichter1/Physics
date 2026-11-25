@@ -1,0 +1,154 @@
+[
+ {
+  "id": "abell370",
+  "file": "img/lec/abell370.jpg",
+  "w": 1280,
+  "h": 1056,
+  "credit": "NASA, ESA, the Hubble SM4 ERO Team and ST-ECF (ESA/Hubble heic0910b), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/heic0910b.jpg"
+ },
+ {
+  "id": "webb_deep_field",
+  "file": "img/lec/webb_deep_field.jpg",
+  "w": 1280,
+  "h": 1306,
+  "credit": "NASA, ESA, CSA, STScI (ESA/Webb weic2209a), CC BY 4.0",
+  "source": "https://cdn.esawebb.org/archives/images/screen/weic2209a.jpg"
+ },
+ {
+  "id": "horseshoe",
+  "file": "img/lec/horseshoe.jpg",
+  "w": 1280,
+  "h": 1018,
+  "credit": "ESA/Hubble & NASA (potw1151a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/potw1151a.jpg"
+ },
+ {
+  "id": "cluster_dm_maps",
+  "file": "img/lec/cluster_dm_maps.jpg",
+  "w": 1280,
+  "h": 771,
+  "credit": "NASA, ESA, D. Harvey (EPFL), R. Massey (Durham) (ESA/Hubble heic1506a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/heic1506a.jpg"
+ },
+ {
+  "id": "antennae",
+  "file": "img/lec/antennae.jpg",
+  "w": 1280,
+  "h": 1270,
+  "credit": "NASA, ESA, and the Hubble Heritage Team (ESA/Hubble heic0615a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/heic0615a.jpg"
+ },
+ {
+  "id": "df2",
+  "file": "img/lec/df2.jpg",
+  "w": 1280,
+  "h": 853,
+  "credit": "NASA, ESA, and P. van Dokkum (Yale) (ESA/Hubble heic1806a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/heic1806a.jpg"
+ },
+ {
+  "id": "m87_jet",
+  "file": "img/lec/m87_jet.jpg",
+  "w": 1280,
+  "h": 1337,
+  "credit": "NASA and the Hubble Heritage Team (STScI/AURA) (ESA/Hubble opo0020a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/opo0020a.jpg"
+ },
+ {
+  "id": "sn1987a",
+  "file": "img/lec/sn1987a.jpg",
+  "w": 1280,
+  "h": 1001,
+  "credit": "NASA, ESA, P. Challis and R. Kirshner (Harvard-Smithsonian CfA) (ESA/Hubble heic0704a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/heic0704a.jpg"
+ },
+ {
+  "id": "cats_eye",
+  "file": "img/lec/cats_eye.jpg",
+  "w": 1280,
+  "h": 1280,
+  "credit": "NASA, ESA, HEIC and the Hubble Heritage Team (ESA/Hubble heic0414a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/heic0414a.jpg"
+ },
+ {
+  "id": "hr8799",
+  "file": "img/lec/hr8799.jpg",
+  "w": 1280,
+  "h": 526,
+  "credit": "NASA, ESA, and R. Soummer (STScI) (ESA/Hubble opo1129a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/opo1129a.jpg"
+ },
+ {
+  "id": "pillars",
+  "file": "img/lec/pillars.jpg",
+  "w": 1280,
+  "h": 1280,
+  "credit": "NASA, ESA, CSA, STScI; J. DePasquale, A. Koekemoer, A. Pagan (ESA/Webb weic2216a), CC BY 4.0",
+  "source": "https://cdn.esawebb.org/archives/images/screen/weic2216a.jpg"
+ },
+ {
+  "id": "m87_bh",
+  "file": "img/lec/m87_bh.jpg",
+  "w": 1280,
+  "h": 746,
+  "credit": "EHT Collaboration (ESO eso1907a), CC BY 4.0",
+  "source": "https://cdn.eso.org/images/screen/eso1907a.jpg"
+ },
+ {
+  "id": "sgra_bh",
+  "file": "img/lec/sgra_bh.jpg",
+  "w": 1280,
+  "h": 1280,
+  "credit": "EHT Collaboration (ESO eso2208-eht-mwa), CC BY 4.0",
+  "source": "https://cdn.eso.org/images/screen/eso2208-eht-mwa.jpg"
+ },
+ {
+  "id": "hltau",
+  "file": "img/lec/hltau.jpg",
+  "w": 1280,
+  "h": 1280,
+  "credit": "ALMA (ESO/NAOJ/NRAO) (ESO eso1436a), CC BY 4.0",
+  "source": "https://cdn.eso.org/images/screen/eso1436a.jpg"
+ },
+ {
+  "id": "s2_motion",
+  "file": "img/lec/s2_motion.jpg",
+  "w": 1280,
+  "h": 924,
+  "credit": "ESO/GRAVITY Collaboration (eso1825e), CC BY 4.0",
+  "source": "https://cdn.eso.org/images/screen/eso1825e.jpg"
+ },
+ {
+  "id": "eclipse1919",
+  "file": "img/lec/eclipse1919.jpg",
+  "w": 490,
+  "h": 533,
+  "credit": "F. W. Dyson, A. S. Eddington and C. Davidson 1920, Phil. Trans. R. Soc. A 220 (Wikimedia Commons), public domain",
+  "source": "https://upload.wikimedia.org/wikipedia/commons/3/37/1919_eclipse_positive.jpg"
+ },
+ {
+  "id": "einstein_cross",
+  "file": "img/lec/einstein_cross.jpg",
+  "w": 1280,
+  "h": 1236,
+  "credit": "NASA, ESA and STScI (Wikimedia Commons), public domain",
+  "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c8/Einstein_cross.jpg/1280px-Einstein_cross.jpg"
+ },
+ {
+  "id": "pioneer_plaque",
+  "file": "img/lec/pioneer_plaque.jpg",
+  "w": 1280,
+  "h": 1015,
+  "credit": "NASA; designed by C. Sagan and F. Drake, artwork by L. Salzman Sagan (Wikimedia Commons), public domain",
+  "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/02/Pioneer_plaque.svg/1280px-Pioneer_plaque.svg.png"
+ },
+ {
+  "id": "sun_hmi",
+  "file": "img/lec/sun_hmi.jpg",
+  "w": 1024,
+  "h": 1024,
+  "credit": "NASA/SDO and the HMI science team, 25 November 2026, public domain",
+  "source": "https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_HMIIC.jpg"
+ }
+]

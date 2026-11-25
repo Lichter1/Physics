@@ -91,18 +91,59 @@ and followed onto the sky. Teacher mode in the Notebook unlocks everything.
 | L5 galaxy clusters, dark matter | 5.2 | SDSS (Coma) | |
 | L5 scaling relations: Tully–Fisher, Faber–Jackson | 5.3 | SPARC | HW5 |
 
-### Topics from lectures 1–5 not yet covered, with data that would cover them
+### Lecture coverage, reviewed against the slides (version 6)
+
+A second pass through the slides of lectures 1–5 and the homework found topics that were taught but missing from
+the observatory. They are now lecture steps, most with a photograph, a live chart of real data or a worked example
+(119 steps, 27 figures, 27 worked examples, 36 practice problems):
+
+| Topic (slides, homework) | Where it is now | Figure, chart or example |
+|---|---|---|
+| L1 telescopes: light grasp, resolution (HW1 Q1) | 1.1 *Telescopes* | Galileo and Jupiter's moons: photon counts, 20″ vs 3.5″, glare |
+| L1 history: Aristarchus to Kepler, Galileo | 1.1 *From Aristarchus to Kepler* | why 87° gives 19 instead of 390 |
+| L1 magnitudes, star counts | 1.1 *Magnitudes* | live histogram of 8,868 naked-eye stars (×3 per magnitude, not ×4) |
+| L1 spectral lines, Bohr, Kirchhoff, Balmer | 1.4 *Lines* | live SDSS A0 spectrum with Rydberg-formula line positions; Hα worked out |
+| L1 OBAFGKM, Cannon, Payne | 1.4 *The spectral sequence* | six live SDSS spectra, B to M |
+| L1 Sirius B, white-dwarf size and density | 1.5 *Sirius B* | R = 5,800 km, 2.4×10⁹ kg m⁻³ |
+| L1 visual binaries | 1.6 *Kepler's third law* | Sirius weighed: 3.1 M☉ |
+| L2 mass transfer: Roche lobes, Algol, novae, X-ray binaries | 1.6 *When stars touch* | Eggleton's formula for q = 0.5 |
+| L2 lifetimes (HW2 Q3) | 1.7 *Lifetimes* | 20 M☉: 5.6 Myr |
+| L2 fusion: pp chain, CNO, solar neutrino problem | 2.1 *What makes stars shine* | the Sun's 10 Gyr vs 30 Myr by contraction |
+| L2 endpoints: planetary nebulae, SN II and Ia, SN 1987A | 2.1 *How stars end* | Cat's Eye, SN 1987A; dome turns to the LMC |
+| L2 black holes, Schwarzschild radius (HW2 Q5), EHT | 2.4 *Black holes* | M87*, Sgr A*; R_s = 29.5 km; 40 μas shadow |
+| L2 pulsars as beacons | 2.4 *A lighthouse* | the Pioneer plaque's pulsar map |
+| L4 gamma-ray bursts | 2.4 *Gamma-ray bursts* | live T₉₀ histogram of 4,430 Fermi bursts; isotropic energy |
+| L3 direct imaging (slide example) | 3.2 *Taking a picture of a planet* | HR 8799; 0.25″ vs 0.05″ |
+| L3 ISM, star formation, Jeans mass | 3.2 *Where stars are born* | Pillars of Creation; M_J ≈ 5 M☉ in a dense core |
+| L3 IMF, Salpeter (HW3 Q1) | 3.2 *How many of each mass* | live mass histogram of 31,567 Gaia stars with Salpeter's slope |
+| L3 protoplanetary discs | 3.2 *Where planets form* | HL Tau (ALMA) |
+| L3 lensing history, strong lensing (HW4 Q2) | 3.3 *Gravity bends light*, *Rings, arcs and crosses* | 1919 eclipse plate; Cosmic Horseshoe (also on the dome), Einstein Cross; θ_E = 2.85″ |
+| L4 the Sun, sunspots, the 11-year cycle | 4.1 *Our star*, *The 11-year cycle* | SDO image; live sunspot series since 1700 |
+| L4 comets, Oort cloud | 4.1 *Comets and the Oort cloud* | P = 11 Myr at 50,000 AU |
+| L4 Sgr A*, S2 | 4.2 *A black hole at the centre* | GRAVITY orbit; 4.2×10⁶ M☉ from Kepler's law |
+| L4 dark-matter candidates: MACHOs, WIMPs | 4.3 *What could dark matter be?* | 72 colliding clusters (lensing vs X-rays) |
+| L5 galaxy collisions | 5.1 *Galaxies collide* | the Antennae; star–star collision odds |
+| L5 AGN, quasars, Eddington limit, one-sided jets | 5.1 *Active galactic nuclei* | M87's jet; 173 AU, 8×10⁸ M☉ |
+| L5 luminosity function (Schechter) | 5.1 *How many galaxies…* | live M_r histogram of 14,000 SDSS galaxies with a fitted Schechter curve and the survey limit |
+| L5 Local Group, catalogues, Great Attractor | 5.2 *Our neighbourhood* | all-sky markers |
+| L5 cluster lensing (the lecturer's field) | 5.2 *Clusters as lenses* | Abell 370 (also on the dome), Webb's First Deep Field; θ_E ≈ 35″ |
+| L5 a galaxy without dark matter | 5.2 *A galaxy without dark matter* | NGC 1052-DF2; virial mass |
+| L5 top of the distance ladder: TRGB, masers, SNe Ia, fundamental plane | 5.3 *To the top of the ladder* | ladder explainer with the new rungs |
+| L5 Olbers' paradox (HW5) | 5.3 *Why is the night sky dark?* | mean free path 10¹² ly |
+| L5 Hubble–Lemaître law, cosmic clocks | 5.3 *How old is the Universe?* | 1/H₀ = 14 Gyr |
+
+### Topics now in the lectures that could still become full missions
 
 | Topic | Mission idea | Data (reachable from here unless noted) |
 |---|---|---|
 | L1 history: Kepler's laws | Recover the third law from planet and moon orbits | JPL Horizons / SBDB |
-| L1 spectral lines, OBAFGKM | Classify real stellar spectra by their lines | SDSS stellar spectra (SkyServer) |
+| L1 spectral lines, OBAFGKM | Classify real stellar spectra by their lines | SDSS stellar spectra (six shipped in `spectra.csv`) |
 | L2 supernovae Ia vs II | Light-curve shapes and peak brightness | ZTF Bright Transient Survey (to test) |
 | L2 black holes | Weigh Sgr A* from the orbit of S2 | Published orbital elements (GRAVITY 2019) |
 | L3 initial mass function (HW3 Q1) | Count stars per mass bin in the 100 pc sample; fit Salpeter's slope | Gaia 100 pc (already shipped) |
 | L3 habitable zone, snow line | Planets by insolation and temperature | NASA Exoplanet Archive (shipped) |
-| L4 the Sun | The 11-year cycle in 270 years of sunspot counts | SILSO (to test) |
-| L4 gamma-ray bursts | Short and long bursts from the duration histogram | Fermi GBM burst catalogue (HEASARC, reachable) |
+| L4 the Sun | The 11-year cycle in 270 years of sunspot counts | SILSO (shipped: `sunspots.csv`) |
+| L4 gamma-ray bursts | Short and long bursts from the duration histogram | Fermi GBM burst catalogue (shipped: `grbs.csv`) |
 | L4 Kuiper-belt occultations (HW4 Q1) | Event durations and detectable sizes | JPL SBDB (shipped) |
 | L5 AGN, quasars | Broad lines and redshifts in quasar spectra | SDSS (reachable) |
 | L5 Faber–Jackson, luminosity function | σ against luminosity; the Schechter fit | SDSS (shipped: `sigma` column) |
