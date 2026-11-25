@@ -1,0 +1,805 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Astronomy HW2 Solutions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky question rail on the left (chips on phones), one reading column of worked steps; each part ends in a boxed answer, an explorer, and an inline tutor. */
+:root{
+  --bg:#faf9f7; --surface:#ffffff; --ink:#1f1b17; --muted:#6b625a; --line:#ebe5df;
+  --accent:#b9532f; --accent-soft:#fbede6; --answer:#fdf3ed; --answer-line:#d97757;
+  --why:#f6f3ef; --why-line:#c4a898; --code:#f3efea;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Literata",Georgia,"Times New Roman",serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1a1714; --surface:#221e1a; --ink:#efe9e3; --muted:#a89d93; --line:#38312b;
+  --accent:#e8906f; --accent-soft:#3a2920; --answer:#33241c; --answer-line:#d97757;
+  --why:#28231f; --why-line:#7d6a5d; --code:#2b2622; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1a1714; --surface:#221e1a; --ink:#efe9e3; --muted:#a89d93; --line:#38312b;
+  --accent:#e8906f; --accent-soft:#3a2920; --answer:#33241c; --answer-line:#d97757;
+  --why:#28231f; --why-line:#7d6a5d; --code:#2b2622; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16.5px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:200px minmax(0,1fr);gap:40px;padding-block:28px 80px}
+h1,h2,h3,.label,button,.nav a{font-family:var(--f-display)}
+h1{font-size:2rem;line-height:1.15;margin:0 0 6px;text-wrap:balance}
+h2{font-size:1.45rem;margin:0 0 4px;text-wrap:balance}
+h3{font-size:1.1rem;margin:0;color:var(--accent)}
+.sub{color:var(--muted);font-size:.95rem;margin:0}
+.label{text-transform:uppercase;letter-spacing:.08em;font-size:.72rem;font-weight:600;color:var(--muted)}
+/* rail */
+.nav{position:sticky;top:calc(env(safe-area-inset-top,0px) + 20px);align-self:start;display:flex;flex-direction:column;gap:4px}
+.nav a{display:flex;justify-content:space-between;align-items:center;gap:8px;text-decoration:none;color:var(--ink);padding:7px 10px;border-radius:6px;font-weight:500;font-size:.95rem}
+.nav a:hover{background:var(--accent-soft)}
+.nav a .tick{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line);flex:none}
+.nav a.done .tick{background:var(--accent);border-color:var(--accent)}
+.modebox{margin-top:16px;display:flex;flex-direction:column;gap:6px}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--surface);color:var(--muted);padding:7px 6px;font-size:.85rem;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+main{min-width:0;display:flex;flex-direction:column;gap:40px}
+header{display:flex;flex-direction:column;gap:10px}
+.note{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-size:.95rem}
+.note ul{margin:6px 0 0;padding-left:20px}
+details.ref summary{cursor:pointer;font-family:var(--f-display);font-weight:600}
+.tablewrap{overflow-x:auto;margin-top:10px}
+table{border-collapse:collapse;font-size:.9rem;width:100%}
+td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:middle}
+th{font-family:var(--f-display);font-weight:600;color:var(--muted)}
+td:first-child{font-family:var(--f-mono);font-size:.8rem;white-space:nowrap;color:var(--accent)}
+/* question */
+section.q{display:flex;flex-direction:column;gap:18px;scroll-margin-top:20px}
+.qhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:8px}
+.problem{font-size:.97rem;color:var(--muted);border-left:3px solid var(--line);padding-left:14px}
+.part{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.fg{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:.95rem}
+.fg b{font-family:var(--f-display);font-weight:600;color:var(--muted)}
+.lead{font-weight:600}
+.step{position:relative;padding-right:34px;min-width:0}
+.step p{margin:0 0 6px}
+.step mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+.ask-step{position:absolute;top:0;right:0;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;font-size:.85rem;font-weight:700}
+.ask-step:hover,.ask-step:focus-visible{border-color:var(--accent);color:var(--accent)}
+.answer{background:var(--answer);border:1px solid var(--answer-line);border-radius:8px;padding:6px 14px;overflow-x:auto}
+.why{background:var(--why);border-left:3px solid var(--why-line);padding:10px 14px;font-size:.93rem;border-radius:0 6px 6px 0}
+.why p{margin:0 0 6px}.why p:last-child{margin:0}
+figure{margin:0}figure img{display:block;border:1px solid var(--line);border-radius:6px;background:#fff}
+figcaption{font-size:.85rem;color:var(--muted);margin-top:4px}
+pre{background:var(--code);border-radius:6px;padding:12px;overflow-x:auto;font-family:var(--f-mono);font-size:.8rem;line-height:1.5;margin:0}
+.codebar{display:flex;justify-content:space-between;align-items:center}
+/* explorers (interactive figures) */
+.explorer{display:flex;flex-direction:column;gap:12px;border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--bg);min-width:0}
+.ex-controls{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;align-items:center;font-family:var(--f-display);font-size:.95rem}
+.ex-row{display:flex;align-items:center;gap:10px;min-width:0}
+.ex-row input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
+.ex-row output{font-family:var(--f-mono);font-size:.9rem;min-width:3.6em;text-align:right;font-variant-numeric:tabular-nums}
+.ex-unit{font-size:.8rem;color:var(--muted);min-width:3.4em}
+.ex-presets{display:flex;gap:8px;flex-wrap:wrap}
+.ex-read{font-size:.92rem;line-height:1.7;font-variant-numeric:tabular-nums}
+.ex-read .pill{display:inline-block;padding:1px 10px;border-radius:999px;background:var(--accent);color:var(--surface);font-family:var(--f-display);font-weight:600;font-size:.85rem;margin-right:8px}
+.ex-read code{font-family:var(--f-mono);font-size:.85rem}
+.ex-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.ex-plot{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ex-plot svg{display:block;width:100%;height:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.explorer .gl{stroke:var(--line);stroke-width:1}
+.explorer .frame{fill:none;stroke:var(--muted);stroke-width:1}
+.explorer .ax{stroke:var(--muted);stroke-width:1.2}
+.explorer .tx{fill:var(--muted);font:10px var(--f-mono)}
+.explorer .lbl{fill:var(--muted);font:600 11px var(--f-display)}
+.explorer .reg-under{fill:var(--accent-soft)}
+.explorer .reg-over{fill:var(--why)}
+.explorer .crit{fill:none;stroke:var(--ink);stroke-width:1.6}
+.explorer .cur{fill:none;stroke:var(--accent);stroke-width:2.2}
+.explorer .ref{fill:none;stroke:var(--muted);stroke-width:1.2;stroke-dasharray:5 4}
+.explorer .ss{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3}
+.explorer .dot{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+.explorer .px{stroke:var(--accent);stroke-width:2.6;stroke-linecap:round}
+.explorer .circ{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:4 3}
+.explorer .ptxt{fill:var(--accent);font:600 11px var(--f-mono)}
+.explorer .mk{fill:var(--accent);stroke:var(--surface);stroke-width:1.5}
+.explorer .mk.data{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.explorer .forb{fill:var(--muted);fill-opacity:.16}
+.explorer .b-ts,.explorer .b-tr,.explorer .b-os{fill:none;stroke:var(--ink);stroke-width:1.3}
+.explorer .dragme{cursor:crosshair;touch-action:none}
+.ex-read table{margin-top:6px;font-size:.85rem}
+.ex-read td:first-child{font-family:var(--f-body);font-size:.85rem;color:var(--ink);white-space:normal}
+/* practice mode */
+.reveal{display:none;gap:8px;flex-wrap:wrap}
+body.practice .reveal{display:flex}
+body.practice .step.hid,body.practice .answer.hid,body.practice .why.hid,body.practice figure.hid,body.practice .tablewrap.hid{display:none}
+.btn{border:1px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:7px;padding:7px 12px;font-size:.92rem;font-weight:600;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--surface)}
+.btn:disabled{opacity:.5;cursor:default}
+button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* tutor */
+.tutor{border-top:1px dashed var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
+.tutor[hidden]{display:none!important}
+.msgs{display:flex;flex-direction:column;gap:10px}
+.msg{border-radius:8px;padding:10px 12px;font-size:.95rem;min-width:0;overflow-x:auto}
+.msg.user{background:var(--accent-soft);align-self:flex-end;max-width:90%}
+.msg.bot{background:var(--bg);border:1px solid var(--line)}
+.msg p{margin:0 0 8px}.msg p:last-child{margin:0}
+.msg ul,.msg ol{margin:4px 0 8px;padding-left:22px}
+.msg code{font-family:var(--f-mono);font-size:.85em;background:var(--code);padding:1px 4px;border-radius:3px}
+.compose{display:flex;gap:8px;align-items:flex-end}
+.compose textarea{flex:1;min-width:0;resize:vertical;min-height:44px;font:inherit;font-size:.95rem;padding:8px 10px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.tutor-foot{font-size:.8rem;color:var(--muted)}
+.partfoot{display:flex;gap:8px;flex-wrap:wrap}
+.btn.ghost{border-color:var(--line);color:var(--muted)}
+.recap ol{padding-left:22px;margin:0}.recap li{margin-bottom:6px}
+@media (max-width:820px){
+  .wrap{grid-template-columns:1fr;gap:20px}
+  .nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;flex-direction:row;overflow-x:auto;background:var(--bg);padding-block:8px;margin-inline:-4px}
+  .nav a{flex:none}
+  .modebox{margin-top:0;flex-direction:row;align-items:center;flex:none}
+  .modebox .label{display:none}
+  .part{padding:16px 14px}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="wrap">
+<nav class="nav" aria-label="Questions">
+  <a href="#q1" data-q="q1">Q1 · How stars die<span class="tick"></span></a>
+  <a href="#q2" data-q="q2">Q2 · Chandrasekhar<span class="tick"></span></a>
+  <a href="#q3" data-q="q3">Q3 · A 20 M☉ star<span class="tick"></span></a>
+  <a href="#q4" data-q="q4">Q4 · Eclipsing binary<span class="tick"></span></a>
+  <a href="#q5" data-q="q5">Q5 · Black hole<span class="tick"></span></a>
+  <a href="#recap" data-q="recap">Recap<span class="tick"></span></a>
+  <div class="modebox">
+    <span class="label">Mode</span>
+    <div class="seg" role="group" aria-label="Mode">
+      <button id="mode-full" aria-pressed="true">Read</button>
+      <button id="mode-practice" aria-pressed="false">Practice</button>
+    </div>
+  </div>
+</nav>
+<main>
+<header>
+  <span class="label">General Astronomy 1 · BGU · 2020/21 · Homework 2</span>
+  <h1>Astronomy HW2 — worked solutions</h1>
+  <p class="sub">Stellar end states, the Chandrasekhar mass, main-sequence scalings, binary-star masses, and a 10 M☉ black hole (Schwarzschild radius, tides, gravitational redshift). Every result verified numerically.</p>
+  <div class="note">
+    <b class="label">How to use this page</b>
+    <ul>
+      <li><b>Read</b> shows full solutions. <b>Practice</b> hides each part's steps — try it on paper, then reveal one step at a time.</li>
+      <li>The <b>?</b> beside any step opens a tutor on that exact step. <b>Ask about this part</b> starts a free question. Answers use your Claude account (the first question asks you to allow it).</li>
+      <li><b>Interactive</b> boxes have sliders and presets — move things and watch what changes.</li>
+      <li>To change the page itself, use comment mode and <b>Send to Claude</b>.</li>
+    </ul>
+  </div>
+  <div class="note"><b class="label">Read this first</b><ul>
+    <li><b>No formula sheet was uploaded</b>, so the reference table is my own list of standard results. F.1–F.3 are the same main-sequence scalings used in HW1 Q2(c).</li>
+    <li><b>Q4 velocities.</b> The PDF text layer is scrambled around the numbers; I read the maximum radial velocities as <b>20 km/s and 5 km/s</b>.</li>
+    <li><b>Q5(b) needs a body length the paper doesn't give.</b> I assume 2 m (feet to head). The 100 kg cancels out: both the tidal force and the Earth weight are proportional to the mass.</li>
+    <li><b>Q5(b) depends on the body model.</b> The usual course model (whole body mass feeling the head–feet difference in acceleration) gives <b>276 R<sub>s</sub></b>. A more careful model (tension at the waist of a uniform body) gives 138 R<sub>s</sub>. Both are worked out; Q5(c) uses the first.</li>
+  </ul></div>
+  <details class="note ref"><summary>Formula reference</summary>
+    <div class="tablewrap"><table>
+      <tr><th>Tag</th><th>Name</th><th>Formula</th></tr>
+      <tr><td>F.1</td><td>Mass–luminosity (main sequence)</td><td>$L/L_\odot=(M/M_\odot)^{3.5}$</td></tr>
+      <tr><td>F.2</td><td>Mass–radius (main sequence)</td><td>$R/R_\odot=(M/M_\odot)^{0.8}$</td></tr>
+      <tr><td>F.3</td><td>Stefan–Boltzmann, in solar units</td><td>$\dfrac{L}{L_\odot}=\left(\dfrac{R}{R_\odot}\right)^2\left(\dfrac{T}{T_\odot}\right)^4$</td></tr>
+      <tr><td>F.4</td><td>Main-sequence lifetime</td><td>$t\propto\dfrac{\text{fuel}}{\text{burn rate}}=\dfrac{M}{L},\quad t_\odot\approx10^{10}\ \mathrm{yr}$</td></tr>
+      <tr><td>F.5</td><td>Kepler III (Newton)</td><td>$G(M_1+M_2)P^2=4\pi^2a^3$</td></tr>
+      <tr><td>F.6</td><td>Circular speed</td><td>$v=\dfrac{2\pi r}{P}$</td></tr>
+      <tr><td>F.7</td><td>Centre of mass</td><td>$M_1a_1=M_2a_2,\quad a=a_1+a_2$</td></tr>
+      <tr><td>F.8</td><td>Schwarzschild radius</td><td>$R_s=\dfrac{2GM}{c^2}$</td></tr>
+      <tr><td>F.9</td><td>Tidal acceleration across length $\ell$</td><td>$\Delta a=\dfrac{2GM}{r^3}\,\ell$</td></tr>
+      <tr><td>F.10</td><td>Gravitational redshift (static emitter)</td><td>$f_\infty=f_\text{em}\sqrt{1-\dfrac{R_s}{r}}$</td></tr>
+      <tr><td>F.11</td><td>Chandrasekhar mass</td><td>$M_\text{Ch}\approx\dfrac{5.83}{\mu_e^2}M_\odot\approx1.44\,M_\odot\ (\mu_e=2)$</td></tr>
+      <tr><td>F.12</td><td>Fermi momentum of electrons</td><td>$p_F=\hbar(3\pi^2n_e)^{1/3}$</td></tr>
+    </table></div>
+    <p class="sub">Constants: $G=6.674\times10^{-11}$, $c=3.00\times10^8$ m/s, $M_\odot=1.989\times10^{30}$ kg, $T_\odot=5772$ K, yr $=3.156\times10^7$ s, AU $=1.496\times10^{11}$ m.</p>
+  </details>
+</header>
+
+<!-- ================= Q1 ================= -->
+<section class="q" id="q1">
+  <div class="qhead"><div><span class="label">Question 1</span><h2>How a 1 M☉ and a 30 M☉ star end their lives</h2></div><button class="btn ghost markdone" data-q="q1">Mark understood</button></div>
+  <p class="problem">Briefly describe the end of life of a main-sequence star of one solar mass, and of about 30 solar masses.</p>
+
+  <article class="part" data-part="Q1">
+    <h3>Two endings, set by mass</h3>
+    <div class="fg"><b>Find</b><span>the late evolution and final remnant for $M=1\,M_\odot$ and $M=30\,M_\odot$</span><b>Given</b><span>main-sequence stars; (F.4) for the timescale</span></div>
+    <div class="step"><p class="lead">Mass decides two things: how hot the core can get (so which fuels ignite), and whether the final core is light enough for degeneracy pressure to hold it up.</p></div>
+    <div class="step"><p><b>How long each lives.</b> From (F.1) and (F.4), $t/t_\odot=M/L=M^{1-3.5}=M^{-2.5}$:</p>
+      $$t(1\,M_\odot)\approx10^{10}\ \mathrm{yr},\qquad t(30\,M_\odot)=30^{-2.5}\times10^{10}\approx2\times10^{6}\ \mathrm{yr}$$
+      <p>The heavy star burns 30× more fuel ~150 000× faster.</p></div>
+    <div class="step"><p><b>1 M☉, step 1: red giant.</b> When core hydrogen runs out, the helium core contracts and heats; hydrogen keeps burning in a shell around it. The released energy puffs the envelope up to ~100 $R_\odot$: the star becomes a cool, luminous red giant.</p></div>
+    <div class="step"><p><b>1 M☉, step 2: helium burning.</b> The inert core is electron-degenerate. At ~10⁸ K helium ignites explosively (the <i>helium flash</i>), then burns quietly to carbon and oxygen (horizontal branch).</p></div>
+    <div class="step"><p><b>1 M☉, step 3: no further ignition.</b> The C/O core is too light to reach ~6×10⁸ K for carbon burning. The star climbs the asymptotic giant branch with H and He shells, pulses, and loses its envelope in strong winds.</p></div>
+    <div class="step"><p><b>1 M☉, end: planetary nebula + white dwarf.</b> The ejected envelope glows as a planetary nebula, lit by the exposed hot core. That core, ~0.6 $M_\odot$ of C/O about the size of Earth, is a <b>white dwarf</b> held up by electron degeneracy pressure; it cools for billions of years.</p></div>
+    <div class="step"><p><b>30 M☉, step 1: rapid burning and mass loss.</b> After ~2 Myr on the main sequence it becomes a blue/red supergiant. Strong radiation-driven winds strip much of its envelope (it may become a Wolf–Rayet star).</p></div>
+    <div class="step"><p><b>30 M☉, step 2: the onion.</b> The massive core reaches each ignition temperature in turn: H → He → C → Ne → O → Si, each stage shorter (Si burning lasts about a day), leaving an onion of shells around an <b>iron</b> core.</p></div>
+    <div class="step"><p><b>30 M☉, step 3: iron is a dead end.</b> Fusing iron absorbs energy instead of releasing it. When the iron core exceeds the Chandrasekhar mass (Q2), electron degeneracy fails and the core collapses in under a second.</p></div>
+    <div class="step"><p><b>30 M☉, end: supernova + black hole.</b> The collapse rebounds and drives a <b>core-collapse supernova</b> (Type II, or Ib/c if the envelope was stripped). For a star this heavy the remnant is most likely a <b>black hole</b>, possibly via fallback onto a short-lived neutron star.</p></div>
+    <div class="answer">$$\boxed{\begin{aligned}1\,M_\odot&:\ \text{red giant}\to\text{He flash}\to\text{AGB}\to\text{planetary nebula}+\text{C/O white dwarf}\ (\sim0.6\,M_\odot)\\30\,M_\odot&:\ \text{supergiant}\to\text{burning up to Fe}\to\text{core collapse}\to\text{supernova}+\text{black hole}\end{aligned}}$$</div>
+    <figure class="explorer" id="q1x">
+      <span class="label">Interactive — mass decides lifetime and fate</span>
+      <div class="ex-controls">
+        <label for="q1-m">Initial mass</label>
+        <div class="ex-row"><input type="range" id="q1-m" min="-0.5" max="2" step="0.01" value="0"><output id="q1-mv">1.0</output><span class="ex-unit">M☉</span></div>
+      </div>
+      <div class="ex-presets">
+        <button class="btn ghost" id="q1-p1">1 M☉</button>
+        <button class="btn ghost" id="q1-p2">30 M☉</button>
+        <button class="btn ghost" id="q1-p3">Q3: 20 M☉</button>
+      </div>
+      <div class="ex-read" id="q1-read" aria-live="polite"></div>
+      <div class="ex-grid">
+        <div class="ex-plot"><span class="label">Main-sequence lifetime t ∝ M^−2.5, coloured by fate</span><svg id="q1-pl" role="img" aria-label="Lifetime versus mass with fate regions"></svg></div>
+      </div>
+      <figcaption>The line is t = 10¹⁰ yr·M^−2.5 from (F.1)+(F.4); the shaded bands are the end states. The boundaries near 8 and ~25 M☉ are approximate (they depend on metallicity and mass loss). Compare the 1 and 30 M☉ presets: 3.5 decades apart in lifetime.</figcaption>
+    </figure>
+    <aside class="why"><p><b>The dividing line is ~8 M☉.</b> Below it the core never ignites carbon and ends as a white dwarf under 1.44 $M_\odot$. Above it the core burns all the way to iron and collapses. The 1 M☉ star is far below; the 30 M☉ far above.</p>
+    <p><b>Why the heavy star has a shorter life despite more fuel:</b> $L\propto M^{3.5}$ grows much faster than the fuel $\propto M$.</p></aside>
+  </article>
+</section>
+
+<!-- ================= Q2 ================= -->
+<section class="q" id="q2">
+  <div class="qhead"><div><span class="label">Question 2</span><h2>The Chandrasekhar mass</h2></div><button class="btn ghost markdone" data-q="q2">Mark understood</button></div>
+  <p class="problem">What is the Chandrasekhar mass? Describe qualitatively how it is obtained. What is likely to happen to a stellar remnant whose mass exceeds it?</p>
+
+  <article class="part" data-part="Q2">
+    <h3>What it is, where it comes from, and what happens above it</h3>
+    <div class="fg"><b>Find</b><span>definition, a qualitative derivation, the fate above it</span><b>Given</b><span>(F.11), (F.12); a white dwarf supported by degenerate electrons</span></div>
+    <div class="step"><p class="lead">Compare how degeneracy pressure and gravity scale with radius. Once the electrons become relativistic, both scale the same way, so a single mass balances them and nothing heavier can.</p></div>
+    <div class="step"><p><b>Definition.</b> The Chandrasekhar mass is the largest mass a star supported by electron degeneracy pressure (a white dwarf) can have (F.11):</p>
+      $$M_\text{Ch}\approx\frac{5.83}{\mu_e^2}M_\odot=1.46\,M_\odot\quad(\mu_e=2\text{ for C/O or He})$$</div>
+    <div class="step"><p><b>Degeneracy pressure.</b> Pauli exclusion forces electrons into momentum states up to $p_F$ (F.12). For $N_e$ electrons in a sphere of radius $R$, $n_e\propto N_e/R^3$, so</p>
+      $$p_F\propto\frac{N_e^{1/3}}{R}$$</div>
+    <div class="step"><p><b>Energy per electron, two regimes.</b></p>
+      $$\text{non-relativistic: }\ \varepsilon\sim\frac{p_F^2}{2m_e}\propto\frac{N_e^{2/3}}{R^2},\qquad\text{relativistic: }\ \varepsilon\sim p_Fc\propto\frac{N_e^{1/3}}{R}$$</div>
+    <div class="step"><p><b>Gravity per particle</b> scales as $-GMm_p/R\propto-N/R$.</p></div>
+    <div class="step"><p><b>Low mass: stable.</b> Non-relativistic kinetic energy ($\propto1/R^2$) wins at small $R$, gravity ($\propto1/R$) wins at large $R$, so the total energy has a minimum: an equilibrium radius. Adding mass makes the star <i>smaller</i> and its electrons faster.</p></div>
+    <div class="step"><p><b>High mass: the electrons turn relativistic.</b> Now both terms go as $1/R$:</p>
+      $$E_\text{per particle}\approx\frac{1}{R}\left(\underbrace{\hbar c\,N_e^{1/3}}_{\text{degeneracy}}-\underbrace{GMm_p}_{\text{gravity}}\right)$$
+      <p>$R$ factors out, so its sign decides everything: positive → expand until non-relativistic again; negative → shrinking always lowers the energy, so the star collapses with no bottom.</p></div>
+    <div class="step"><p><b>Set the bracket to zero.</b> With $N\sim M/m_p$ (and $N_e\sim N$ up to $\mu_e$): $\hbar c\,N^{1/3}\sim GNm_p^2$, so $N^{2/3}\sim\hbar c/(Gm_p^2)$, giving</p>
+      $$M_\text{Ch}\sim m_p\left(\frac{\hbar c}{Gm_p^2}\right)^{3/2}\approx1.9\,M_\odot$$
+      <p>The scale is right; the careful calculation (Lane–Emden polytrope $n=3$) gives 1.46 $M_\odot$.</p></div>
+    <div class="step"><p><b>Above $M_\text{Ch}$.</b> A remnant (or iron core) heavier than this collapses. Electrons are pushed into protons (inverse β-decay), making a <b>neutron star</b> held up by neutron degeneracy and nuclear forces. That has its own limit (~2–3 $M_\odot$); above it nothing stops collapse and a <b>black hole</b> forms. A white dwarf pushed over the limit by accretion from a companion instead ignites carbon and explodes as a <b>Type Ia supernova</b>, leaving no remnant.</p></div>
+    <div class="answer">$$\boxed{M_\text{Ch}\approx1.4\,M_\odot:\ \text{max. mass held by electron degeneracy (relativistic }e^-\Rightarrow\text{both terms}\propto1/R).\ \text{Above it: collapse}\to\text{neutron star or black hole (or Ia if accreting).}}$$</div>
+    <figure class="explorer" id="q2x">
+      <span class="label">Interactive — total energy of a white dwarf vs radius</span>
+      <div class="ex-controls">
+        <label for="q2-m">Mass</label>
+        <div class="ex-row"><input type="range" id="q2-m" min="0.2" max="2.2" step="0.01" value="0.6"><output id="q2-mv">0.60</output><span class="ex-unit">M☉</span></div>
+      </div>
+      <div class="ex-presets">
+        <button class="btn ghost" id="q2-p1">Typical WD 0.6 M☉</button>
+        <button class="btn ghost" id="q2-p2">Near the limit</button>
+        <button class="btn ghost" id="q2-p3">Over the limit</button>
+      </div>
+      <div class="ex-read" id="q2-read" aria-live="polite"></div>
+      <div class="ex-grid">
+        <div class="ex-plot"><span class="label">E(R) = degeneracy (exact relativistic E_F) − gravity, toy model</span><svg id="q2-pl" role="img" aria-label="Energy versus radius"></svg></div>
+      </div>
+      <figcaption>Toy model: uniform sphere, mean electron energy ¾ of the exact relativistic Fermi energy, gravity −⅗GM²/R. Raise the mass: the minimum (the equilibrium radius) moves to smaller R and gets shallower, then disappears. The toy limit is ~1.7 M☉; the exact polytrope gives 1.46.</figcaption>
+    </figure>
+    <aside class="why"><p><b>The counter-intuitive part:</b> heavier white dwarfs are <i>smaller</i>. Radius shrinks with mass ($R\propto M^{-1/3}$ in the non-relativistic regime) and goes to zero as $M\to M_\text{Ch}$.</p>
+    <p><b>Connection to Q1:</b> this is exactly why a 1 M☉ star's 0.6 M☉ core can retire as a white dwarf, while a 30 M☉ star's iron core, once past ~1.4 M☉, must collapse.</p></aside>
+  </article>
+</section>
+
+<!-- ================= Q3 ================= -->
+<section class="q" id="q3">
+  <div class="qhead"><div><span class="label">Question 3</span><h2>A 20 M☉ main-sequence star</h2></div><button class="btn ghost markdone" data-q="q3">Mark understood</button></div>
+  <p class="problem">For a 20 M☉ main-sequence star, estimate its radius, temperature and lifetime in solar units, using the main-sequence scaling relations.</p>
+
+  <article class="part" data-part="Q3">
+    <h3>Radius, temperature, lifetime</h3>
+    <div class="fg"><b>Find</b><span>$R/R_\odot$, $T/T_\odot$, $t/t_\odot$</span><b>Given</b><span>$M=20\,M_\odot$; (F.1)–(F.4)</span></div>
+    <div class="step"><p class="lead">Each scaling is a power law in M, so every answer is $20^{\text{some power}}$. Derive the power for T and t first, then put in 20. (Same relations as HW1 Q2(c), there used in reverse.)</p></div>
+    <div class="step"><p><b>Radius</b> from (F.2):</p>
+      $$\frac{R}{R_\odot}=20^{0.8}=11.0$$</div>
+    <div class="step"><p><b>Luminosity</b> from (F.1), needed for T and t:</p>
+      $$\frac{L}{L_\odot}=20^{3.5}=3.58\times10^{4}$$</div>
+    <div class="step"><p><b>Temperature: solve (F.3) for T.</b></p>
+      $$\frac{T}{T_\odot}=\left(\frac{L/L_\odot}{(R/R_\odot)^2}\right)^{1/4}$$</div>
+    <div class="step"><p><b>Insert the power laws</b> — exponents combine:</p>
+      $$\frac{T}{T_\odot}=\left(\frac{M^{3.5}}{M^{1.6}}\right)^{1/4}=M^{1.9/4}=M^{0.475}=20^{0.475}=4.15$$
+      $$T\approx4.15\times5772\ \mathrm{K}\approx2.4\times10^4\ \mathrm{K}$$</div>
+    <div class="step"><p><b>Lifetime</b> from (F.4) with (F.1):</p>
+      $$\frac{t}{t_\odot}=\frac{M/M_\odot}{L/L_\odot}=M^{1-3.5}=20^{-2.5}=5.6\times10^{-4}$$
+      $$t\approx5.6\times10^{-4}\times10^{10}\ \mathrm{yr}\approx5.6\times10^6\ \mathrm{yr}$$</div>
+    <div class="answer">$$\boxed{R\approx11\,R_\odot,\quad T\approx4.2\,T_\odot\approx2.4\times10^4\ \mathrm{K},\quad L\approx3.6\times10^4L_\odot,\quad t\approx5.6\times10^{-4}t_\odot\approx6\ \mathrm{Myr}}$$</div>
+    <figure class="explorer" id="q3x">
+      <span class="label">Interactive — slide along the main sequence</span>
+      <div class="ex-controls">
+        <label for="q3-m">Mass</label>
+        <div class="ex-row"><input type="range" id="q3-m" min="-0.7" max="1.8" step="0.01" value="1.301"><output id="q3-mv">20.0</output><span class="ex-unit">M☉</span></div>
+      </div>
+      <div class="ex-presets">
+        <button class="btn ghost" id="q3-p1">20 M☉ (paper)</button>
+        <button class="btn ghost" id="q3-p2">Sun</button>
+        <button class="btn ghost" id="q3-p3">0.3 M☉ red dwarf</button>
+      </div>
+      <div class="ex-read" id="q3-read" aria-live="polite"></div>
+      <div class="ex-grid">
+        <div class="ex-plot"><span class="label">HR diagram: the scaling-law main sequence</span><svg id="q3-pa" role="img" aria-label="HR diagram"></svg></div>
+        <div class="ex-plot"><span class="label">Each quantity as a power of M (log–log)</span><svg id="q3-pb" role="img" aria-label="R, L, T and t versus mass"></svg></div>
+      </div>
+      <figcaption>Right: on log–log axes each power law is a straight line whose slope is its exponent (L: 3.5, R: 0.8, T: 0.475, t: −2.5). The vertical marker is the current mass. Left: the same star on the HR diagram.</figcaption>
+    </figure>
+    <aside class="why"><p><b>Reality check.</b> Real 20 M☉ stars (late O / early B) have $R\approx7$–$8\,R_\odot$, $T\approx3.3\times10^4$ K, $L\approx5\times10^4L_\odot$ and live ~8–10 Myr. The single power laws are fitted mostly to Sun-like stars and flatten at high mass ($L\propto M^{3}$ or less), so our numbers are right in order of magnitude only.</p>
+    <p><b>Quick exponent trick:</b> always reduce to one power of M before inserting numbers ($T\propto M^{0.475}$, $t\propto M^{-2.5}$). It saves arithmetic and lets you check slopes.</p></aside>
+  </article>
+</section>
+
+<!-- ================= Q4 ================= -->
+<section class="q" id="q4">
+  <div class="qhead"><div><span class="label">Question 4</span><h2>Masses of an eclipsing spectroscopic binary</h2></div><button class="btn ghost markdone" data-q="q4">Mark understood</button></div>
+  <p class="problem">A spectroscopic binary with near-circular orbits is also eclipsing, so the inclination is ~90° (seen edge-on). The stars' maximum radial velocities are 20 km/s and 5 km/s, and the period is 10 years. Find each star's mass.</p>
+
+  <article class="part" data-part="Q4">
+    <h3>$M_1$ and $M_2$ from $v_1$, $v_2$, $P$</h3>
+    <div class="fg"><b>Find</b><span>$M_1$, $M_2$</span><b>Given</b><span>$v_1=20$ km/s, $v_2=5$ km/s (max radial = full orbital speed since $i=90^\circ$), $P=10$ yr $=3.156\times10^8$ s, circular orbits</span></div>
+    <div class="step"><p class="lead">The velocities give the orbit sizes, Kepler III gives the total mass, and the centre-of-mass condition splits it. Eclipses matter because they make $\sin i=1$, so the radial velocities are the true speeds.</p></div>
+    <div class="step"><p><b>Edge-on ⇒ no projection.</b> The radial velocity is $v\sin i$; with $i=90^\circ$, $\sin i=1$, so the measured maxima are the orbital speeds themselves.</p></div>
+    <div class="step"><p><b>Orbit radii</b> from (F.6), $r=vP/2\pi$:</p>
+      $$a_1=\frac{v_1P}{2\pi},\qquad a_2=\frac{v_2P}{2\pi}\quad\Rightarrow\quad a=a_1+a_2=\frac{(v_1+v_2)P}{2\pi}$$</div>
+    <div class="step"><p><b>Total mass</b> from (F.5). Substitute $a$:</p>
+      $$M_1+M_2=\frac{4\pi^2a^3}{GP^2}=\frac{4\pi^2}{GP^2}\cdot\frac{(v_1+v_2)^3P^3}{8\pi^3}$$</div>
+    <div class="step"><p><b>Simplify</b> — $4\pi^2/8\pi^3=1/2\pi$, and $P^3/P^2=P$:</p>
+      $$M_1+M_2=\frac{(v_1+v_2)^3P}{2\pi G}$$</div>
+    <div class="step"><p><b>Numbers.</b> $v_1+v_2=2.5\times10^4$ m/s:</p>
+      $$M_1+M_2=\frac{(2.5\times10^4)^3\times3.156\times10^8}{2\pi\times6.674\times10^{-11}}=\frac{4.93\times10^{21}}{4.19\times10^{-10}}=1.18\times10^{31}\ \mathrm{kg}=5.91\,M_\odot$$
+      <p>(Check: $a=8.39$ AU, and $a^3/P^2=591/100=5.91$ in solar units ✓.)</p></div>
+    <div class="step"><p><b>Split with the centre of mass</b> (F.7). Both stars share the same period, so $v\propto a$, and</p>
+      $$M_1a_1=M_2a_2\ \Rightarrow\ \frac{M_1}{M_2}=\frac{a_2}{a_1}=\frac{v_2}{v_1}=\frac{5}{20}=\frac14$$
+      <p>The <b>faster</b> star is the <b>lighter</b> one.</p></div>
+    <div class="step"><p><b>Individual masses:</b></p>
+      $$M_\text{fast}=\frac{v_\text{slow}}{v_1+v_2}M_\text{tot}=\frac{5}{25}\times5.91=1.18\,M_\odot,\qquad M_\text{slow}=\frac{20}{25}\times5.91=4.73\,M_\odot$$</div>
+    <div class="answer">$$\boxed{M(v=20\ \mathrm{km/s})\approx1.2\,M_\odot,\qquad M(v=5\ \mathrm{km/s})\approx4.7\,M_\odot\qquad(M_\text{tot}=5.9\,M_\odot,\ a=8.4\ \mathrm{AU})}$$</div>
+    <figure class="explorer" id="q4x">
+      <span class="label">Interactive — radial-velocity curves and the orbit</span>
+      <div class="ex-controls">
+        <label for="q4-v1">v₁ (star 1)</label>
+        <div class="ex-row"><input type="range" id="q4-v1" min="1" max="40" step="0.5" value="20"><output id="q4-v1v">20.0</output><span class="ex-unit">km/s</span></div>
+        <label for="q4-v2">v₂ (star 2)</label>
+        <div class="ex-row"><input type="range" id="q4-v2" min="1" max="40" step="0.5" value="5"><output id="q4-v2v">5.0</output><span class="ex-unit">km/s</span></div>
+        <label for="q4-P">Period P</label>
+        <div class="ex-row"><input type="range" id="q4-P" min="1" max="30" step="0.5" value="10"><output id="q4-Pv">10.0</output><span class="ex-unit">yr</span></div>
+        <label for="q4-t">Time</label>
+        <div class="ex-row"><input type="range" id="q4-t" min="0" max="1" step="0.005" value="0.125"><output id="q4-tv">0.13</output><span class="ex-unit">× P</span></div>
+        <label for="q4-i">Inclination i</label>
+        <div class="ex-row"><input type="range" id="q4-i" min="10" max="90" step="1" value="90"><output id="q4-iv">90</output><span class="ex-unit">deg</span></div>
+      </div>
+      <div class="ex-presets">
+        <button class="btn ghost" id="q4-p1">Paper's system</button>
+        <button class="btn ghost" id="q4-p2">Equal masses</button>
+        <button class="btn ghost" id="q4-p3">Not eclipsing (i = 40°)</button>
+      </div>
+      <div class="ex-read" id="q4-read" aria-live="polite"></div>
+      <div class="ex-grid">
+        <div class="ex-plot"><span class="label">Measured radial velocity v sin i over one period</span><svg id="q4-pa" role="img" aria-label="Radial velocity curves"></svg></div>
+        <div class="ex-plot"><span class="label">Orbit seen from above (observer at the bottom)</span><svg id="q4-pb" role="img" aria-label="Orbits from above"></svg></div>
+      </div>
+      <figcaption>Move the time slider: the stars are always on opposite sides of the centre of mass, and their radial velocities are always in opposite directions. Lower the inclination: the measured amplitudes shrink by sin i, and the masses you would naively compute drop by sin³ i. That is why the eclipse matters.</figcaption>
+    </figure>
+    <aside class="why"><p><b>Why eclipses are gold.</b> For a non-eclipsing system you only get $M_\text{tot}\sin^3i$, a lower limit. An eclipse forces $i\approx90^\circ$, so you get true masses, one of the few direct ways to weigh stars.</p>
+    <p><b>Trap:</b> mixing up which mass goes with which velocity. The heavier star sits closer to the centre of mass and moves slower.</p></aside>
+  </article>
+</section>
+
+<!-- ================= Q5 ================= -->
+<section class="q" id="q5">
+  <div class="qhead"><div><span class="label">Question 5</span><h2>Falling toward a 10 M☉ black hole</h2></div><button class="btn ghost markdone" data-q="q5">Mark understood</button></div>
+  <p class="problem">(a) Briefly describe the Schwarzschild radius and give its value. (b) An astronaut approaches a 10 M☉ black hole feet first. At what distance (in Schwarzschild radii) will he feel his body stretched with a tension equal to his Earth weight, if he has a mass of 100 kg? (c) He transmits on a radio calibrated to 120 MHz. To what frequency should a person in a spaceship at rest far from the black hole tune his receiver?</p>
+
+  <article class="part" data-part="Q5(a)">
+    <h3>(a) The Schwarzschild radius</h3>
+    <div class="fg"><b>Find</b><span>meaning and value of $R_s$</span><b>Given</b><span>(F.8); $M=10\,M_\odot$ for the rest of the question</span></div>
+    <div class="step"><p class="lead">It is the size of the event horizon: the radius inside which even light cannot escape.</p></div>
+    <div class="step"><p><b>Meaning.</b> For a non-rotating mass $M$, $R_s$ is the radius of the event horizon. A body compressed inside $R_s$ becomes a black hole; nothing that crosses it, not even light, can return. (Newtonian shortcut: setting the escape speed $\sqrt{2GM/r}$ equal to $c$ gives the same formula.)</p></div>
+    <div class="step"><p><b>Value</b> from (F.8):</p>
+      $$R_s=\frac{2GM}{c^2}=\frac{2\times6.674\times10^{-11}\times1.989\times10^{30}}{(3.00\times10^8)^2}\left(\frac{M}{M_\odot}\right)=2.95\ \mathrm{km}\times\frac{M}{M_\odot}$$
+      $$R_s(10\,M_\odot)=29.5\ \mathrm{km}$$</div>
+    <div class="answer">$$\boxed{R_s=\frac{2GM}{c^2}\approx3\ \mathrm{km}\,(M/M_\odot);\quad R_s(10\,M_\odot)\approx29.5\ \mathrm{km}}$$</div>
+    <aside class="why"><p><b>Linear in mass</b>: a supermassive black hole of $4\times10^6M_\odot$ (Sgr A*) has $R_s\approx0.08$ AU. This matters in (b).</p></aside>
+  </article>
+
+  <article class="part" data-part="Q5(b)">
+    <h3>(b) Where the tidal stretch equals his Earth weight</h3>
+    <div class="fg"><b>Find</b><span>$r/R_s$ where the tidal stretching force $=mg$</span><b>Given</b><span>$M=10\,M_\odot$, $m=100$ kg, body length $\ell\approx2$ m (assumed), $g=9.81$ m/s²</span></div>
+    <div class="step"><p class="lead">Gravity pulls his feet harder than his head; the difference is the stretch. Set it equal to $mg$ and solve for $r$. The mass cancels.</p></div>
+    <div class="step"><p><b>Tidal difference</b> (F.9). Differentiate $a(r)=GM/r^2$: $\;da/dr=-2GM/r^3$, so over his length $\ell$</p>
+      $$\Delta a=\frac{2GM}{r^3}\,\ell\qquad\Rightarrow\qquad F_\text{tidal}=m\,\Delta a=\frac{2GMm\ell}{r^3}$$</div>
+    <div class="step"><p><b>Set equal to his weight</b>; $m$ appears on both sides and is nonzero, so it cancels:</p>
+      $$\frac{2GMm\ell}{r^3}=mg\quad\Rightarrow\quad r=\left(\frac{2GM\ell}{g}\right)^{1/3}$$</div>
+    <div class="step"><p><b>Numbers:</b></p>
+      $$r=\left(\frac{2\times6.674\times10^{-11}\times1.989\times10^{31}\times2}{9.81}\right)^{1/3}=(5.41\times10^{20})^{1/3}=8.15\times10^6\ \mathrm{m}$$</div>
+    <div class="step"><p><b>In Schwarzschild radii:</b></p>
+      $$\frac{r}{R_s}=\frac{8.15\times10^6}{2.95\times10^4}\approx276$$</div>
+    <div class="answer">$$\boxed{r=\left(\frac{2GM\ell}{g}\right)^{1/3}\approx8.2\times10^3\ \mathrm{km}\approx2.8\times10^{2}\,R_s\quad(\ell=2\ \mathrm{m};\ m\text{ cancels})}$$</div>
+    <figure class="explorer" id="q5x">
+      <span class="label">Interactive — tidal stretch and redshift on the way in</span>
+      <div class="ex-controls">
+        <label for="q5-M">Black-hole mass</label>
+        <div class="ex-row"><input type="range" id="q5-M" min="0" max="7" step="0.05" value="1"><output id="q5-Mv">10</output><span class="ex-unit">M☉</span></div>
+        <label for="q5-r">Distance r</label>
+        <div class="ex-row"><input type="range" id="q5-r" min="0.05" max="4" step="0.01" value="2.44"><output id="q5-rv">276</output><span class="ex-unit">R_s</span></div>
+        <label for="q5-l">Body length ℓ</label>
+        <div class="ex-row"><input type="range" id="q5-l" min="0.5" max="3" step="0.1" value="2"><output id="q5-lv">2.0</output><span class="ex-unit">m</span></div>
+      </div>
+      <div class="ex-presets">
+        <button class="btn ghost" id="q5-p1">Paper: 10 M☉, Δa = g</button>
+        <button class="btn ghost" id="q5-p2">Near the horizon (1.1 R_s)</button>
+        <button class="btn ghost" id="q5-p3">Sgr A* (4×10⁶ M☉)</button>
+      </div>
+      <div class="ex-read" id="q5-read" aria-live="polite"></div>
+      <div class="ex-grid">
+        <div class="ex-plot"><span class="label">Tidal stretch Δa / g vs r / R_s (log–log)</span><svg id="q5-pa" role="img" aria-label="Tidal acceleration versus distance"></svg></div>
+        <div class="ex-plot"><span class="label">Received frequency f∞ vs r / R_s (emitted 120 MHz)</span><svg id="q5-pb" role="img" aria-label="Received frequency versus distance"></svg></div>
+      </div>
+      <figcaption>Left: the tidal stretch in units of g; the dashed line is "feels like his weight". Increase the black-hole mass at fixed r/R_s: the tide at the horizon falls as 1/M². Right: the static gravitational redshift (solid) and, dashed, the extra Doppler drop if he is freely falling from rest at infinity.</figcaption>
+    </figure>
+    <aside class="why"><p><b>Refinement: tension at his waist.</b> The difference in pull is shared along the body. For a uniform body the maximum tension (at the middle) is $T=\frac{GMm\ell}{4r^3}$, 8× smaller than the simple estimate. Then $r=(GM\ell/4g)^{1/3}=4.1\times10^3$ km $\approx138\,R_s$. Both models give "a few hundred $R_s$, thousands of km away".</p>
+    <p><b>At the horizon of this black hole</b> the stretch is ~2×10⁷ g: spaghettification well outside the horizon. For Sgr A* the tide at the horizon is only ~10⁻⁴ g, so you would cross it without noticing. Tides go as $M/r^3$, and with $r\propto M$ that is $\propto1/M^2$.</p>
+    <p><b>Surplus data:</b> the 100 kg is not needed, because both sides of the condition are proportional to $m$.</p></aside>
+  </article>
+
+  <article class="part" data-part="Q5(c)">
+    <h3>(c) Frequency received far away</h3>
+    <div class="fg"><b>Find</b><span>$f_\infty$ for a 120 MHz signal sent from $r=276\,R_s$</span><b>Given</b><span>(F.10); receiver at rest far away</span></div>
+    <div class="step"><p class="lead">Light climbing out of a gravity well loses energy, so it arrives at a lower frequency. Only the ratio $R_s/r$ matters, which we have from (b).</p></div>
+    <div class="step"><p><b>Gravitational redshift</b> (F.10):</p>
+      $$f_\infty=f_\text{em}\sqrt{1-\frac{R_s}{r}}=120\ \mathrm{MHz}\times\sqrt{1-\frac{1}{276}}$$</div>
+    <div class="step"><p><b>Numbers.</b> $1/276=3.62\times10^{-3}$, so $\sqrt{0.99638}=0.99819$:</p>
+      $$f_\infty=119.78\ \mathrm{MHz}$$</div>
+    <div class="step"><p><b>Small-shift form</b> (binomial, since $R_s/r\ll1$): $\sqrt{1-x}\approx1-x/2$, so</p>
+      $$\Delta f\approx f_\text{em}\frac{R_s}{2r}=120\times\frac{1}{552}=0.22\ \mathrm{MHz}$$</div>
+    <div class="answer">$$\boxed{f_\infty=120\sqrt{1-R_s/r}\approx119.8\ \mathrm{MHz}\quad(\text{redshifted by }\approx0.22\ \mathrm{MHz})}$$</div>
+    <aside class="why"><p><b>If the astronaut is falling, add Doppler.</b> (F.10) is for an emitter at rest at $r$. Falling from rest at infinity, he moves away from the receiver at $\beta=\sqrt{R_s/r}=0.06$, which lowers the frequency further, to ≈112.8 MHz. The question gives no speed, so the static answer is the intended one.</p>
+    <p><b>With the waist-tension radius</b> (138 $R_s$): $f_\infty=119.56$ MHz. <b>Near the horizon (1.1 R_s)</b> $f_\infty\to0$: the signal is infinitely redshifted.</p></aside>
+  </article>
+</section>
+
+<section class="q recap" id="recap">
+  <div class="qhead"><div><span class="label">Recap</span><h2>What this homework tests</h2></div><button class="btn ghost markdone" data-q="recap">Mark understood</button></div>
+  <ol>
+    <li><b>Mass is destiny.</b> &lt;8 M☉ → white dwarf after a planetary nebula; &gt;8 M☉ → burns to iron → core collapse → neutron star or (very massive) black hole. Lifetime $\propto M^{-2.5}$.</li>
+    <li><b>Limits come from matching scalings.</b> Degeneracy energy goes from $1/R^2$ to $1/R$ when electrons turn relativistic; once it scales like gravity, there's one critical mass, $M_\text{Ch}\sim m_p(\hbar c/Gm_p^2)^{3/2}\approx1.4\,M_\odot$. <b>Trap:</b> heavier white dwarfs are smaller, not larger.</li>
+    <li><b>Power-law bookkeeping.</b> Reduce every main-sequence quantity to one power of M first ($T\propto M^{0.475}$, $t\propto M^{-2.5}$), then plug in.</li>
+    <li><b>Binary masses in four lines:</b> $a=(v_1+v_2)P/2\pi$ → $M_\text{tot}=(v_1+v_2)^3P/2\pi G$ → $M_1/M_2=v_2/v_1$. Eclipses give $\sin i=1$. <b>Trap:</b> the fast star is the light one.</li>
+    <li><b>Black holes:</b> $R_s\approx3$ km per M☉; tides $\Delta a=2GM\ell/r^3$ (mass of the victim cancels); redshift $f_\infty=f\sqrt{1-R_s/r}\approx f(1-R_s/2r)$ far out.</li>
+  </ol>
+</section>
+</main>
+</div>
+
+<script>
+/* --- capture TeX sources before MathJax rewrites the DOM --- */
+const PAGE_TITLE="General Astronomy 1 — Homework 2";
+const COURSE_CONTEXT="No official formula sheet. Standard results used: main sequence L∝M^3.5, R∝M^0.8, L=R²T⁴ in solar units, lifetime t∝M/L with t_sun=1e10 yr; Kepler III G(M1+M2)P²=4π²a³; v=2πr/P; centre of mass M1a1=M2a2; Schwarzschild radius 2GM/c²; tidal acceleration 2GMℓ/r³; gravitational redshift f∞=f√(1−Rs/r); Chandrasekhar mass ≈1.44 M_sun from relativistic electron degeneracy, p_F=ħ(3π²n)^(1/3). Key results: 20 M_sun star R≈11 R_sun, T≈2.4e4 K, t≈5.6 Myr; binary (20 and 5 km/s, P=10 yr, edge-on) M_tot=5.91, masses 1.18 (fast) and 4.73 (slow) M_sun; 10 M_sun BH Rs=29.5 km, tide equals g at ≈276 Rs for a 2 m body (138 Rs for waist tension of a uniform body), 120 MHz received at 119.78 MHz.";
+document.querySelectorAll(".part").forEach(part=>{
+  const q=part.closest("section.q");
+  part.dataset.problem=(q.querySelector(".problem")||{}).textContent||"";
+  part.dataset.src=[...part.querySelectorAll("h3,.fg,.step,.answer,.why")].map(e=>e.textContent.replace(/\s+\n/g,"\n").trim()).join("\n\n");
+  part.querySelectorAll(".step").forEach(s=>s.dataset.src=s.textContent.trim());
+});
+window.MathJax={tex:{inlineMath:[["$","$"]],displayMath:[["$$","$$"]]},svg:{fontCache:"global"},options:{skipHtmlTags:["script","style","textarea","pre","code"]}};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg-full.js" async></script>
+<script>
+const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function typeset(el){if(window.MathJax&&MathJax.typesetPromise)return MathJax.typesetPromise([el]).catch(()=>{});}
+
+/* --- understood ticks --- */
+const done=store.get("ws-done",{});
+function paintDone(){document.querySelectorAll(".nav a").forEach(a=>a.classList.toggle("done",!!done[a.dataset.q]));
+  document.querySelectorAll(".markdone").forEach(b=>{b.textContent=done[b.dataset.q]?"Understood ✓":"Mark understood"});}
+document.querySelectorAll(".markdone").forEach(b=>b.addEventListener("click",()=>{done[b.dataset.q]=!done[b.dataset.q];store.set("ws-done",done);paintDone();}));
+paintDone();
+
+/* --- practice mode: hide steps, reveal one at a time --- */
+const hideables=p=>[...p.querySelectorAll(".step,.answer,.why,figure,:scope > .tablewrap")];
+document.querySelectorAll(".part").forEach(p=>{
+  const bar=document.createElement("div");bar.className="reveal";
+  const next=document.createElement("button");next.className="btn primary";next.textContent="Reveal next step";
+  const all=document.createElement("button");all.className="btn";all.textContent="Show all";
+  bar.append(next,all);p.querySelector("h3").after(p.querySelector(".fg")||document.createTextNode(""));
+  (p.querySelector(".fg")||p.querySelector("h3")).after(bar);
+  const sync=()=>{const left=hideables(p).filter(e=>e.classList.contains("hid"));next.disabled=!left.length;all.disabled=!left.length;next.textContent=left.length?`Reveal next step (${left.length} left)`:"All revealed";};
+  next.onclick=()=>{const n=hideables(p).find(e=>e.classList.contains("hid"));if(n){n.classList.remove("hid");typeset(n);}sync();};
+  all.onclick=()=>{hideables(p).forEach(e=>e.classList.remove("hid"));sync();};
+  p._resetPractice=()=>{hideables(p).forEach(e=>e.classList.add("hid"));sync();};
+});
+function setMode(m){document.body.classList.toggle("practice",m==="practice");
+  document.getElementById("mode-full").setAttribute("aria-pressed",m!=="practice");
+  document.getElementById("mode-practice").setAttribute("aria-pressed",m==="practice");
+  if(m==="practice")document.querySelectorAll(".part").forEach(p=>p._resetPractice());
+  store.set("ws-mode",m);}
+document.getElementById("mode-full").onclick=()=>setMode("full");
+document.getElementById("mode-practice").onclick=()=>setMode("practice");
+setMode(store.get("ws-mode","full"));
+
+/* --- copy buttons: <button class="btn ghost copybtn" data-target="ID"> --- */
+document.querySelectorAll(".copybtn").forEach(btn=>btn.onclick=async()=>{const el=document.getElementById(btn.dataset.target);
+  try{await navigator.clipboard.writeText(el.textContent);btn.textContent="Copied";}catch(_){const r=document.createRange();r.selectNodeContents(el);getSelection().removeAllRanges();getSelection().addRange(r);btn.textContent="Selected — press Ctrl+C";}
+  setTimeout(()=>btn.textContent="Copy",2000);});
+
+/* --- tiny markdown for tutor answers (math left for MathJax) --- */
+function md(src){
+  const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const inline=s=>esc(s).replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/`([^`]+)`/g,"<code>$1</code>");
+  const blocks=src.trim().split(/\n\s*\n/);let out="";
+  for(const b of blocks){const lines=b.split("\n");
+    if(lines.every(l=>/^\s*[-*] /.test(l)))out+="<ul>"+lines.map(l=>"<li>"+inline(l.replace(/^\s*[-*] /,""))+"</li>").join("")+"</ul>";
+    else if(lines.every(l=>/^\s*\d+[.)] /.test(l)))out+="<ol>"+lines.map(l=>"<li>"+inline(l.replace(/^\s*\d+[.)] /,""))+"</li>").join("")+"</ol>";
+    else if(/^#{1,4} /.test(b))out+="<p><strong>"+inline(b.replace(/^#+ /,""))+"</strong></p>";
+    else out+="<p>"+inline(b).replace(/\n/g,"<br>")+"</p>";}
+  return out;}
+
+/* --- tutor --- */
+let samplePromise=null;
+function getSample(){if(!samplePromise)samplePromise=(window.claude?claude.use("sample"):Promise.resolve(null)).catch(()=>null);return samplePromise;}
+const ERR={not_granted:"Asking Claude isn't allowed on this page. You can still ask in the chat.",sampling_disabled:"Claude isn't available for this account here.",rate_limited:"Too many questions at once. Wait a minute and ask again.",session_expired:"Sign in to claude.ai again, then ask.",refused:"Claude declined that question. Try rephrasing it.",upstream_error:"The answer was interrupted. Ask again."};
+let tutorOff=false;
+function rules(part){return `You are a patient tutor for an engineering student (Omri, BGU) studying ${PAGE_TITLE}. He is reading a worked solution and has a question. Answer in English. Be clear and step-by-step, show every algebra step where something non-obvious happens, and cite the formula used. Keep it focused: answer the question, don't re-solve everything. Write math in LaTeX with $...$ inline and $$...$$ for display. If his question exposes a misconception, say so plainly. If you think the worked solution itself has an error, say so and explain.
+
+${COURSE_CONTEXT}
+
+PROBLEM: ${part.dataset.problem}
+
+PART: ${part.dataset.part}
+
+WORKED SOLUTION OF THIS PART (LaTeX source):
+${part.dataset.src}`;}
+function buildTutor(part){
+  if(part._tutor)return part._tutor;
+  const box=document.createElement("div");box.className="tutor";box.hidden=true;
+  box.innerHTML=`<span class="label">Tutor · ${part.dataset.part}</span><div class="msgs"></div>
+  <div class="compose"><textarea rows="2" placeholder="Ask anything about this part…" aria-label="Your question"></textarea><button class="btn primary send">Ask</button><button class="btn ghost stop" hidden>Stop</button></div>
+  <span class="tutor-foot">Answers come from Claude using your account and may contain mistakes. Check them against the solution.</span>`;
+  part.append(box);
+  const t={box,msgs:box.querySelector(".msgs"),ta:box.querySelector("textarea"),send:box.querySelector(".send"),stop:box.querySelector(".stop"),turns:[],ctl:null};
+  t.ta.id="ask-"+part.dataset.part.replace(/\W+/g,"-");
+  t.send.onclick=()=>ask(part,t.ta.value);
+  t.ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();ask(part,t.ta.value);}});
+  t.stop.onclick=()=>t.ctl&&t.ctl.abort();
+  part._tutor=t;return t;}
+function openTutor(part,prefill){const t=buildTutor(part);t.box.hidden=false;if(prefill!=null){t.ta.value=prefill;}t.ta.focus();t.box.scrollIntoView({block:"nearest"});}
+async function ask(part,q){
+  q=(q||"").trim();const t=buildTutor(part);if(!q||t.busy)return;
+  const sample=await getSample();
+  const u=document.createElement("div");u.className="msg user";u.textContent=q;t.msgs.append(u);
+  const b=document.createElement("div");b.className="msg bot";b.textContent="Thinking…";t.msgs.append(b);
+  t.ta.value="";
+  if(!sample||tutorOff){b.textContent="The in-page tutor isn't available in this view. Ask in the Claude chat instead, or use comment mode → Send to Claude.";return;}
+  t.busy=true;t.send.disabled=true;t.stop.hidden=false;t.ctl=new AbortController();
+  t.turns.push({role:"user",content:q});
+  try{
+    const {text}=await sample([{role:"user",content:rules(part)},...t.turns.slice(-10)],
+      {cache:false,signal:t.ctl.signal,onText:({text})=>{b.textContent=text;}});
+    t.turns.push({role:"assistant",content:text});
+    b.innerHTML=md(text);typeset(b);
+  }catch(e){
+    t.turns.pop();
+    if(e&&e.text){b.innerHTML=md(e.text);typeset(b);}else b.textContent="";
+    if(e&&e.code!=="cancelled"){const n=document.createElement("div");n.className="tutor-foot";n.textContent=ERR[e.code]||ERR.upstream_error;b.after(n);
+      if(["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(e.code))tutorOff=true;}
+    if(!b.textContent)b.remove();
+  }finally{t.busy=false;t.send.disabled=false;t.stop.hidden=true;}
+}
+document.querySelectorAll(".part").forEach(part=>{
+  part.querySelectorAll(".step").forEach((s,i)=>{const btn=document.createElement("button");btn.className="ask-step";btn.textContent="?";btn.title="Ask about this step";btn.setAttribute("aria-label","Ask about this step");
+    btn.onclick=()=>openTutor(part,`Explain this step in more detail:\n${s.dataset.src.slice(0,600)}`);s.append(btn);});
+  const foot=document.createElement("div");foot.className="partfoot";
+  const a=document.createElement("button");a.className="btn";a.textContent="Ask about this part";a.onclick=()=>openTutor(part,null);
+  foot.append(a);part.append(foot);
+});
+</script>
+<script>
+/* ===== EX: tiny plotting + simulation kit for explorers (SVG, theme-aware via CSS classes) ===== */
+const EX=(()=>{
+  const n=(x,d=2)=>(x<0?"−":"")+Math.abs(x).toFixed(d);
+  const tick=v=>String(+(+v).toPrecision(4)).replace("-","−");
+  /* plot(svg,{W,H,x0,x1,y0,y1,equal}) -> scale; equal:true recomputes x0 so 1 unit is the same length on both axes */
+  function plot(svg,o){
+    const W=o.W||300,H=o.H||240,L=o.L||42,R=10,T=12,B=30,AW=W-L-R,AH=H-T-B;
+    let {x0,x1,y0,y1}=o; if(o.equal)x0=x1-(y1-y0)*AW/AH;
+    svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+    const sx=v=>L+(v-x0)/(x1-x0)*AW, sy=v=>H-B-(v-y0)/(y1-y0)*AH;
+    return {svg,W,H,L,R,T,B,AW,AH,x0,x1,y0,y1,sx,sy,ppu:AH/(y1-y0),
+      ix:px=>x0+(px-L)/AW*(x1-x0), iy:py=>y0+(H-B-py)/AH*(y1-y0), clip:`url(#${svg.id}-clip)`};}
+  /* gridlines, tick labels, frame, axis titles, clip rect; origin:true adds the s-plane axes */
+  function axes(s,xt,yt,xl,yl,origin){
+    let g=`<defs><clipPath id="${s.svg.id}-clip"><rect x="${s.L}" y="${s.T}" width="${s.AW}" height="${s.AH}"/></clipPath></defs>`;
+    xt.forEach(v=>{const x=s.sx(v);g+=`<line class="gl" x1="${x}" x2="${x}" y1="${s.T}" y2="${s.H-s.B}"/><text class="tx" x="${x}" y="${s.H-s.B+13}" text-anchor="middle">${tick(v)}</text>`;});
+    yt.forEach(v=>{const y=s.sy(v);g+=`<line class="gl" x1="${s.L}" x2="${s.W-s.R}" y1="${y}" y2="${y}"/><text class="tx" x="${s.L-5}" y="${y+3.5}" text-anchor="end">${tick(v)}</text>`;});
+    if(origin&&s.x0<0&&s.x1>0)g+=`<line class="ax" x1="${s.sx(0)}" x2="${s.sx(0)}" y1="${s.T}" y2="${s.H-s.B}"/>`;
+    if(origin&&s.y0<0&&s.y1>0)g+=`<line class="ax" x1="${s.L}" x2="${s.W-s.R}" y1="${s.sy(0)}" y2="${s.sy(0)}"/>`;
+    g+=`<rect class="frame" x="${s.L}" y="${s.T}" width="${s.AW}" height="${s.AH}"/>`;
+    g+=`<text class="tx" x="${s.L+s.AW/2}" y="${s.H-4}" text-anchor="middle">${xl}</text>`;
+    g+=`<text class="tx" transform="translate(10 ${s.T+s.AH/2}) rotate(-90)" text-anchor="middle">${yl}</text>`;
+    return g;}
+  const cap=v=>Math.max(-1e7,Math.min(1e7,v));
+  const path=(s,pts)=>"M"+pts.map(p=>s.sx(p[0]).toFixed(1)+","+s.sy(cap(p[1])).toFixed(1)).join("L");
+  /* RK4 for x'' = acc(t,x,v); returns [[t,x],...] */
+  function sim(acc,t1,dt,x=0,v=0){
+    const pts=[[0,x]],N=Math.round(t1/dt),every=Math.max(1,Math.round(N/400));
+    for(let i=0;i<N;i++){const t=i*dt;
+      const a1=v,b1=acc(t,x,v),a2=v+dt/2*b1,b2=acc(t+dt/2,x+dt/2*a1,v+dt/2*b1),a3=v+dt/2*b2,b3=acc(t+dt/2,x+dt/2*a2,v+dt/2*b2),a4=v+dt*b3,b4=acc(t+dt,x+dt*a3,v+dt*b3);
+      x+=dt/6*(a1+2*a2+2*a3+a4);v+=dt/6*(b1+2*b2+2*b3+b4);
+      if((i+1)%every===0)pts.push([(i+1)*dt,x]);}
+    return pts;}
+  /* nice axis: top value and ticks for [0,max] */
+  function nice(max){max=Math.max(max,1e-9);const p=10**Math.floor(Math.log10(max)),m=max/p,st=(m<=1.5?0.25:m<=3?0.5:m<=6?1:2)*p,top=Math.ceil(max*1.08/st)*st,t=[];for(let v=0;v<=top+st/2;v+=st)t.push(v);return {top,ticks:t};}
+  const mark=(s,x,y,cls="mk")=>`<circle class="${cls}" cx="${s.sx(x)}" cy="${s.sy(y)}" r="4.5"/>`;
+  const cross=(s,x,y,d=6)=>{const X=s.sx(x),Y=s.sy(y);return `<line class="px" x1="${X-d}" y1="${Y-d}" x2="${X+d}" y2="${Y+d}"/><line class="px" x1="${X-d}" y1="${Y+d}" x2="${X+d}" y2="${Y-d}"/>`;};
+  /* convert a pointer event to plot units */
+  function at(s,e){const p=s.svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(s.svg.getScreenCTM().inverse());return [s.ix(q.x),s.iy(q.y)];}
+  /* wire range inputs: spec = {id:[setter]} */
+  function sliders(map,render){Object.entries(map).forEach(([id,[set]])=>{const el=document.getElementById(id);el.addEventListener("input",()=>{set(+el.value);render();});});}
+  function show(id,v,d){const o=document.getElementById(id);if(o)o.textContent=(+v).toFixed(d);}
+  return {n,plot,axes,path,sim,nice,mark,cross,at,sliders,show};
+})();
+const $=id=>document.getElementById(id);
+function setIn(id,v,d){const el=$(id);if(el)el.value=v;EX.show(id+"v",v,d);}
+/* ===== explorers for this paper: one IIFE each ===== */
+function fmtE(x,d=1){if(!isFinite(x)||x===0)return "0";const e=Math.floor(Math.log10(Math.abs(x)));const m=x/Math.pow(10,e);return (e>=-2&&e<=4)?(+x.toPrecision(3)).toLocaleString("en-US"):`${m.toFixed(d)}×10<sup>${e}</sup>`;}
+const fmtM=m=>m<10?m.toFixed(m<1?2:1):m.toFixed(0);
+
+/* ---------- Q1: fate map ---------- */
+(function(){
+  if(!$("q1x"))return;
+  let lm=0;
+  function fate(M){return M<0.5?["Not yet dead","Lifetime longer than the age of the Universe; will end as a He white dwarf."]:
+    M<8?["White dwarf","Red giant → He burning → AGB → planetary nebula → C/O white dwarf."]:
+    M<25?["Neutron star","Supergiant → burns to Fe → core collapse → Type II supernova → neutron star."]:
+    ["Black hole","Supergiant/Wolf–Rayet → burns to Fe → core collapse → supernova (or direct collapse) → black hole."];}
+  function render(){
+    const M=Math.pow(10,lm);$("q1-mv").textContent=fmtM(M);
+    const s=EX.plot($("q1-pl"),{x0:-0.5,x1:2,y0:5,y1:12,W:600,H:260});
+    let g=EX.axes(s,[-0.5,0,0.5,1,1.5,2],[5,6,7,8,9,10,11,12],"log₁₀ M / M☉","log₁₀ t [yr]");
+    const band=(a,b,cls,txt)=>{const x0=s.sx(Math.log10(a)),x1=s.sx(Math.log10(b));return `<rect class="${cls}" x="${x0}" y="${s.T}" width="${x1-x0}" height="${s.AH}"/><text class="lbl" x="${(x0+x1)/2}" y="${s.T+14}" text-anchor="middle">${txt}</text>`;};
+    g+=`<g clip-path="${s.clip}">`+band(0.316,8,"reg-under","white dwarf")+band(8,25,"reg-over","neutron star")+band(25,100,"forb","black hole");
+    const pts=[];for(let x=-0.5;x<=2.001;x+=0.02)pts.push([x,10-2.5*x]);
+    g+=`<line class="ref" x1="${s.L}" x2="${s.W-s.R}" y1="${s.sy(Math.log10(1.38e10))}" y2="${s.sy(Math.log10(1.38e10))}"/><path class="cur" d="${EX.path(s,pts)}"/></g>`;
+    g+=`<text class="tx" x="${s.sx(1.2)}" y="${s.sy(Math.log10(1.38e10))-4}">age of the Universe</text>`;
+    g+=EX.mark(s,0,10,"mk data")+EX.mark(s,Math.log10(30),10-2.5*Math.log10(30),"mk data");
+    g+=`<circle class="dot" cx="${s.sx(lm)}" cy="${s.sy(10-2.5*lm)}" r="6"/>`;
+    $("q1-pl").innerHTML=g;
+    const t=1e10*Math.pow(M,-2.5),[p,txt]=fate(M);
+    $("q1-read").innerHTML=`<span class="pill">${p}</span>t = 10¹⁰ yr × ${fmtM(M)}<sup>−2.5</sup> = <b>${fmtE(t)} yr</b>; L = ${fmtE(Math.pow(M,3.5))} L☉. ${txt}`;
+  }
+  EX.sliders({"q1-m":[v=>lm=v]},render);
+  [["q1-p1",0],["q1-p2",Math.log10(30)],["q1-p3",Math.log10(20)]].forEach(([id,v])=>$(id).onclick=()=>{lm=v;$("q1-m").value=v;render();});
+  render();
+})();
+
+/* ---------- Q2: E(R) toy model ---------- */
+(function(){
+  if(!$("q2x"))return;
+  const G=6.674e-11,c=2.99792458e8,hbar=1.0546e-34,me=9.109e-31,mp=1.6726e-27,Ms=1.989e30;
+  let M=0.6;
+  function E(R,Mk){const Ne=Mk/(2*mp),pF=hbar*Math.cbrt(9*Math.PI*Ne/4)/R;
+    return Ne*0.75*(Math.sqrt((pF*c)**2+(me*c*c)**2)-me*c*c)-0.6*G*Mk*Mk/R;}
+  function render(){
+    EX.show("q2-mv",M,2);
+    const Mk=M*Ms,pts=[];let best=null;
+    for(let x=4;x<=8.5;x+=0.01){const R=Math.pow(10,x),e=E(R,Mk)/1e42;pts.push([x,e]);if(!best||e<best[1])best=[x,e];}
+    const s=EX.plot($("q2-pl"),{x0:4,x1:8.5,y0:-6,y1:6,W:600,H:260});
+    let g=EX.axes(s,[4,5,6,7,8],[-6,-3,0,3,6],"log₁₀ R [m]  (Earth ≈ 6.8)","E [10⁴² J]",true);
+    g+=`<g clip-path="${s.clip}"><path class="cur" d="${EX.path(s,pts)}"/></g>`;
+    const stable=best[0]>4.02&&best[1]<0;
+    if(stable)g+=`<circle class="dot" cx="${s.sx(best[0])}" cy="${s.sy(Math.max(best[1],-6))}" r="6"/>`;
+    $("q2-pl").innerHTML=g;
+    $("q2-read").innerHTML=stable?`<span class="pill">Stable white dwarf</span>Energy minimum at R ≈ <b>${fmtE(Math.pow(10,best[0])/1e3)} km</b> (${(Math.pow(10,best[0])/6.371e6).toFixed(2)} R⊕). Heavier → smaller.`
+      :`<span class="pill">Collapse</span>No minimum: shrinking always lowers E. Above the toy limit (~1.72 M☉; real value 1.46 M☉) electron degeneracy cannot hold the star.`;
+  }
+  EX.sliders({"q2-m":[v=>M=v]},render);
+  [["q2-p1",0.6],["q2-p2",1.6],["q2-p3",1.9]].forEach(([id,v])=>$(id).onclick=()=>{M=v;setIn("q2-m",v,2);render();});
+  render();
+})();
+
+/* ---------- Q3: main-sequence scalings ---------- */
+(function(){
+  if(!$("q3x"))return;
+  let lm=Math.log10(20);
+  function render(){
+    const M=Math.pow(10,lm);$("q3-mv").textContent=fmtM(M);
+    const L=M**3.5,R=M**0.8,T=5772*M**0.475,t=1e10*M**-2.5;
+    const s=EX.plot($("q3-pa"),{x0:4.8,x1:3.3,y0:-3,y1:6});
+    let g=EX.axes(s,[4.5,4.2,3.9,3.6,3.3],[-2,0,2,4,6],"log₁₀ T [K]","log₁₀ L/L☉");
+    const ms=[];for(let x=-0.7;x<=1.8;x+=0.02)ms.push([Math.log10(5772)+0.475*x,3.5*x]);
+    g+=`<g clip-path="${s.clip}"><path class="crit" d="${EX.path(s,ms)}"/></g>`+EX.mark(s,Math.log10(5772),0,"mk data")+`<text class="tx" x="${s.sx(Math.log10(5772))+7}" y="${s.sy(0)+12}">Sun</text>`;
+    g+=`<circle class="dot" cx="${s.sx(Math.log10(T))}" cy="${s.sy(Math.log10(L))}" r="6"/>`;
+    $("q3-pa").innerHTML=g;
+    const u=EX.plot($("q3-pb"),{x0:-0.7,x1:1.8,y0:-6,y1:7});
+    let h=EX.axes(u,[-0.5,0,0.5,1,1.5],[-6,-3,0,3,6],"log₁₀ M/M☉","log₁₀ (X / X☉)",true);
+    const line=(k,lab)=>{const p=[[-0.7,-0.7*k],[1.8,1.8*k]];return `<path class="${lab==='T'?'cur':'ref'}" d="${EX.path(u,p)}"/>`;};
+    h+=`<g clip-path="${u.clip}">`+line(3.5,"L")+line(0.8,"R")+line(0.475,"T")+line(-2.5,"t")+`<line class="ss" x1="${u.sx(lm)}" x2="${u.sx(lm)}" y1="${u.T}" y2="${u.H-u.B}"/></g>`;
+    [[3.5,"L"],[0.8,"R"],[0.475,"T"],[-2.5,"t"]].forEach(([k,n])=>{const y=Math.max(-5.6,Math.min(6.6,1.75*k));h+=`<text class="lbl" x="${u.sx(1.66)}" y="${u.sy(y)+(n==='T'?13:-4)}">${n}</text>`;h+=EX.mark(u,lm,lm*k);});
+    $("q3-pb").innerHTML=h;
+    const cls=T>30000?"O star":T>10000?"B star":T>7500?"A star":T>6000?"F star":T>5200?"G star":T>3700?"K star":"M dwarf";
+    $("q3-read").innerHTML=`<span class="pill">${cls}</span>R = ${fmtM(M)}<sup>0.8</sup> = <b>${R.toFixed(2)} R☉</b> · L = ${fmtM(M)}<sup>3.5</sup> = ${fmtE(L)} L☉ · T = 5772·${fmtM(M)}<sup>0.475</sup> = <b>${fmtE(T)} K</b> · t = 10¹⁰·${fmtM(M)}<sup>−2.5</sup> = <b>${fmtE(t)} yr</b>`;
+  }
+  EX.sliders({"q3-m":[v=>lm=v]},render);
+  [["q3-p1",Math.log10(20)],["q3-p2",0],["q3-p3",Math.log10(0.3)]].forEach(([id,v])=>$(id).onclick=()=>{lm=v;$("q3-m").value=v;render();});
+  render();
+})();
+
+/* ---------- Q4: binary ---------- */
+(function(){
+  if(!$("q4x"))return;
+  const G=6.674e-11,yr=3.156e7,Ms=1.989e30,AU=1.496e11;
+  let v1=20,v2=5,P=10,ph=0.125,inc=90;
+  function render(){
+    EX.show("q4-v1v",v1,1);EX.show("q4-v2v",v2,1);EX.show("q4-Pv",P,1);EX.show("q4-tv",ph,2);EX.show("q4-iv",inc,0);
+    const si=Math.sin(inc*Math.PI/180),k1=v1*si,k2=v2*si;
+    const vmax=Math.max(45,Math.max(v1,v2)+5);
+    const s=EX.plot($("q4-pa"),{x0:0,x1:1,y0:-vmax,y1:vmax});
+    const tk=vmax>40?[-40,-20,0,20,40]:[-20,0,20];
+    let g=EX.axes(s,[0,0.25,0.5,0.75,1],tk,"t / P","v_r [km/s]",true);
+    const c1=[],c2=[];for(let x=0;x<=1.0001;x+=0.005){c1.push([x,k1*Math.sin(2*Math.PI*x)]);c2.push([x,-k2*Math.sin(2*Math.PI*x)]);}
+    g+=`<g clip-path="${s.clip}"><path class="cur" d="${EX.path(s,c1)}"/><path class="ref" d="${EX.path(s,c2)}"/><line class="ss" x1="${s.sx(ph)}" x2="${s.sx(ph)}" y1="${s.T}" y2="${s.H-s.B}"/></g>`;
+    g+=EX.mark(s,ph,k1*Math.sin(2*Math.PI*ph))+EX.mark(s,ph,-k2*Math.sin(2*Math.PI*ph),"mk data");
+    g+=`<text class="tx" x="${s.sx(0.27)}" y="${s.sy(k1)-5}">star 1 (solid)</text><text class="tx" x="${s.sx(0.6)}" y="${s.sy(-k2)+14}">star 2 (dashed)</text>`;
+    $("q4-pa").innerHTML=g;
+    const a1=v1,a2=v2,R=Math.max(a1,a2)*1.25;
+    const u=EX.plot($("q4-pb"),{x0:-R,x1:R,y0:-R,y1:R,equal:true});
+    const th=2*Math.PI*ph,x1=a1*Math.sin(th),y1=-a1*Math.cos(th),x2=-a2*Math.sin(th),y2=a2*Math.cos(th);
+    let h=EX.axes(u,[],[],"","",true);
+    const ppu=u.ppu;
+    h+=`<circle class="circ" cx="${u.sx(0)}" cy="${u.sy(0)}" r="${a1*ppu}"/><circle class="circ" cx="${u.sx(0)}" cy="${u.sy(0)}" r="${a2*ppu}"/>`;
+    h+=`<line class="ss" x1="${u.sx(x1)}" y1="${u.sy(y1)}" x2="${u.sx(x2)}" y2="${u.sy(y2)}"/>`;
+    const M1=v2/(v1+v2),M2=v1/(v1+v2);
+    h+=`<circle class="dot" cx="${u.sx(x1)}" cy="${u.sy(y1)}" r="${5+5*M1}"/><circle class="mk data" cx="${u.sx(x2)}" cy="${u.sy(y2)}" r="${5+5*M2}"/>`;
+    h+=`<text class="tx" x="${u.sx(0)}" y="${u.H-u.B-4}" text-anchor="middle">↓ to observer</text>`;
+    $("q4-pb").innerHTML=h;
+    const Pt=P*yr,Mt=Math.pow((k1+k2)*1e3,3)*Pt/(2*Math.PI*G)/Ms,Mtrue=Math.pow((v1+v2)*1e3,3)*Pt/(2*Math.PI*G)/Ms;
+    const a=(v1+v2)*1e3*Pt/(2*Math.PI)/AU;
+    const pill=inc>=88?"Edge-on: true masses":"sin i < 1: masses underestimated";
+    $("q4-read").innerHTML=`<span class="pill">${pill}</span>a = (v₁+v₂)P/2π = ${a.toFixed(2)} AU · M_tot = (K₁+K₂)³P/2πG = <b>${Mt.toFixed(2)} M☉</b>${inc<88?` (true ${Mtrue.toFixed(2)} M☉ = measured / sin³i)`:""} · M₁ = ${(Mt*M1).toFixed(2)} M☉, M₂ = ${(Mt*M2).toFixed(2)} M☉ (M₁/M₂ = v₂/v₁ = ${(v2/v1).toFixed(2)})`;
+  }
+  EX.sliders({"q4-v1":[v=>v1=v],"q4-v2":[v=>v2=v],"q4-P":[v=>P=v],"q4-t":[v=>ph=v],"q4-i":[v=>inc=v]},render);
+  const set=(a,b,p,i)=>{v1=a;v2=b;P=p;inc=i;setIn("q4-v1",a,1);setIn("q4-v2",b,1);setIn("q4-P",p,1);setIn("q4-i",i,0);render();};
+  $("q4-p1").onclick=()=>set(20,5,10,90);$("q4-p2").onclick=()=>set(12.5,12.5,10,90);$("q4-p3").onclick=()=>set(20,5,10,40);
+  render();
+})();
+
+/* ---------- Q5: tides and redshift ---------- */
+(function(){
+  if(!$("q5x"))return;
+  const G=6.674e-11,c=2.99792458e8,Ms=1.989e30,g0=9.81;
+  let lM=1,lr=Math.log10(276),ell=2;
+  function render(){
+    const M=Math.pow(10,lM)*Ms,Rs=2*G*M/c**2,x=Math.pow(10,lr),r=x*Rs;
+    $("q5-Mv").innerHTML=fmtE(Math.pow(10,lM));$("q5-rv").textContent=x<10?x.toFixed(2):x.toFixed(0);EX.show("q5-lv",ell,1);
+    const tide=X=>2*G*M*ell/Math.pow(X*Rs,3)/g0;
+    const s=EX.plot($("q5-pa"),{x0:0,x1:4,y0:-8,y1:10});
+    let g=EX.axes(s,[0,1,2,3,4],[-8,-4,0,4,8],"log₁₀ r / R_s","log₁₀ Δa / g");
+    const pts=[];for(let q=0;q<=4.001;q+=0.02)pts.push([q,Math.log10(tide(Math.pow(10,q)))]);
+    g+=`<g clip-path="${s.clip}"><line class="ref" x1="${s.L}" x2="${s.W-s.R}" y1="${s.sy(0)}" y2="${s.sy(0)}"/><path class="cur" d="${EX.path(s,pts)}"/></g>`;
+    const ty=Math.log10(tide(x));if(ty>-8&&ty<10)g+=`<circle class="dot" cx="${s.sx(lr)}" cy="${s.sy(ty)}" r="6"/>`;
+    $("q5-pa").innerHTML=g;
+    const u=EX.plot($("q5-pb"),{x0:0,x1:4,y0:0,y1:125});
+    let h=EX.axes(u,[0,1,2,3,4],[0,40,80,120],"log₁₀ r / R_s","f∞ [MHz]");
+    const fs=[],fd=[];for(let q=0.002;q<=4.001;q+=0.01){const X=Math.pow(10,q),b=Math.sqrt(1/X),f=120*Math.sqrt(1-1/X);fs.push([q,f]);fd.push([q,f*Math.sqrt((1-b)/(1+b))]);}
+    h+=`<g clip-path="${u.clip}"><path class="ref" d="${EX.path(u,fd)}"/><path class="cur" d="${EX.path(u,fs)}"/></g>`;
+    const f=120*Math.sqrt(1-1/x);h+=`<circle class="dot" cx="${u.sx(lr)}" cy="${u.sy(f)}" r="6"/>`;
+    $("q5-pb").innerHTML=h;
+    const tv=tide(x),rEq=Math.cbrt(2*G*M*ell/g0)/Rs;
+    const pill=tv>1e3?"Spaghettified":tv>=0.99?"Stretched at least his weight":tv>1e-2?"Noticeable pull":"Barely felt";
+    $("q5-read").innerHTML=`<span class="pill">${pill}</span>R_s = 2GM/c² = ${fmtE(Rs/1e3)} km · Δa = 2GMℓ/r³ = <b>${fmtE(tv)} g</b> at r = ${fmtE(r/1e3)} km · Δa = g at r = <b>${rEq<1?"never outside the horizon":fmtE(rEq)+" R_s"}</b> · f∞ = 120√(1 − R_s/r) = <b>${f.toFixed(3)} MHz</b>`;
+  }
+  EX.sliders({"q5-M":[v=>lM=v],"q5-r":[v=>lr=v],"q5-l":[v=>ell=v]},render);
+  const set=(m,r)=>{lM=m;lr=r;$("q5-M").value=m;$("q5-r").value=r;render();};
+  $("q5-p1").onclick=()=>set(1,Math.log10(Math.cbrt(2*G*10*Ms*ell/g0)/(2*G*10*Ms/c**2)));
+  $("q5-p2").onclick=()=>set(lM,0.05);
+  $("q5-p3").onclick=()=>set(Math.log10(4e6),0.05);
+  render();
+})();
+
+</script>
+</body></html>
