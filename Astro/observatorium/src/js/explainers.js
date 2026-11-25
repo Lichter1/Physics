@@ -70,6 +70,44 @@
     draw(); return { stop: function () { } };
   };
 
+  // ------------------------------------------------------------------------------------------ 1.1 filters: B and V
+  // Johnson B and V passbands approximated as Gaussians (B: 442 nm, 94 nm wide; V: 540 nm, 88 nm wide); the eye's
+  // daylight sensitivity as a Gaussian peaking at 555 nm. Zero point: a 5772 K blackbody gets the Sun's B - V = 0.65.
+  function gauss(l, c, w) { var s = w / 2.355; return Math.exp(-0.5 * (l - c) * (l - c) / (s * s)); }
+  function bandFlux(T, c, w) { var s = 0; for (var l = 300; l <= 750; l += 2) s += A.planck(l * 1e-9, T) * l * gauss(l, c, w); return s; }
+  function rawBV(T) { return -2.5 * Math.log10(bandFlux(T, 442, 94) / bandFlux(T, 540, 88)); }
+  var BV0 = null;
+  X.filters = function (host) {
+    var s = stage(host, 0.5), st = { T: 5772 };
+    var PRE = [['Rigel', 12000, -0.03], ['Sun', 5772, 0.65], ['Betelgeuse', 3600, 1.85]];
+    if (BV0 === null) BV0 = 0.653 - rawBV(5772);
+    function draw() {
+      s.fit(); var c = s.ctx, C = s.C, pb = plotBox(s, 36, 12, s.W - 52, s.H - 52, [330, 730], [0, 1.15], {});
+      text(c, 'wavelength [nm]', pb.x0 + pb.w, pb.y0 + pb.h + 30, C['ink-2'], 'right');
+      for (var l = 380; l < 720; l += 4) { var hue = 270 - (l - 380) / 340 * 270; c.fillStyle = 'hsla(' + hue + ',85%,55%,0.18)'; c.fillRect(pb.x(l), pb.y0 + pb.h - 10, pb.x(l + 4) - pb.x(l), 10); }
+      function curve(fn, col, w, dash, fill) {
+        var pts = []; for (var x = 330; x <= 730; x += 2) pts.push([pb.x(x), pb.y(fn(x))]);
+        if (fill) { c.beginPath(); c.moveTo(pts[0][0], pb.y(0)); pts.forEach(function (p) { c.lineTo(p[0], p[1]); }); c.lineTo(pts[pts.length - 1][0], pb.y(0)); c.closePath(); c.globalAlpha = 0.18; c.fillStyle = col; c.fill(); c.globalAlpha = 1; }
+        line(c, pts, col, w, dash);
+      }
+      curve(function (x) { return gauss(x, 442, 94); }, C.c1, 2, null, true);
+      curve(function (x) { return gauss(x, 540, 88); }, C.c3, 2, null, true);
+      curve(function (x) { return gauss(x, 555, 100); }, C['ink-2'], 1.5, [4, 4]);
+      var pk = 0; for (var x = 330; x <= 730; x += 2) pk = Math.max(pk, A.planck(x * 1e-9, st.T));
+      curve(function (x) { return A.planck(x * 1e-9, st.T) / pk; }, C.accent, 2.4);
+      [400, 500, 600, 700].forEach(function (t) { text(c, String(t), pb.x(t), pb.y0 + pb.h + 13, C['ink-3'], 'center'); });
+      text(c, 'B filter', pb.x(442), pb.y(1.04), C.c1, 'center'); text(c, 'V filter', pb.x(540), pb.y(1.04), C.c3, 'center');
+      text(c, 'human eye', pb.x(640), pb.y(gauss(640, 555, 100)) - 6, C['ink-2']);
+      var bv = rawBV(st.T) + BV0, fb = bandFlux(st.T, 442, 94), fv = bandFlux(st.T, 540, 88);
+      s.out.innerHTML = 'Gold: the spectrum of a <b>' + Math.round(st.T).toLocaleString('en-US') + ' K</b> star (scaled to fit). Through B it gives <b>' + f(fb / fv, 2) + '×</b> the light it gives through V, so B − V = <b>' + OBS.fix(bv, 2) + '</b> (for a perfect blackbody). Bigger B − V is redder. ' +
+        'Measured: Rigel −0.03, the Sun 0.65, Betelgeuse 1.85; cool stars come out redder than a blackbody because molecules absorb their blue light (mission 1.4).';
+    }
+    var row = UI.row(s.ctl), seg = document.createElement('div'); seg.className = 'seg'; row.appendChild(seg);
+    var sl = UI.slider(s.ctl, { label: 'Star’s temperature', min: 3000, max: 25000, value: st.T, log: true, unit: 'K', fmt: function (x) { return Math.round(x).toLocaleString('en-US'); }, oninput: function (x) { st.T = x; draw(); } });
+    PRE.forEach(function (p) { UI.button(seg, p[0], function () { st.T = p[1]; sl.set(p[1], true); draw(); }, 'seg-b'); });
+    draw(); return { stop: function () { } };
+  };
+
   // ------------------------------------------------------------------------------------------ 1.2 parallax
   X.parallax = function (host) {
     var s = stage(host, 0.5), st = { d: 3.5 };
