@@ -14,7 +14,8 @@
     kepler: { label: 'Orbits give mass', rel: 'M₁ + M₂ = P (K₁ + K₂)³ / (2πG sin³i)', by: 'binary' },
     masslum: { label: 'Mass sets luminosity', rel: 'L ∝ M^a on the main sequence;  t ≈ 10 Gyr · M/L', by: 'masslum' },
     leavitt: { label: 'Period gives luminosity', rel: 'M = a log₁₀ P + b for Cepheids', by: 'leavitt' },
-    transit: { label: 'Transit depth gives size', rel: 'ΔF/F = (R_p / R★)²', by: 'transit' }
+    transit: { label: 'Transit depth gives size', rel: 'ΔF/F = (R_p / R★)²', by: 'transit' },
+    cosmo: { label: 'Redshift gives distance and age', rel: 'D_L = (1+z) (c/H₀) ∫ dz/E(z),  E² = Ωm(1+z)³ + ΩΛ  (ΩΛ ≈ 0.7)', by: 'accel' }
   };
   var S = OBS.state = OBS.state || { concepts: {}, sandbox: false };
   OBS.unlocked = function (needs) {
@@ -61,6 +62,13 @@
     v('M_gaia', 'Mass (Gaia FLAME)', 'M☉', col('mass_flame'), { needs: ['masslum'], scale: 'log', how: 'Gaia’s estimate from stellar models.' })
   ];
 
+  function galB(c, i) { return A.equToGal(c.ra[i], c.dec[i])[1]; }
+  var GALB = [
+    v('b', 'Galactic latitude b', '°', galB, { how: 'Angle above (+) or below (−) the plane of the Milky Way.' }),
+    v('sinb', 'sin b', '', function (c, i) { return Math.sin(galB(c, i) * Math.PI / 180); }, { how: 'For objects spread evenly over the sky, sin b is spread evenly between −1 and +1.' })
+  ];
+  /** Lookback time in a flat universe with Ωm = 0.31, H0 = 70 (needs the 'cosmo' concept). */
+  function tlb(zcol) { return v('tlb', 'Lookback time', 'Gyr', function (c, i) { return c[zcol][i] > 0 ? A.lookback(c[zcol][i], 70, 0.31, 0.69) : NaN; }, { needs: ['cosmo'], how: 'How long ago the light left: ∫ dz / ((1+z) H(z)) in the ΛCDM model you tested.' }); }
   var DS = OBS.DATASETS = {};
   function def(d) { DS[d.id] = d; return d; }
 
@@ -116,15 +124,16 @@
   });
   def({
     id: 'pulsars', file: 'pulsars', level: 'stars', title: 'Pulsars', sub: 'Every pulsar in the ATNF catalogue with a measured period',
-    pos: false, x: 'P', y: 'Pdot', name: function (c, i) { return 'PSR ' + c.name[i]; },
-    vars: [
+    pos: true, x: 'P', y: 'Pdot', name: function (c, i) { return 'PSR ' + c.name[i]; },
+    vars: POS.concat(GALB, [
+      v('dm', 'Dispersion measure DM', 'pc/cm³', col('dm'), { scale: 'log', how: 'Free electrons along the line of sight: low frequencies arrive later by Δt ∝ DM / ν².' }),
       v('P', 'Spin period P', 's', col('P'), { scale: 'log', how: 'Time between pulses.' }),
       v('Pdot', 'Spin-down rate Ṗ', 's/s', col('Pdot'), { scale: 'log', how: 'How fast the period grows.' }),
       v('B', 'Surface magnetic field', 'gauss', function (c, i) { return A.pulsarB(c.P[i], c.Pdot[i]); }, { scale: 'log', how: 'B ≈ 3.2×10¹⁹ √(P Ṗ) G, for a spinning magnet losing energy.' }),
       v('age', 'Characteristic age τ', 'yr', function (c, i) { return A.pulsarAge(c.P[i], c.Pdot[i]); }, { scale: 'log', how: 'τ = P / 2Ṗ' }),
       v('bin', 'In a binary?', '', function (c, i) { return c.binary[i] ? 'binary' : 'single'; }, { cat: true }),
       v('kind', 'Kind', '', function (c, i) { var t = c.type[i]; return /AXP/.test(t) ? 'magnetar' : c.P[i] < 0.03 ? 'millisecond' : 'ordinary'; }, { cat: true })
-    ]
+    ])
   });
   def({
     id: 'exoplanets', file: 'exoplanets', level: 'stars', title: 'Known exoplanets', sub: 'NASA Exoplanet Archive, one row per confirmed planet',
@@ -266,11 +275,100 @@
   });
   def({
     id: 'grbs', file: 'grbs', level: 'galaxies', title: 'Gamma-ray bursts', sub: 'Every burst in the Fermi GBM catalogue with a measured duration',
-    pos: false, x: 't90', y: '#', name: function (c, i) { return c.name[i]; },
-    vars: [
+    pos: true, x: 't90', y: '#', name: function (c, i) { return c.name[i]; },
+    vars: POS.concat(GALB, [
       v('t90', 'Duration T₉₀', 's', col('t90'), { scale: 'log', how: 'Time over which 90% of the burst’s gamma-ray counts arrive.' }),
       v('fluence', 'Fluence', 'erg/cm²', col('fluence'), { scale: 'log', how: 'Total energy received per unit area.' }),
       v('kind', 'Short or long', '', function (c, i) { return c.t90[i] < 2 ? 'short (< 2 s)' : 'long'; }, { cat: true })
+    ])
+  });
+
+  // ---------------------------------------------------------------------------------------------- chapters 6-9: the Universe, light, galaxies
+  var H73 = 73;
+  def({
+    id: 'supernovae', file: 'supernovae', level: 'universe', title: 'Type Ia supernovae', sub: 'Pantheon+: 1,466 supernovae with redshifts and standardised peak brightness (Scolnic et al. 2022)',
+    pos: true, mag: 'mb', x: 'z', y: 'mu', err: { mu: 'emu', dmu: 'emu' }, name: function (c, i) { return 'SN ' + c.name[i]; },
+    vars: POS.concat([
+      v('z', 'Redshift z', '', col('z'), { scale: 'log', how: 'Shift of the host galaxy’s (or the supernova’s) lines: 1 + z = λ_observed / λ_emitted.' }),
+      v('mb', 'Peak brightness m_B (standardised)', 'mag', col('mb'), { rev: true, how: 'Peak B magnitude corrected for the light curve’s width and colour, which makes type Ia supernovae standard candles.' }),
+      v('mu', 'Distance modulus μ = m − M', 'mag', col('mu'), { how: 'm_B − M_B with M_B ≈ −19.25 from Cepheid-calibrated supernovae (SH0ES).' }),
+      v('dL', 'Luminosity distance D_L', 'Mpc', function (c, i) { return Math.pow(10, c.mu[i] / 5 + 1) / 1e6; }, { scale: 'log', how: 'D_L = 10^(μ/5 + 1) pc: the distance at which the flux matches the luminosity.' }),
+      v('dmu', 'Fainter than an empty universe by Δμ', 'mag', function (c, i) { return c.mu[i] - A.distModEmpty(c.z[i], H73); }, { how: 'μ minus the μ of a coasting universe with no matter and no Λ (H₀ = 73). Positive: farther, fainter.' }),
+      v('v', 'Recession speed cz', 'km/s', function (c, i) { return c.z[i] * 299792.458; }, { scale: 'log', how: 'Valid only while z ≪ 1.' }),
+      tlb('z')
+    ])
+  });
+  def({
+    id: 'cmbspec', file: 'cmb_spectrum', level: 'universe', title: 'The CMB spectrum', sub: 'COBE FIRAS: the brightness of the microwave sky at 43 frequencies (Fixsen et al. 1996)',
+    pos: false, x: 'f', y: 'I', err: { I: 'err' },
+    vars: [
+      v('f', 'Frequency ν', 'GHz', col('f_ghz'), { how: 'ν = c / λ' }),
+      v('lam', 'Wavelength λ', 'mm', function (c, i) { return 10 / c.nu_icm[i]; }, { how: 'λ = 1 / wavenumber' }),
+      v('I', 'Brightness I_ν', 'MJy/sr', col('I'), { how: 'Power per unit area, frequency and solid angle; 1 MJy/sr = 10⁻²⁰ W m⁻² Hz⁻¹ sr⁻¹.' }),
+      v('resid', 'Residual from a 2.725 K blackbody', 'kJy/sr', col('resid'), { how: 'Measured minus a perfect blackbody, a thousand times smaller than the signal.' })
+    ]
+  });
+  def({
+    id: 'cmbpower', file: 'cmb_power', level: 'universe', title: 'The CMB power spectrum', sub: 'Planck 2018: how strongly the temperature varies on each angular scale',
+    pos: false, x: 'l', y: 'Dl', err: { Dl: 'err' },
+    vars: [
+      v('l', 'Multipole ℓ', '', col('l'), { how: 'Spots of angular size θ correspond to ℓ ≈ 180° / θ.' }),
+      v('theta', 'Angular scale ≈ 180°/ℓ', '°', function (c, i) { return 180 / c.l[i]; }, { scale: 'log' }),
+      v('Dl', 'Fluctuation power D_ℓ', 'μK²', col('Dl'), { how: 'D_ℓ = ℓ(ℓ+1) C_ℓ / 2π: the variance of the temperature on that scale.' })
+    ]
+  });
+  def({
+    id: 'cmbtheory', file: 'cmb_theory', level: 'universe', title: 'The Planck best-fit CMB spectrum', sub: 'ΛCDM model spectrum from the Planck 2018 fit (theory, not data)',
+    pos: false, x: 'l', y: 'tt',
+    vars: [v('l', 'Multipole ℓ', '', col('l')), v('tt', 'Model D_ℓ', 'μK²', col('tt'))]
+  });
+  def({
+    id: 'zspec', file: 'zspec', level: 'galaxies', title: 'Spectra for measuring redshifts', sub: 'SDSS: a star-forming galaxy, an elliptical, a distant red galaxy and a quasar',
+    pos: false, x: 'lam', y: 'f', connect: true, subset: { col: 'obj', label: 'Object', def: 'sf', names: { sf: 'Star-forming galaxy', ell: 'Elliptical galaxy', lrg: 'Distant red galaxy', qso: 'Quasar' } },
+    vars: [v('lam', 'Observed wavelength λ', 'nm', col('lam')), v('f', 'Brightness (scaled)', '', col('f'), { how: 'Flux per unit wavelength, scaled so the brightest part is about 1.' })]
+  });
+  var BPT = { 1: 'star-forming', 2: 'star-forming', 3: 'composite', 4: 'AGN', 5: 'AGN', '-1': 'unclassified' };
+  def({
+    id: 'bpt', file: 'bpt', level: 'galaxies', title: 'Galaxies’ emission lines', sub: 'SDSS (MPA-JHU): 20,000 galaxies with Hα, Hβ, [N II] and [O III] all measured',
+    pos: true, mag: null, x: 'n2ha', y: 'o3hb', name: function (c, i) { return 'SDSS galaxy at z = ' + c.z[i].toFixed(4); },
+    vars: POS.concat([
+      v('z', 'Redshift z', '', col('z')),
+      v('n2ha', 'log [N II] 658.4 / Hα', '', function (c, i) { return Math.log10(c.nii[i] / c.ha[i]); }, { how: 'Ratio of two neighbouring lines: no dust or distance correction needed.' }),
+      v('o3hb', 'log [O III] 500.7 / Hβ', '', function (c, i) { return Math.log10(c.oiii[i] / c.hb[i]); }, { how: 'High when the ionising light is hard, as from an accreting black hole.' }),
+      v('logm', 'Stellar mass', 'log M☉', col('logm'), { how: 'From the galaxy’s colours and spectrum, fitted with stellar population models.' }),
+      v('logsfr', 'Star formation rate', 'log M☉/yr', col('logsfr'), { how: 'Mostly from the Hα line, corrected for dust and the fibre aperture (Brinchmann et al. 2004).' }),
+      v('ssfr', 'Specific star formation rate', 'log /yr', function (c, i) { return c.logsfr[i] - c.logm[i]; }, { how: 'SFR per unit stellar mass: how fast the galaxy is growing.' }),
+      v('oh', 'Gas metallicity 12 + log(O/H)', '', col('oh'), { how: 'Oxygen abundance of the gas, from its emission lines (Tremonti et al. 2004). The Sun: 8.69.' }),
+      v('lha', 'Hα luminosity (in the fibre)', 'erg/s', function (c, i) { var d = A.DL(c.z[i], 70, 0.3, 0.7) * 1e6 * A.C.pc * 100; return 4 * Math.PI * d * d * c.ha[i] * 1e-17; }, { scale: 'log', needs: ['cosmo'], how: 'L = 4π D_L² F, with F in the 3″ fibre (no dust correction).' }),
+      v('cls', 'MPA-JHU classification', '', function (c, i) { return BPT[c.bptclass[i]] || 'unclassified'; }, { cat: true, how: 'From the lines, using the Kauffmann et al. (2003) and Kewley et al. (2001) lines.' })
+    ])
+  });
+  def({
+    id: 'frbs', file: 'frbs', level: 'universe', title: 'Fast radio bursts', sub: '183 bursts with dispersion measures; 101 localized to a host galaxy with a redshift',
+    pos: true, x: 'z', y: 'dm', name: function (c, i) { return c.name[i]; },
+    vars: POS.concat(GALB, [
+      v('dm', 'Dispersion measure DM', 'pc/cm³', col('dm'), { how: 'Column of free electrons: the delay of low frequencies, Δt = 4.15 ms · DM · (ν / 1 GHz)⁻².' }),
+      v('z', 'Host redshift z', '', col('z'), { how: 'From the host galaxy’s spectrum, once the burst is localized.' }),
+      v('rep', 'Repeats?', '', function (c, i) { return c.repeater[i] ? 'repeater' : 'one-off'; }, { cat: true }),
+      v('tel', 'Telescope', '', col('telescope'), { cat: true }),
+      tlb('z')
+    ])
+  });
+  def({
+    id: 'gw', file: 'gw', level: 'universe', title: 'Gravitational-wave mergers', sub: 'LIGO, Virgo and KAGRA (GWTC-1 to GWTC-5): 282 mergers, median source-frame masses',
+    pos: false, x: 'mtot', y: 'mfinal', name: function (c, i) { return c.name[i]; },
+    vars: [
+      v('m1', 'Heavier object m₁', 'M☉', col('m1'), { scale: 'log', how: 'From the waveform: the chirp and the merger.' }),
+      v('m2', 'Lighter object m₂', 'M☉', col('m2'), { scale: 'log' }),
+      v('mtot', 'Total mass m₁ + m₂', 'M☉', function (c, i) { return c.m1[i] + c.m2[i]; }, { scale: 'log' }),
+      v('mfinal', 'Final mass', 'M☉', col('mfinal'), { scale: 'log', how: 'From the ringdown of the merged black hole.' }),
+      v('mrad', 'Mass radiated as waves', 'M☉', function (c, i) { return c.m1[i] + c.m2[i] - c.mfinal[i]; }, { how: 'm₁ + m₂ − M_final; times c² it is the energy carried off.' }),
+      v('mchirp', 'Chirp mass', 'M☉', col('mchirp'), { scale: 'log', how: '(m₁m₂)^{3/5} / (m₁+m₂)^{1/5}: what sets how fast the frequency sweeps up.' }),
+      v('dl', 'Luminosity distance', 'Mpc', col('dl'), { scale: 'log', how: 'From the amplitude of the waves: a standard siren, no ladder needed.' }),
+      v('z', 'Redshift', '', col('z')),
+      v('snr', 'Signal-to-noise ratio', '', col('snr'), { scale: 'log' }),
+      v('kind', 'Kind', '', function (c, i) { return c.m1[i] < 3 ? 'two neutron stars' : c.m2[i] < 3 ? 'neutron star + black hole' : 'two black holes'; }, { cat: true, how: 'Objects under 3 M☉ counted as neutron stars.' }),
+      v('year', 'Year', '', col('year'), { plain: true })
     ]
   });
 
@@ -367,6 +465,6 @@
     { id: 'clusters', label: 'Star clusters', scale: '50 pc – 3 kpc', note: 'Stars born together.' },
     { id: 'galaxy', label: 'The Milky Way', scale: '1–30 kpc', note: 'Our galaxy and its halo.' },
     { id: 'galaxies', label: 'Galaxies', scale: '50 kpc – 300 Mpc', note: 'The Magellanic Clouds and beyond.' },
-    { id: 'universe', label: 'The Universe', scale: '1 Gpc', note: 'Opens with the cosmology lectures.', locked: true }
+    { id: 'universe', label: 'The Universe', scale: '1–14 Gpc', note: 'Supernovae across the Universe, over the oldest light there is: the cosmic microwave background.' }
   ];
 })(typeof window !== 'undefined' ? window : globalThis);

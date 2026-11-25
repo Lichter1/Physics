@@ -42,7 +42,26 @@ const SOLVE = {
     for (let i = 0; i < x.length; i++) if (ch.mask[i] && x[i] > 0 && y[i] > 0) { const X = Math.log10(x[i]), Y = Math.log10(y[i]); n++; sx += X; sy += Y; sxx += X * X; sxy += X * Y; }
     const m = (n * sxy - sx * sy) / (n * sxx - sx * sx), b = (sy - m * sx) / n;
     Object.assign(ch.get('tf'), { x1: 50, y1: Math.pow(10, b + m * Math.log10(50)), x2: 250, y2: Math.pow(10, b + m * Math.log10(250)) });
-  }
+  },
+  // chapters 6-9
+  accel: (OBS, st) => { const s = st.model.sliders; s.Om.set(0.36); s.OL.set(0.64); s.H0.set(72.6); },
+  cmb: (OBS, st) => { const s = st.model.sliders; s.T.set(2.725); s.dT.set(0); },
+  peaks: (OBS, st) => { const s = st.model.sliders; s.Ot.set(1.0); s.dO.set(0); },
+  forest: (OBS, st) => st.fit.set(st.meta.z),
+  night: (OBS, st) => {
+    const p = st.planner; p.sd.set(167); p.sh.set(24);
+    let h = p.transit; while (h < 16) h += 24; while (h > 32) h -= 24; p.sh.set(Math.round(h * 4) / 4);
+  },
+  photometry: (OBS, st) => { st.phot.slider.set(10); for (let k = 0; k < st.field.stars.length; k++) st.phot.pick(k); },
+  bursts: async (OBS, st) => {
+    await st.go('pulsars'); await st.go('grbs');
+    const ch = OBS.app.chart, sb = OBS.column(ch.ds, 'sinb'), idx = []; for (let i = 0; i < sb.length; i++) if (Math.abs(sb[i]) < 0.17) idx.push(i); ch.setSel(idx);
+  },
+  frb: (OBS, st) => { const s = st.model.sliders; s.Ob.set(0.048); s.a.set(250); },
+  gw: (OBS, st) => st.model.sliders.eps.set(0.042),
+  redshift: async (OBS, st) => { for (const k of ['sf', 'ell', 'lrg']) { await st.go(k); st.fit.set(st.meta[k].z); } },
+  bpt: (OBS, st) => { Object.assign(OBS.app.chart.get('cut'), { x1: -0.22, y1: 1.2, x2: -0.22, y2: -1.2 }); st.score(); },
+  chain: (OBS, st) => { const m = st.mc; m.sStep.set(0.05); m.sBurn.set(300); for (let k = 0; k < 6000; k++) m.stepOnce(); m.report(); }
 };
 
 (async () => {

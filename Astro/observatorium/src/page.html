@@ -43,7 +43,9 @@
         <div class="ctl-bar">
           <div class="seg" role="group" aria-label="Look"><button type="button" class="seg-b" data-slook="drawn" aria-pressed="true">Drawn</button><button type="button" class="seg-b" data-slook="photo" aria-pressed="false" disabled title="Loading the photographs…">Photo</button></div>
           <div class="seg" role="group" aria-label="Projection"><button type="button" class="seg-b" data-smode="dome" aria-pressed="true">Dome</button><button type="button" class="seg-b" data-smode="allsky" aria-pressed="false">Whole sky</button></div>
-          <div class="seg" role="group" aria-label="Coordinates"><button type="button" class="seg-b" data-sframe="equ" aria-pressed="true">Equatorial</button><button type="button" class="seg-b" data-sframe="gal" aria-pressed="false">Galactic</button></div>
+          <div class="seg" role="group" aria-label="Coordinates"><button type="button" class="seg-b" data-sframe="equ" aria-pressed="true">Equatorial</button><button type="button" class="seg-b" data-sframe="gal" aria-pressed="false">Galactic</button><button type="button" class="seg-b" data-sframe="hor" aria-pressed="false" title="The sky over the Wise Observatory, Mitzpe Ramon, at the time you choose">Horizon</button></div>
+          <label class="sel sky-band"><span>Light</span><select id="sky-band" aria-label="Wavelength shown on the sky"><option value="visible">Visible</option></select></label>
+          <div class="sky-time" id="sky-time-wrap" hidden><label class="sel"><span>Mitzpe Ramon, UTC+2</span><input type="datetime-local" id="sky-time" step="60"></label><button type="button" class="seg-b" id="sky-now">Now</button></div>
           <div class="seg" role="group" aria-label="Layers">
             <button type="button" class="seg-b" id="layer-milkyway">Milky Way</button><button type="button" class="seg-b" id="layer-constellations">Lines</button><button type="button" class="seg-b" id="layer-grid">Grid</button><button type="button" class="seg-b" id="layer-labels">Names</button>
           </div>
@@ -82,7 +84,7 @@
       </div>
       <article class="lecture" id="lecture" hidden aria-live="polite"></article>
       <p class="lens-note" id="lens-note" hidden></p>
-      <div class="chartwrap"><canvas id="chart" aria-label="Data lens chart"></canvas><div class="legend" id="legend"></div><div class="pop" id="pop" hidden></div></div>
+      <div class="chartwrap"><canvas id="chart" aria-label="Data lens chart"></canvas><canvas id="imgview" hidden aria-label="Instrument view"></canvas><div class="legend" id="legend"></div><div class="pop" id="pop" hidden></div></div>
       <div class="readbar"><span id="lens-read"></span><span id="lens-hover" class="hover"></span></div>
       <div class="tools" id="tools"></div>
     </section>

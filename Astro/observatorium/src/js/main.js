@@ -15,7 +15,7 @@
       open: function (id, o) {
         o = o || {};
         return OBS.open(id).then(function (ds) {
-          lensMode('data');
+          lensMode('data'); app.imageView(false);
           chart.equal = false; chart.pointColour = null; chart.bins = 40;
           chart.setDataset(ds, o.sub);
           if (o.filter) chart.setFilter(o.filter);
@@ -34,7 +34,9 @@
         app.tools.innerHTML = '';
         return { chart: chart, tools: app.tools };
       },
-      reset: function () { app.tools.innerHTML = ''; app.note(''); sky.markers = []; chart.fold = null; chart.equal = false; sky.draw(); },
+      reset: function () { app.tools.innerHTML = ''; app.note(''); sky.markers = []; chart.fold = null; chart.equal = false; app.imageView(false); sky.draw(); },
+      /** Show (or hide) the instrument's own canvas in place of the chart, for images and parameter maps. */
+      imageView: function (on) { var cv = $('imgview'); cv.hidden = !on; $('chart').style.visibility = on ? 'hidden' : ''; $('legend').hidden = !!on; return cv; },
       lectureMode: function () { lensMode('lecture'); },
       lensMode: function () { return mode; },
       note: function (html) { var n = $('lens-note'); n.innerHTML = html || ''; n.hidden = !html; },
@@ -154,7 +156,8 @@
     stars: function () { return app.open('nearby').then(function () { sky.goTo(0, 0, 200, { mode: 'allsky', frame: 'equ' }); }); },
     clusters: function () { return app.open('clusters', { sub: 'pleiades' }).then(function () { sky.goTo(56.75, 24.12, 9, { mode: 'dome', frame: 'equ' }); }); },
     galaxy: function () { return app.open('globulars').then(function () { sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal' }); }); },
-    galaxies: function () { return app.open('galaxies').then(function () { sky.goTo(180, 30, 200, { mode: 'allsky', frame: 'equ' }); }); }
+    galaxies: function () { return app.open('galaxies').then(function () { sky.goTo(180, 30, 200, { mode: 'allsky', frame: 'equ' }); }); },
+    universe: function () { return app.open('supernovae').then(function () { sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal', band: 'cmb' }); }); }
   };
   function bindSky() {
     $('ladder').innerHTML = OBS.LEVELS.map(function (L) {
@@ -167,10 +170,33 @@
       });
     }
     seg('data-smode', function (m) { sky.setMode(m); if (m === 'dome' && sky.fov > 150) sky.fov = 110; });
-    seg('data-sframe', function (f) { sky.setFrame(f); });
+    seg('data-sframe', function (f) {
+      if (f === 'hor' && sky.mode !== 'dome') sky.setMode('dome');
+      sky.setFrame(f);
+      if (f === 'hor') { sky.lon0 = 180; sky.lat0 = 35; sky.fov = Math.max(sky.fov, 100); sky.draw(true); }
+      timeUI();
+    });
+    // the moment shown in the horizon frame, in the observatory's standard time (UTC+2)
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function timeUI() {
+      $('sky-time-wrap').hidden = sky.frame !== 'hor';
+      var d = new Date(Math.round(((sky.obs.jd - 2440587.5) * 86400000 + 2 * 3600000) / 60000) * 60000);
+      $('sky-time').value = d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()) + 'T' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes());
+    }
+    app.timeUI = timeUI;
+    $('sky-time').addEventListener('change', function (e) {
+      var m = /^(\d+)-(\d+)-(\d+)T(\d+):(\d+)/.exec(e.target.value); if (!m) return;
+      sky.setTime(Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5]) - 2 * 3600000);
+    });
+    $('sky-now').addEventListener('click', function () { sky.setTime(Date.now()); timeUI(); });
+    $('sky-band').addEventListener('change', function (e) { sky.setBand(e.target.value); syncSky(); });
     seg('data-stool', function (t) { sky.tool = t === 'circle' ? 'circle' : null; });
-    seg('data-slook', function (v) { sky.layers.photo = v === 'photo' && !!sky.images; sky._mwKey = null; sky.draw(true); });
-    OBS.on('skyimages', function () { [].forEach.call(document.querySelectorAll('[data-slook="photo"]'), function (b) { b.disabled = false; b.title = 'Real photographs of the sky'; }); });
+    seg('data-slook', function (v) { sky.layers.photo = v === 'photo' && !!sky.images; if (v === 'drawn') sky.band = 'visible'; sky._mwKey = null; sky.draw(true); });
+    OBS.on('skyimages', function (m) {
+      [].forEach.call(document.querySelectorAll('[data-slook="photo"]'), function (b) { b.disabled = false; b.title = 'Real photographs of the sky'; });
+      $('sky-band').innerHTML = '<option value="visible">Visible</option>' + (m.bands || []).map(function (b) { return '<option value="' + b.id + '">' + esc(b.label) + '</option>'; }).join('');
+      $('sky-band').value = sky.band;
+    });
     ['milkyway', 'constellations', 'grid', 'labels'].forEach(function (k) {
       var b = $('layer-' + k); b.setAttribute('aria-pressed', sky.layers[k]);
       b.addEventListener('click', function () { sky.layers[k] = !sky.layers[k]; b.setAttribute('aria-pressed', sky.layers[k]); sky.draw(true); });
@@ -178,7 +204,7 @@
     OBS.on('skymode', syncSky);
     sky.listeners.push(function (ev, h) {
       if (ev === 'draw') {
-        var c = sky.centre(); $('sky-read').textContent = (sky.mode === 'dome' ? 'Looking at α ' + raStr(c[0]) + ', δ ' + decStr(c[1]) + ' · field ' + OBS.fmt(sky.fov, 2) + '°' : 'The whole sky · ' + (sky.frame === 'gal' ? 'Galactic coordinates, centre of the Galaxy in the middle' : 'equatorial coordinates'));
+        var c = sky.centre(); $('sky-read').textContent = sky.frame === 'hor' ? horRead() : (sky.mode === 'dome' ? 'Looking at α ' + raStr(c[0]) + ', δ ' + decStr(c[1]) + ' · field ' + OBS.fmt(sky.fov, 2) + '°' : 'The whole sky · ' + (sky.frame === 'gal' ? 'Galactic coordinates, centre of the Galaxy in the middle' : 'equatorial coordinates'));
         var cr = sky.credits(); $('sky-credit').textContent = cr ? 'Photographs: ' + cr : ''; $('sky-credit').hidden = !cr;
         syncSky();
       }
@@ -197,6 +223,15 @@
     [].forEach.call(document.querySelectorAll('[data-stool]'), function (b) { b.setAttribute('aria-pressed', (b.dataset.stool === 'circle') === (sky.tool === 'circle')); });
     [].forEach.call(document.querySelectorAll('[data-slook]'), function (b) { b.setAttribute('aria-pressed', (b.dataset.slook === 'photo') === !!sky.layers.photo); });
     var g = $('layer-grid'); if (g) g.setAttribute('aria-pressed', !!sky.layers.grid);
+    var bs = $('sky-band'); if (bs && bs.value !== sky.band) bs.value = sky.band;
+    if ($('sky-time-wrap')) $('sky-time-wrap').hidden = sky.frame !== 'hor';
+    if (sky.frame === 'hor' && app.timeUI && document.activeElement !== $('sky-time')) app.timeUI();
+  }
+  function horRead() {
+    var d = new Date(Math.round(((sky.obs.jd - 2440587.5) * 86400000 + 2 * 3600000) / 60000) * 60000), s = sky.sunAlt();
+    var when = d.toISOString().slice(0, 16).replace('T', ' ');
+    return 'Mitzpe Ramon, ' + when + ' (UTC+2) · looking at azimuth ' + Math.round((360 - sky.lon0) % 360) + '°, altitude ' + Math.round(sky.lat0) + '° · Sun ' + (s > 0 ? 'up, ' : 'down, ') + Math.round(s) + '°' +
+      (s < -18 ? ' (dark night)' : s < -12 ? ' (astronomical twilight)' : s < -6 ? ' (nautical twilight)' : s < 0 ? ' (civil twilight)' : '');
   }
   function raStr(ra) { var h = ra / 15, H = Math.floor(h), m = Math.round((h - H) * 60); if (m === 60) { H++; m = 0; } return H % 24 + 'h ' + (m < 10 ? '0' : '') + m + 'm'; }
   function decStr(d) { return (d < 0 ? '−' : '+') + Math.abs(d).toFixed(1) + '°'; }

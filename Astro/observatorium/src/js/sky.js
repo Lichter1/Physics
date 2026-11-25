@@ -1,8 +1,9 @@
 /* Observatorium — the sky: a dome you can turn and zoom (stereographic) or the whole sky at once (Hammer),
- * in equatorial or Galactic coordinates. Two looks:
+ * in equatorial, Galactic or horizon coordinates (the sky over the Wise Observatory at a chosen moment). Two looks:
  *   drawn  catalogue stars as glowing points over Gaia's star-count glow
  *   photo  real photographs: ESO's all-sky Milky Way panorama, with Digitized Sky Survey and Legacy Survey
- *          close-ups blended in at full resolution wherever they exist
+ *          close-ups blended in at full resolution wherever they exist; or the whole sky at another wavelength
+ *          (radio, 21 cm, microwave, far infrared, H-alpha, X-ray, gamma rays)
  * Whatever the data lens shows is drawn here too, and a selection in one is a selection in the other. */
 (function (G) {
   'use strict';
@@ -17,6 +18,8 @@
     this.mode = 'dome'; this.frame = 'equ';
     this.lon0 = 83; this.lat0 = 5; this.fov = 110;     // looking at Orion
     this.layers = { milkyway: true, constellations: true, grid: false, labels: true, photo: false };
+    this.band = 'visible';                               // which panorama the photo look shows
+    this.obs = { lat: A.WISE.lat, lon: A.WISE.lon, jd: A.jd(Date.now()) };   // for the horizon frame
     this.markers = [];
     this.chart = null; this.ds = null;
     this.mw = null; this.bg = null; this.con = null; this.images = null;
@@ -43,15 +46,33 @@
   P.setDataset = function (ds, chart) { this.ds = ds; this.chart = chart; this.draw(); };
 
   // ------------------------------------------------------------------------------------- coordinates
-  P.toFrame = function (ra, dec) { return this.frame === 'gal' ? A.equToGal(ra, dec) : [ra, dec]; };
-  P.fromFrame = function (lon, lat) { return this.frame === 'gal' ? A.galToEqu(lon, lat) : [lon, lat]; };
+  // the horizon frame: lon = 360 - azimuth (so east is to the left, as on every other sky map), lat = altitude
+  P.lst = function () { return A.lst(this.obs.jd, this.obs.lon); };
+  P.toFrame = function (ra, dec) {
+    if (this.frame === 'gal') return A.equToGal(ra, dec);
+    if (this.frame === 'hor') { var h = A.equToHor(ra, dec, this.lst(), this.obs.lat); return [(360 - h[0]) % 360, h[1]]; }
+    return [ra, dec];
+  };
+  P.fromFrame = function (lon, lat) {
+    if (this.frame === 'gal') return A.galToEqu(lon, lat);
+    if (this.frame === 'hor') return A.horToEqu((360 - lon) % 360, lat, this.lst(), this.obs.lat);
+    return [lon, lat];
+  };
+  /** 3x3 matrix taking a unit vector in the view's frame to the equatorial frame (columns = frame axes). */
+  P._toEqu = function () {
+    var self = this;
+    return [0, 1, 2].map(function (k) { var p = [[0, 0], [90, 0], [0, 90]][k], e = self.fromFrame(p[0], p[1]); return A.vec(e[0], e[1]); });
+  };
+  /** Set the moment shown in the horizon frame (JavaScript time in ms, UTC). */
+  P.setTime = function (ms) { this.obs.jd = A.jd(ms); this._mwKey = null; this.draw(true); };
   P._posOf = function (ds) {
-    var key = ds.id + ':' + this.frame, t = ds.table;
+    var hor = this.frame === 'hor', key = ds.id + ':' + this.frame + (hor ? ':' + this.obs.jd.toFixed(6) : ''), t = ds.table;
     t.computed.__sky = t.computed.__sky || {};
-    if (t.computed.__sky[key]) return t.computed.__sky[key];
+    var slot = hor ? ds.id + ':hor' : key;                 // the horizon frame keeps only its latest moment
+    if (t.computed.__sky[slot] && t.computed.__sky[slot].key === key) return t.computed.__sky[slot];
     var ra = OBS.column(ds, 'ra'), de = OBS.column(ds, 'dec'), n = ra.length, lo = new Float64Array(n), la = new Float64Array(n);
     for (var i = 0; i < n; i++) { var p = this.toFrame(ra[i], de[i]); lo[i] = p[0]; la[i] = p[1]; }
-    return (t.computed.__sky[key] = { lon: lo, lat: la });
+    return (t.computed.__sky[slot] = { lon: lo, lat: la, key: key });
   };
   P.size = function () {
     var r = this.cv.getBoundingClientRect(), dpr = Math.min(2, G.devicePixelRatio || 1);
@@ -119,9 +140,10 @@
     if (this.layers.grid) this._grid(ctx, C, photo);
     var fg = this.ds && this.ds.pos && this.ds.id !== 'sky';
     if (this.layers.constellations && (!fg || this.mode === 'dome')) this._constellations(ctx, C, photo);
-    if (photo) this._starLabels(ctx, C, true); else this._stars(ctx, C, fg);
+    if (photo) { if (this.band === 'visible') this._starLabels(ctx, C, true); } else this._stars(ctx, C, fg);
     if (fg) this._dataset(ctx, C, photo);
     else if (photo && this.ds && this.ds.id === 'sky') this._skySelection(ctx, C);
+    if (this.frame === 'hor') this._horizon(ctx, C);
     this._markers(ctx, C, photo);
     if (this.drag && this.drag.kind === 'circle' && this.drag.r) {
       var d = this.drag; ctx.strokeStyle = C.sel; ctx.setLineDash([4, 3]); ctx.lineWidth = 1.5;
@@ -137,7 +159,7 @@
   }
   P._milkyWay = function (ctx, C, fine) {
     var f = fine ? 3 : 6, w = Math.ceil(this.W / f), h = Math.ceil(this.H / f);
-    var key = ['mw', this.mode, this.frame, this.lon0.toFixed(3), this.lat0.toFixed(3), this.fov.toFixed(3), w, h, C.dark].join();
+    var key = ['mw', this.mode, this.frame, this.frame === 'hor' ? this.obs.jd.toFixed(5) : '', this.lon0.toFixed(3), this.lat0.toFixed(3), this.fov.toFixed(3), w, h, C.dark].join();
     var mc = this._mwCanvas;
     if (this._mwKey !== key) {
       mc.width = w; mc.height = h;
@@ -146,7 +168,7 @@
       for (var j = 0; j < h; j++) for (var i = 0; i < w; i++) {
         var p = this.unproject((i + 0.5) * f, (j + 0.5) * f);
         if (!p) continue;
-        var e = this.frame === 'gal' ? A.galToEqu(p[0], p[1]) : p;
+        var e = this.frame === 'equ' ? p : this.fromFrame(p[0], p[1]);
         var u = e[0] / 360 * M.w - 0.5, v = (90 - e[1]) / 180 * M.h - 0.5;
         var u0 = Math.floor(u), v0 = Math.max(0, Math.min(M.h - 2, Math.floor(v))), fu = u - u0, fv = Math.max(0, Math.min(1, v - v0));
         var a = (u0 % M.w + M.w) % M.w, b = (a + 1) % M.w;
@@ -175,7 +197,7 @@
       var d;
       try { d = x.getImageData(0, 0, c.width, c.height).data; } catch (e) { self._loading[key] = false; return; }
       self._pix[key] = { w: c.width, h: c.height, data: d, used: performance.now() };
-      var keys = Object.keys(self._pix).filter(function (k) { return k !== 'allsky'; });
+      var keys = Object.keys(self._pix).filter(function (k) { return k !== 'allsky' && k.indexOf('band:') !== 0; });
       if (keys.length > 5) { keys.sort(function (a, b) { return self._pix[a].used - self._pix[b].used; }); delete self._pix[keys[0]]; }
       self._loading[key] = false; self._mwKey = null; self.draw(true);
     };
@@ -194,18 +216,25 @@
       return { k: k, c: [Math.cos(de) * Math.cos(ra), Math.cos(de) * Math.sin(ra), Math.sin(de)], e: [-Math.sin(ra), Math.cos(ra), 0], n: [-Math.sin(de) * Math.cos(ra), -Math.sin(de) * Math.sin(ra), Math.cos(de)], s: k.fov * D2R / k.w, px: self._pixels(k.id, k.file) };
     }).filter(function (q) { return q.px; });
   };
+  /** The panorama for the current wavelength (the visible-light photograph unless another band is chosen). */
+  P.bandInfo = function () {
+    var b = this.images && this.band !== 'visible' && (this.images.bands || []).filter(function (x) { return x.id === this.band; }, this)[0];
+    return b || (this.images ? this.images.allsky : null);
+  };
+  P.setBand = function (id) { this.band = id || 'visible'; if (this.band !== 'visible') this.layers.photo = true; this._mwKey = null; OBS.emit('skymode'); this.draw(true); };
   P._photo = function (ctx, fine) {
-    var all = this._pixels('allsky', this.images.allsky.file);
+    var pano = this.bandInfo(), vis = this.band === 'visible';
+    var all = this._pixels(vis ? 'allsky' : 'band:' + this.band, pano.file);
     var f = fine ? 1.25 : 4, w = Math.ceil(this.W / f), h = Math.ceil(this.H / f);
-    var cuts = this._visibleCutouts();
-    var key = ['ph', this.mode, this.frame, this.lon0.toFixed(4), this.lat0.toFixed(4), this.fov.toFixed(4), w, h, !!all, cuts.map(function (q) { return q.k.id; }).join('+')].join();
+    var cuts = vis ? this._visibleCutouts() : [];
+    var key = ['ph', this.band, this.mode, this.frame, this.frame === 'hor' ? this.obs.jd.toFixed(5) : '', this.lon0.toFixed(4), this.lat0.toFixed(4), this.fov.toFixed(4), w, h, !!all, cuts.map(function (q) { return q.k.id; }).join('+')].join();
     var mc = this._mwCanvas;
     if (this._mwKey !== key) {
       mc.width = w; mc.height = h;
       var mctx = mc.getContext('2d'), im = mctx.createImageData(w, h), px = im.data;
-      var B = this._basis(), gal = this.frame === 'gal', dome = this.mode === 'dome';
-      // the panorama has 3.5' pixels: when zoomed far past that, dim it rather than show big blurry blocks
-      var fade = dome ? Math.max(0.35, Math.min(1, this.fov / 12)) : 1;
+      var B = this._basis(), M = this._toEqu(), dome = this.mode === 'dome';
+      // the panorama has 3.5' pixels (the other wavelengths 15'): when zoomed far past that, dim it rather than show big blurry blocks
+      var fade = dome ? Math.max(0.35, Math.min(1, this.fov / (vis ? 12 : 40))) : 1;
       var AW = all ? all.w : 0, AH = all ? all.h : 0, AD = all ? all.data : null;
       for (var j = 0; j < h; j++) {
         for (var i = 0; i < w; i++) {
@@ -218,10 +247,9 @@
             var p = this.unproject(X, Y); if (!p) continue;
             var cl = Math.cos(p[1] * D2R); v0 = cl * Math.cos(p[0] * D2R); v1 = cl * Math.sin(p[0] * D2R); v2 = Math.sin(p[1] * D2R);
           }
-          // both frames: e = equatorial vector, g = Galactic vector
-          var e0, e1, e2, g0, g1, g2;
-          if (gal) { g0 = v0; g1 = v1; g2 = v2; e0 = RG[0][0] * v0 + RG[1][0] * v1 + RG[2][0] * v2; e1 = RG[0][1] * v0 + RG[1][1] * v1 + RG[2][1] * v2; e2 = RG[0][2] * v0 + RG[1][2] * v1 + RG[2][2] * v2; }
-          else { e0 = v0; e1 = v1; e2 = v2; g0 = RG[0][0] * v0 + RG[0][1] * v1 + RG[0][2] * v2; g1 = RG[1][0] * v0 + RG[1][1] * v1 + RG[1][2] * v2; g2 = RG[2][0] * v0 + RG[2][1] * v1 + RG[2][2] * v2; }
+          // e = equatorial vector (the frame's axes are the columns of M), g = Galactic vector
+          var e0 = M[0][0] * v0 + M[1][0] * v1 + M[2][0] * v2, e1 = M[0][1] * v0 + M[1][1] * v1 + M[2][1] * v2, e2 = M[0][2] * v0 + M[1][2] * v1 + M[2][2] * v2;
+          var g0 = RG[0][0] * e0 + RG[0][1] * e1 + RG[0][2] * e2, g1 = RG[1][0] * e0 + RG[1][1] * e1 + RG[1][2] * e2, g2 = RG[2][0] * e0 + RG[2][1] * e1 + RG[2][2] * e2;
           var r = 0, gg = 0, bb = 0, wt = 0, k = 4 * (j * w + i);
           for (var c = 0; c < cuts.length && wt < 1; c++) {
             var Q = cuts[c], cosc = e0 * Q.c[0] + e1 * Q.c[1] + e2 * Q.c[2];
@@ -260,6 +288,7 @@
   /** Which photographs are on screen, for the credit line. */
   P.credits = function () {
     if (!this.layers.photo || !this.images) return '';
+    if (this.band !== 'visible') { var b = this.bandInfo(); return b.label + ': ' + b.credit + '.'; }
     var cuts = this._visibleCutouts().map(function (q) { return q.k; });
     var out = cuts.length ? cuts.map(function (k) { return k.label; }).join(', ') + ': ' + cuts[0].credit + '. ' : '';
     return out + 'All-sky: ' + this.images.allsky.credit + '.';
@@ -285,7 +314,7 @@
     ctx.fillStyle = photo ? 'rgba(200,210,240,0.7)' : C['ink-3']; ctx.font = '10px ' + getComputedStyle(document.documentElement).getPropertyValue('--mono');
     for (lon = 0; lon < 360; lon += 30) {
       var q = this.project(lon, 0);
-      if (q) ctx.fillText(this.frame === 'gal' ? 'l ' + lon + '°' : (lon / 15) + 'h', q[0] + 3, q[1] - 3);
+      if (q) ctx.fillText(this.frame === 'gal' ? 'l ' + lon + '°' : this.frame === 'hor' ? 'az ' + ((360 - lon) % 360) + '°' : (lon / 15) + 'h', q[0] + 3, q[1] - 3);
     }
   };
   P._constellations = function (ctx, C, photo) {
@@ -423,6 +452,49 @@
       }
     });
   };
+  /** Ground below the horizon, the daylight or twilight the Sun's altitude gives, compass points and the Sun. */
+  P.sunAlt = function () { var s = A.sunPos(this.obs.jd); return A.equToHor(s[0], s[1], this.lst(), this.obs.lat)[1]; };
+  P._horizon = function (ctx, C) {
+    var f = 4, w = Math.ceil(this.W / f), h = Math.ceil(this.H / f), c = this._hz || (this._hz = document.createElement('canvas'));
+    var sun = A.sunPos(this.obs.jd), sh = A.equToHor(sun[0], sun[1], this.lst(), this.obs.lat), sAlt = sh[1];
+    // sky brightness: full day above the horizon, fading through civil, nautical and astronomical twilight to -18 deg
+    var day = Math.max(0, Math.min(1, (sAlt + 18) / 18)), dayA = Math.pow(day, 1.6) * 0.93;
+    var key = [this.mode, this.lon0.toFixed(3), this.lat0.toFixed(3), this.fov.toFixed(3), w, h, dayA.toFixed(3), C.dark].join();
+    if (this._hzKey !== key) {
+      c.width = w; c.height = h;
+      var x = c.getContext('2d'), im = x.createImageData(w, h), px = im.data;
+      var ground = C.dark ? [16, 14, 12] : [96, 88, 76], blue = sAlt > 0 ? [112, 156, 210] : [30, 52, 96];
+      for (var j = 0; j < h; j++) for (var i = 0; i < w; i++) {
+        var p = this.unproject((i + 0.5) * f, (j + 0.5) * f), k = 4 * (j * w + i);
+        if (!p) continue;
+        if (p[1] < 0) { px[k] = ground[0]; px[k + 1] = ground[1]; px[k + 2] = ground[2]; px[k + 3] = 242; }
+        else if (dayA > 0) { var t = 1 - p[1] / 90 * 0.35; px[k] = blue[0] * t; px[k + 1] = blue[1] * t; px[k + 2] = blue[2]; px[k + 3] = dayA * 255; }
+      }
+      x.putImageData(im, 0, 0); this._hzKey = key;
+    }
+    ctx.imageSmoothingEnabled = true; ctx.drawImage(c, 0, 0, w * f, h * f);
+    // the horizon line and the compass
+    ctx.strokeStyle = C.dark ? 'rgba(220,200,160,0.6)' : 'rgba(60,50,40,0.6)'; ctx.lineWidth = 1.2; ctx.beginPath();
+    var on = false, last = null;
+    for (var az = 0; az <= 360; az += 1) {
+      var q = this.project((360 - az) % 360, 0);
+      if (!q || (last && Math.abs(q[0] - last[0]) > this.W / 3)) { on = false; last = q; continue; }
+      if (!on) { ctx.moveTo(q[0], q[1]); on = true; } else ctx.lineTo(q[0], q[1]);
+      last = q;
+    }
+    ctx.stroke();
+    ctx.font = '600 13px ' + getComputedStyle(document.documentElement).getPropertyValue('--sans'); ctx.textAlign = 'center';
+    var self = this;
+    [['N', 0], ['NE', 45], ['E', 90], ['SE', 135], ['S', 180], ['SW', 225], ['W', 270], ['NW', 315]].forEach(function (d) {
+      var q = self.project((360 - d[1]) % 360, -2.5);
+      if (q && q[0] > 0 && q[0] < self.W && q[1] > 0 && q[1] < self.H) { ctx.fillStyle = C.dark ? 'rgba(240,220,180,0.9)' : 'rgba(40,30,20,0.85)'; ctx.fillText(d[0], q[0], q[1] + 12); }
+    });
+    ctx.textAlign = 'left';
+    if (sAlt > -1) {
+      var sq = this.project((360 - sh[0]) % 360, sAlt);
+      if (sq) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(sq[0], sq[1], Math.max(6, 0.27 * this.scale * D2R * 2), 0, 7); ctx.fill(); }
+    }
+  };
   P._hoverRing = function (ctx, C) {
     var h = this.hoverItem, q = this.project(h.lon, h.lat); if (!q) return;
     ctx.strokeStyle = this.layers.photo ? '#fff' : C.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(q[0], q[1], 7, 0, 7); ctx.stroke();
@@ -435,6 +507,9 @@
     if (opts.mode && opts.mode !== this.mode) { this.mode = opts.mode; if (this.mode === 'allsky') this.lat0 = 0; }
     if (opts.frame && opts.frame !== this.frame) { var e = this.fromFrame(this.lon0, this.lat0); this.frame = opts.frame; var nf = this.toFrame(e[0], e[1]); this.lon0 = nf[0]; this.lat0 = nf[1]; }
     if (opts.photo !== undefined && this.images) this.layers.photo = opts.photo;
+    if (opts.band !== undefined) { this.band = opts.band; if (opts.band !== 'visible' && this.images) this.layers.photo = true; }
+    else if (opts.photo === true) this.band = 'visible';   // asking for photographs means the visible-light ones
+    if (opts.time !== undefined) this.obs.jd = A.jd(opts.time);
     this._mwKey = null; OBS.emit('skymode');
     var f = this.toFrame(ra, dec), self = this;
     var from = { lon: this.lon0, lat: this.lat0, fov: this.fov }, to = { lon: f[0], lat: this.mode === 'allsky' ? 0 : f[1], fov: fov || this.fov };

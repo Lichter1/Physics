@@ -323,5 +323,91 @@
    "proj": "tan",
    "credit": "DESI Legacy Imaging Surveys DR9 (legacysurvey.org)"
   }
+ ],
+ "bands": [
+  {
+   "id": "radio",
+   "label": "Radio 408 MHz",
+   "file": "img/sky_radio.jpg",
+   "w": 1440,
+   "h": 720,
+   "frame": "gal",
+   "proj": "car",
+   "lon_center": 0,
+   "lon_left": true,
+   "credit": "Haslam et al. 1982 (408 MHz all-sky survey), via NASA SkyView"
+  },
+  {
+   "id": "hi",
+   "label": "Hydrogen 21 cm",
+   "file": "img/sky_hi.jpg",
+   "w": 1440,
+   "h": 720,
+   "frame": "gal",
+   "proj": "car",
+   "lon_center": 0,
+   "lon_left": true,
+   "credit": "HI4PI Collaboration 2016, via NASA SkyView"
+  },
+  {
+   "id": "cmb",
+   "label": "Microwave: the CMB",
+   "file": "img/sky_cmb.jpg",
+   "w": 1440,
+   "h": 720,
+   "frame": "gal",
+   "proj": "car",
+   "lon_center": 0,
+   "lon_left": true,
+   "credit": "NASA/WMAP Science Team (9-year ILC map), via NASA SkyView"
+  },
+  {
+   "id": "fir",
+   "label": "Far infrared 100 \u00b5m",
+   "file": "img/sky_fir.jpg",
+   "w": 1440,
+   "h": 720,
+   "frame": "gal",
+   "proj": "car",
+   "lon_center": 0,
+   "lon_left": true,
+   "credit": "IRIS (Miville-Deschenes & Lagache 2005, reprocessed IRAS), via NASA SkyView"
+  },
+  {
+   "id": "halpha",
+   "label": "Hydrogen-alpha 656 nm",
+   "file": "img/sky_halpha.jpg",
+   "w": 1440,
+   "h": 720,
+   "frame": "gal",
+   "proj": "car",
+   "lon_center": 0,
+   "lon_left": true,
+   "credit": "Finkbeiner 2003 (H-alpha composite), via NASA SkyView"
+  },
+  {
+   "id": "xray",
+   "label": "X-rays 0.7-1.6 keV",
+   "file": "img/sky_xray.jpg",
+   "w": 1440,
+   "h": 720,
+   "frame": "gal",
+   "proj": "car",
+   "lon_center": 0,
+   "lon_left": true,
+   "credit": "ROSAT All-Sky Survey diffuse background, R6 band (Snowden et al. 1997), via NASA SkyView"
+  },
+  {
+   "id": "gamma",
+   "label": "Gamma rays above 100 MeV",
+   "file": "img/sky_gamma.jpg",
+   "w": 1440,
+   "h": 720,
+   "frame": "gal",
+   "proj": "car",
+   "lon_center": 0,
+   "lon_left": true,
+   "credit": "CGRO/EGRET (NASA), via NASA SkyView"
+  }
  ]
 }

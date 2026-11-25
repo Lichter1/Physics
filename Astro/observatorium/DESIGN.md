@@ -1,7 +1,7 @@
 # Observatorium: design notes
 
-November 2026. Built from the lecture slides, tutorials and homework of General Astronomy 1, lectures 1–5
-(`../Source_Materials/`). Lectures 6 onward are planned at the end.
+November 2026. Built from the lecture slides, tutorials and homework of General Astronomy 1, lectures 1–13
+(`../Source_Materials/`); lecture 6 is not covered. Lectures 1–5 were built first, 7–13 in version 8.
 
 ## 1. The idea
 
@@ -71,7 +71,9 @@ to photographs for nebulae, clusters and galaxies.
 **Free exploration is always open.** Outside missions, any dataset can be put on any unlocked axes, selected,
 and followed onto the sky. Teacher mode in the Notebook unlocks everything.
 
-## 3. Curriculum map: lectures 1–5
+## 3. Curriculum map: lectures 1–13
+
+Lecture 6 is left out on purpose (it is not part of the material this game follows).
 
 | Lecture topics (from the slides) | Missions | Data | Homework |
 |---|---|---|---|
@@ -90,6 +92,19 @@ and followed onto the sky. Teacher mode in the Notebook unlocks everything.
 | L5 galaxies: types, colours | 5.1 | SDSS + Galaxy Zoo | HW5 |
 | L5 galaxy clusters, dark matter | 5.2 | SDSS (Coma) | |
 | L5 scaling relations: Tully–Fisher, Faber–Jackson | 5.3 | SPARC | HW5 |
+| L7 expansion, cosmological redshift, luminosity distance, supernovae Ia and acceleration | 6.1 | Pantheon+ | |
+| L7 the hot Big Bang, the CMB spectrum, Olbers' paradox | 6.2 | COBE FIRAS | |
+| L7 CMB anisotropies, acoustic peaks, geometry, BAO, reionization | 6.3 | Planck 2018 | |
+| L7 nucleosynthesis, the baryon census, quasars and the Lyman-α forest, lensed quasars | 6.4 | SDSS/BOSS quasar spectrum | |
+| L8 telescopes, resolution, coordinates and sidereal time, the atmosphere and airmass | 7.1 | Hipparcos sky; positions of M42, M13, M31, Sgr A*, the Pleiades; computed for Mitzpe Ramon | |
+| L9 detectors, filters, magnitude systems, calibration frames, signal-to-noise; spectroscopy | 7.2, 9.1 | Legacy Surveys DR9 image, SDSS | |
+| L10 radio astronomy, interferometry, infrared, ultraviolet | 8.1 (lecture), 8.2 | FRBs compilation; ATNF (DM) | |
+| L10 dispersion, fast radio bursts, the missing baryons | 8.2 | FRBs/FRB with host redshifts | |
+| L11 X-ray and gamma-ray astronomy, gamma-ray bursts | 8.1 | Fermi GBM positions | |
+| L11 gravitational waves, multi-messenger astronomy | 8.3 | GWOSC GWTC-1 to GWTC-5 | |
+| L12 galaxy types and scaling, Tolman's test, galaxy spectra, photometric redshifts, deep fields | 9.1 | SDSS spectra; SDSS galaxies (shipped) | |
+| L12–13 galaxy properties: stellar mass, star-formation rate, metallicity, BPT, star-formation history | 9.2 | SDSS MPA–JHU (20,000 galaxies) | |
+| L13 numerical tools: χ², grids, MCMC, errors from samples, big data | 9.3 (and 6.1) | Pantheon+ | |
 
 ### Lecture coverage, reviewed against the slides (version 6)
 
@@ -170,23 +185,32 @@ normalised gain used in *Check yourself* (Hake 1998, *Am. J. Phys.* 66, 64); des
 and colleagues. For a stronger before/after test than the built-in quiz, the Light and Spectroscopy Concept
 Inventory (Bardar et al. 2007) and the Astronomy Diagnostic Test are standard instruments.
 
-## 5. Lectures 6 onward: the Universe level
+## 5. Lectures 7–13: the Universe level (version 8)
 
-The syllabus continues with observational cosmology, lensing and data science. Each source below answered from
-this environment on 25 November 2026.
+Chapters 6–9 put the *Universe* rung on the scale ladder. Three things were added to the page to carry them:
+
+- **The sky in eight wavelengths** (*Light* menu): real all-sky maps from NASA SkyView, so the lecture on windows of
+  the atmosphere can show the same Galaxy in radio, 21 cm, the CMB, far infrared, Hα, X-rays and gamma rays.
+- **The horizon frame**: the sky over the Wise Observatory at a chosen date and time, with twilight and the Sun, so
+  coordinates, sidereal time and airmass (lecture 8) are something you plan with rather than read about.
+- **Instruments that work on pixels and samples**: a redshift fitter for spectra, aperture photometry on a real
+  CCD image with a curve of growth, and a Metropolis chain (lecture 13), alongside the existing χ² fits.
+
+Every mission threshold was set from a fit to the shipped data first: FIRAS gives T = 2.7250 K (χ²/N ≈ 1.1); the
+Planck peaks select Ω_tot = 1.00 (0.99 already gives χ²/N ≈ 17); the FRB Macquart relation gives Ω_b ≈ 0.048 with
+≈ 250 pc/cm³ from the Galaxy and hosts; GWTC mergers radiate a median 4.2% of their mass; a straight line in the
+BPT plane reproduces the MPA–JHU classification for 99% of galaxies; Pantheon+ rejects a matter-only universe by
+Δχ² > 300; the Fermi GBM bursts are isotropic within the errors.
+
+Still open, and reachable from here:
 
 | Topic | Mission idea | Data |
 |---|---|---|
-| Expansion, the distance ladder's top | Build the Hubble diagram, then see acceleration | Pantheon+ supernovae (GitHub), Union2.1 (LBL) |
-| The cosmic microwave background, acoustic peaks | Read the curvature off the first peak | Planck 2018 TT power spectrum (IRSA) |
 | Cluster lensing (the lecturer's research) | Find arcs and measure an Einstein radius | CLASH and RELICS Hubble images (MAST) |
-| Gravitational waves | Masses and distances of merging black holes | GWOSC event catalogue |
-| Gamma-ray bursts, fast radio bursts | Two populations; dispersion as a distance | Fermi GBM (HEASARC); CHIME/FRB |
 | Sunyaev–Zel'dovich effect | Clusters found by their shadow on the CMB | Planck PSZ2 catalogue (to test) |
-| Statistics, large samples, machine learning | Classify galaxies or stars from many features | SDSS, Gaia (shipped) |
-
-Add the slides for lectures 6+ to `Source_Materials/` and these become chapters 6–7 at the *Universe* rung of
-the scale ladder.
+| BAO | The 150 Mpc bump in the galaxy correlation function | SDSS/BOSS DR12 (to test) |
+| Photometric redshifts, machine learning | Train a nearest-neighbour photo-z on SDSS colours and test it on spectra | SDSS (reachable) |
+| X-ray clusters | Hot gas mass against galaxy mass | MCXC or eROSITA eRASS1 (to test) |
 
 ## 6. Trying it with people
 

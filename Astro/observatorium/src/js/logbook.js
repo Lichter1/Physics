@@ -34,7 +34,7 @@
   };
   LB.renderList = function () {
     var c = OBS.CHAPTERS[cur.ch - 1], ms = OBS.MISSIONS.filter(function (m) { return m.ch === cur.ch; });
-    $('lb-list').innerHTML = '<p class="eyebrow">Chapter ' + c.n + ' · ' + esc(c.hw) + '</p><h2 class="chap-title">' + esc(c.title) + '</h2><p class="muted small">' + esc(c.lecture) + '</p>' +
+    $('lb-list').innerHTML = '<p class="eyebrow">Chapter ' + c.n + (c.hw ? ' · ' + esc(c.hw) : '') + '</p><h2 class="chap-title">' + esc(c.title) + '</h2><p class="muted small">' + esc(c.lecture) + '</p>' +
       '<ol class="mlist">' + ms.map(function (m) {
         var d = P.done[m.id], ok = needsMet(m);
         return '<li><button type="button" class="mitem' + (cur.m === m ? ' on' : '') + '" data-id="' + m.id + '">' +

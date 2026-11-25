@@ -150,5 +150,77 @@
   "h": 1024,
   "credit": "NASA/SDO and the HMI science team, 25 November 2026, public domain",
   "source": "https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_HMIIC.jpg"
+ },
+ {
+  "id": "wmap_cmb",
+  "file": "img/lec/wmap_cmb.jpg",
+  "w": 1400,
+  "h": 700,
+  "credit": "NASA/WMAP Science Team (9-year ILC map, Wikimedia Commons), public domain",
+  "source": "https://commons.wikimedia.org/wiki/Special:FilePath/Ilc_9yr_moll4096.png?width=1400"
+ },
+ {
+  "id": "horn_antenna",
+  "file": "img/lec/horn_antenna.jpg",
+  "w": 1400,
+  "h": 1101,
+  "credit": "NASA (Wikimedia Commons), public domain",
+  "source": "https://commons.wikimedia.org/wiki/Special:FilePath/Horn_Antenna-in_Holmdel,_New_Jersey.jpeg?width=1400"
+ },
+ {
+  "id": "tuning_fork",
+  "file": "img/lec/tuning_fork.jpg",
+  "w": 1280,
+  "h": 1054,
+  "credit": "NASA & ESA (ESA/Hubble heic9902o), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/heic9902o.jpg"
+ },
+ {
+  "id": "hudf",
+  "file": "img/lec/hudf.jpg",
+  "w": 1280,
+  "h": 1280,
+  "credit": "NASA, ESA, S. Beckwith (STScI) and the HUDF Team (ESA/Hubble heic0406a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/heic0406a.jpg"
+ },
+ {
+  "id": "bullet",
+  "file": "img/lec/bullet.jpg",
+  "w": 1400,
+  "h": 1012,
+  "credit": "X-ray: NASA/CXC/CfA/M. Markevitch et al.; optical: NASA/STScI, Magellan/U. Arizona/D. Clowe et al.; lensing map: NASA/STScI, ESO WFI, Magellan/U. Arizona/D. Clowe et al. (Wikimedia Commons), public domain",
+  "source": "https://commons.wikimedia.org/wiki/Special:FilePath/1e0657_scale.jpg?width=1400"
+ },
+ {
+  "id": "vla",
+  "file": "img/lec/vla.jpg",
+  "w": 640,
+  "h": 480,
+  "credit": "Hajor (Wikimedia Commons), CC BY-SA 3.0",
+  "source": "https://commons.wikimedia.org/wiki/Special:FilePath/USA.NM.VeryLargeArray.02.jpg?width=1400"
+ },
+ {
+  "id": "eht_array",
+  "file": "img/lec/eht_array.jpg",
+  "w": 1280,
+  "h": 672,
+  "credit": "ESO/O. Furtak (ESO ann17015a), CC BY 4.0",
+  "source": "https://cdn.eso.org/images/screen/ann17015a.jpg"
+ },
+ {
+  "id": "kilonova",
+  "file": "img/lec/kilonova.jpg",
+  "w": 1280,
+  "h": 843,
+  "credit": "ESO/L. Cal\u00e7ada/M. Kornmesser (ESO eso1733a, artist's impression), CC BY 4.0",
+  "source": "https://cdn.eso.org/images/screen/eso1733a.jpg"
+ },
+ {
+  "id": "carina_ir",
+  "file": "img/lec/carina_ir.jpg",
+  "w": 1280,
+  "h": 739,
+  "credit": "NASA, ESA and the Hubble SM4 ERO Team (ESA/Hubble heic0910f), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/heic0910f.jpg"
  }
 ]

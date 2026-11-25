@@ -21,7 +21,7 @@
           '<p>This walk-through takes about two minutes. Leave it at any step with <kbd>Esc</kbd>, and replay it from <b>Tour</b> at the top.</p>';
       }, next: 'Show me around', skip: 'Skip, I’ll explore' },
     { at: '#chapters', h: 'Chapters follow the lectures',
-      html: '<p>Chapter 1 is Lecture 1, and so on. Each chapter holds a few missions, and the small counter shows how many you have finished. The chapters zoom out as the course does: from single stars to clusters, the Milky Way and other galaxies. Chapter 6, the Universe, opens with the cosmology lectures.</p>' },
+      html: '<p>Chapter 1 is Lecture 1, and so on. Each chapter holds a few missions, and the small counter shows how many you have finished. Chapters 1–5 zoom out as the course does, from single stars to galaxies; chapters 6–9 follow lectures 7–13: the expanding Universe, the observer’s toolkit, light beyond the visible, and galaxies in depth.</p>' },
     { at: '#lb-list', pane: 'logbook', tab: 'missions', h: 'Missions: one discovery each',
       html: '<p>Every mission retraces one real measurement, with the year and the people who made it. Later missions build on earlier ones: <span class="tour-tag">needs 1.2</span> means mission 1.2 teaches something this one uses. (Teacher mode in the Notebook opens everything at once.)</p><p>Click a mission to start it. Finished ones are marked <span class="tour-tag ok">done</span>.</p>' },
     { at: '#pane-logbook', pane: 'logbook', h: 'Every mission runs in four steps',
@@ -38,18 +38,19 @@
     { at: '#pane-sky .ctl-bar', pane: 'sky', h: 'How the sky is shown',
       html: '<dl class="tour-dl"><dt>Drawn · Photo</dt><dd>Catalogue stars as points of light, or real photographs: ESO’s Milky Way panorama with telescope close-ups of clusters, nebulae, galaxies and lenses. Credits appear under the sky.</dd>' +
         '<dt>Dome · Whole sky</dt><dd>A view through a telescope dome, or the entire sky as one map.</dd>' +
-        '<dt>Equatorial · Galactic</dt><dd>Line the map up with the Earth’s equator, or with the Milky Way.</dd>' +
+        '<dt>Equatorial · Galactic · Horizon</dt><dd>Line the map up with the Earth’s equator or with the Milky Way, or see the sky over the Wise Observatory at any date and hour.</dd>' +
+        '<dt>Light</dt><dd>The whole sky in radio, hydrogen’s 21 cm line, microwaves (the cosmic microwave background), far infrared, Hα, X-rays or gamma rays.</dd>' +
         '<dt>Milky Way · Lines · Grid · Names</dt><dd>Layers you can switch on and off.</dd>' +
         '<dt>Turn · Select circle</dt><dd>What dragging does: turn the sky, or draw a circle that selects everything inside it.</dd></dl>' },
     { at: '#ladder', pane: 'sky', h: 'The scale ladder',
-      html: '<p>Jump between scales: the naked-eye sky, the Solar System, the stars within 100 pc, star clusters, the Milky Way and other galaxies. Each rung opens that scale’s data in the lens and turns the sky to match.</p>' },
+      html: '<p>Jump between scales: the naked-eye sky, the Solar System, the stars within 100 pc, star clusters, the Milky Way, other galaxies and the Universe itself. Each rung opens that scale’s data in the lens and turns the sky to match.</p>' },
     { at: '#pane-lens .chartwrap', pane: 'lens', lens: true, h: 'The data lens',
       html: '<p>The same objects as the sky, as numbers: each dot is one object, placed by any two measured quantities. Right now it is the naked-eye sky, colour against brightness.</p><p>The lens and the sky are linked. Select objects in one and they light up in the other.</p>',
       try: { say: 'Try it: drag a box around a group of dots.', ok: 'Those objects are now highlighted on the sky as well. Clear, under the plot, removes the selection.',
         start: function (s) { s.n = OBS.app.chart.selected().length; s.hit = false; s.off = OBS.on('selection', function () { s.hit = true; }); },
         done: function (s) { return s.hit && OBS.app.chart.selected().length > 0; } } },
     { at: '#lens-ctl', pane: 'lens', lens: true, h: 'Choose what to plot',
-      html: '<p><b>Dataset</b> picks one of 21 real catalogues. <b>Across</b> and <b>Up</b> pick the two axes; <i>Number of objects</i> turns the plot into a histogram. <b>Colour by</b> paints the dots by another quantity.</p>' +
+      html: function () { return '<p><b>Dataset</b> picks one of ' + Object.keys(OBS.DATASETS).length + ' real catalogues.'; }() + ' <b>Across</b> and <b>Up</b> pick the two axes; <i>Number of objects</i> turns the plot into a histogram. <b>Colour by</b> paints the dots by another quantity.</p>' +
         '<p>Quantities you have not learned to measure yet are not in the menus. They appear when a mission teaches the method, the way they did in history: no distances before parallax, no luminosities before distances.</p>' },
     { at: '#pane-lens', pane: 'lens', h: 'The lecture hall',
       enter: function () { var m = first(), k = OBS.lecture.beats(m).map(function (b) { return b.h; }).indexOf('Magnitudes'); OBS.lecture.open(m, Math.max(0, k)); },

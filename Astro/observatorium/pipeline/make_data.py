@@ -296,6 +296,15 @@ def fl(r, k):
         return float(r[k].replace('D', 'E'))
     except (KeyError, ValueError):
         return np.nan
+def hms(s):
+    if not s: return np.nan
+    p = [float(x) for x in s.split(':')] + [0, 0]
+    return 15 * (p[0] + p[1] / 60 + p[2] / 3600)
+def dms(s):
+    if not s: return np.nan
+    sg = -1 if s.startswith('-') else 1
+    p = [abs(float(x)) for x in s.split(':')] + [0, 0]
+    return sg * (p[0] + p[1] / 60 + p[2] / 3600)
 ps = []
 for r in recs:
     P0, P1 = fl(r, 'P0'), fl(r, 'P1')
@@ -306,14 +315,15 @@ for r in recs:
         P1 = -F1 / F0**2
     typ = r.get('TYPE', '')
     ps.append({'name': r['PSRJ'], 'P': P0, 'Pdot': P1, 'binary': int('BINARY' in r or 'PB' in r), 'type': typ,
-               'assoc': r.get('ASSOC', '').split('[')[0].split('(')[0], 'dist': fl(r, 'DIST_DM')})
+               'assoc': r.get('ASSOC', '').split('[')[0].split('(')[0], 'dist': fl(r, 'DIST_DM'),
+               'ra': hms(r.get('RAJ')), 'dec': dms(r.get('DECJ')), 'dm': fl(r, 'DM')})
 ps = pd.DataFrame(ps)
 ps = ps[(ps.P > 0)]
 version = re.search(r'#CATALOGUE\s+(\S+)', db)
-save('pulsars', ps, {'name': None, 'P': 9, 'Pdot': None, 'binary': 0, 'type': None, 'assoc': None, 'dist': 3},
+save('pulsars', ps, {'name': None, 'P': 9, 'Pdot': None, 'binary': 0, 'type': None, 'assoc': None, 'dist': 3, 'ra': 5, 'dec': 5, 'dm': 4},
      title='Pulsars (ATNF Pulsar Catalogue)', source='www.atnf.csiro.au/research/pulsar/psrcat, psrcat_pkg.tar.gz' + (f' (catalogue {version.group(1)})' if version else ''),
      citation='Manchester, Hobbs, Teoh & Hobbs 2005, AJ 129, 1993', license='ATNF Pulsar Catalogue, free to use with citation',
-     columns_note='P seconds; Pdot s/s (blank when unmeasured); binary 1 = in a binary; type: AXP, HE, NRAD, RRAT etc.; dist kpc from dispersion measure')
+     columns_note='P seconds; Pdot s/s (blank when unmeasured); binary 1 = in a binary; type: AXP, HE, NRAD, RRAT etc.; dist kpc from dispersion measure; ra, dec J2000 degrees; dm pc/cm^3')
 
 # ----------------------------------------------------------------------------------------------------- exoplanets
 ex = pd.read_csv(c('exoplanets.csv'))

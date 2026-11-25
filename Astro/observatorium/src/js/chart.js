@@ -205,9 +205,9 @@
     this._axes(ctx, C);
     ctx.save();
     ctx.beginPath(); ctx.rect(PAD.l, PAD.t, W - PAD.l - PAD.r, H - PAD.t - PAD.b); ctx.clip();
-    this.overlays.forEach(function (o) { if (o.type === 'ref' && o.under !== false) this._overlay(ctx, o, C); }, this);
+    this.overlays.forEach(function (o) { if ((o.type === 'ref' || o.type === 'span') && o.under !== false) this._overlay(ctx, o, C); }, this);
     if (this.hist()) this._bars(ctx, C); else this._points(ctx, C);
-    this.overlays.forEach(function (o) { if (!(o.type === 'ref' && o.under !== false)) this._overlay(ctx, o, C); }, this);
+    this.overlays.forEach(function (o) { if (!((o.type === 'ref' || o.type === 'span') && o.under !== false)) this._overlay(ctx, o, C); }, this);
     if (this.drag && this.drag.kind === 'brush') {
       var d = this.drag; ctx.strokeStyle = C.sel; ctx.setLineDash([4, 3]); ctx.lineWidth = 1;
       ctx.fillStyle = C.sel;
@@ -229,7 +229,9 @@
     var cycles = this.fold ? 2 : 1, anySel = false;
     for (i = 0; i < n; i++) if (this.sel[i]) { anySel = true; break; }
     ctx.globalAlpha = shown > 20000 ? 0.55 : shown > 5000 ? 0.7 : 0.9;
-    var err = this.ds.err && this.yid === 'Vobs' ? OBS.column(this.ds, 'Vobs') && this.ds.table.cols[this.ds.err] : null;
+    // error bars: ds.err is a column for Vobs (rotation curves) or a map {y variable: error column}
+    var ecol = !this.ds.err || this.fold ? null : typeof this.ds.err === 'string' ? (this.yid === 'Vobs' ? this.ds.err : null) : this.ds.err[this.yid];
+    var err = ecol ? this.ds.table.cols[ecol] : null;
     if (this.ds.connect && !this.fold && !anySel) {   // a spectrum or a time series: join the points, one line per category
       ctx.globalAlpha = 1; ctx.lineWidth = 1.6; var prev = null, pc = null;
       for (i = 0; i < n; i++) {
@@ -259,7 +261,12 @@
         } else ctx.fillStyle = C.sel;
         for (var k = 0; k < cycles; k++) {
           var x = this.px(X + k), y = this.py(Y);
-          if (err) { ctx.fillRect(x - 0.5, this.py(Y - err[i]), 1, this.py(Y + err[i]) - this.py(Y - err[i])); }
+          if (err && err[i] > 0) {
+            if (shown > 400) ctx.globalAlpha = 0.25;   // many points: faint bars, so the points still show
+            var ylo = ly ? ax(Math.max(ys[i] - err[i], ys[i] * 1e-3), ly) : Y - err[i], yhi = ax(ys[i] + err[i], ly);
+            ctx.fillRect(x - 0.5, this.py(yhi), 1, this.py(ylo) - this.py(yhi));
+            if (shown > 400) ctx.globalAlpha = pass === 0 ? (shown > 20000 ? 0.55 : shown > 5000 ? 0.7 : 0.9) : 1;
+          }
           ctx.fillRect(x - h, y - h, s, s);
         }
       }
@@ -284,7 +291,7 @@
   }
   function tickLabel(v, log, plain) {
     if (plain) return String(Math.round(v)).replace('-', '−');   // years: 1850, not 1,850
-    if (!log) return OBS.fmt(v, 4);
+    if (!log) return OBS.fmt(Math.abs(v) < 1e-9 ? 0 : v, 4);   // a tick at 5.6e-17 is zero
     var p = Math.round(v), x = Math.pow(10, v);
     if (Math.abs(v - p) > 1e-6) return OBS.fmt(x, 2);
     if (p >= -3 && p <= 4) return OBS.fmt(x, 2);
@@ -383,6 +390,10 @@
         var xl = o.labelAt !== undefined ? o.labelAt : unax(v.x0 + 0.82 * (v.x1 - v.x0), lx), yl = o.f(xl);
         if (isFinite(yl)) { var lp = this.toPx(xl, yl); ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText(o.label, lp[0] + 4, lp[1] - 4); }
       }
+    } else if (o.type === 'span') {   // a shaded band between two x values
+      var sa = this.px(ax(o.x0, lx)), sb = this.px(ax(o.x1, lx));
+      ctx.globalAlpha = o.alpha || 0.13; ctx.fillRect(Math.min(sa, sb), PAD.t, Math.abs(sb - sa), this.H - PAD.t - PAD.b); ctx.globalAlpha = 1;
+      if (o.label) { ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(o.label, (sa + sb) / 2, PAD.t + 4); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; }
     } else if (o.type === 'ref') {
       ctx.globalAlpha = o.alpha || 0.5;
       var s = o.size || 1.6;

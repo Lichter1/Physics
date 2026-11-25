@@ -103,7 +103,8 @@
     var sky = OBS.app.sky;
     if (s.grid !== undefined) sky.layers.grid = s.grid;
     OBS.app.markers(s.markers || []);
-    sky.goTo(s.ra, s.dec, s.fov, { mode: s.mode, frame: s.frame, photo: s.photo });
+    // a cue names its frame and wavelength; without them it returns to the equatorial sky in visible light
+    sky.goTo(s.ra, s.dec, s.fov, { mode: s.mode, frame: s.frame || (sky.frame === 'hor' ? 'equ' : undefined), photo: s.photo, band: s.band || 'visible' });
   }
   function render(first, quiet) {
     LEC.stop();

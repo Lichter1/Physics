@@ -13,7 +13,7 @@ ctx.globalThis = ctx; ctx.window = ctx;
 ctx.OBS_INLINE = {};
 for (const f of readdirSync(join(root, 'data')).filter((x) => /\.(csv|json)$/.test(x))) ctx.OBS_INLINE[f] = readFileSync(join(root, 'data', f), 'utf8');
 vm.createContext(ctx);
-for (const s of ['core', 'astro', 'catalog', 'instruments', 'explainers', 'missions', 'lectures']) vm.runInContext(readFileSync(join(root, 'src/js', s + '.js'), 'utf8'), ctx, { filename: s + '.js' });
+for (const s of ['core', 'astro', 'catalog', 'instruments', 'observing', 'explainers', 'explainers2', 'missions', 'lectures', 'lectures2']) vm.runInContext(readFileSync(join(root, 'src/js', s + '.js'), 'utf8'), ctx, { filename: s + '.js' });
 const OBS = ctx.OBS, A = OBS.astro;
 const close = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (±${tol})`);
 
@@ -141,6 +141,43 @@ test('practice answers agree with the physics module', () => {
   near(ans('redblue', 2), 1e39 / 1.26e31 / 1e7, 'Eddington mass');
   near(ans('zwicky', 1), 1150 / 70, 'Hubble distance');
   near(ans('tully', 1), A.C.pc * 1e6 / 1e3 / 73 / (365.25 * 86400 * 1e9), 'Hubble time');
+  // chapters 6-9
+  near(ans('accel', 1), Math.pow(10, (24.0 + 19.3) / 5 + 1) / 1e6, 'SN distance');
+  near(ans('accel', 2), A.q0(0.3, 0.7), 'q0');
+  near(ans('cmb', 1), A.wienNuGHz(2.725), 'CMB peak frequency');
+  near(ans('cmb', 2), A.C.c / 1e3 * 3.36e-3 / 2.725, 'CMB dipole speed');
+  near(ans('night', 2), 1.22 * 550e-9 / 8.2 * 206264.8, 'VLT diffraction limit');
+  near(ans('photometry', 0), -2.5 * Math.log10(1e-3 / 3631), 'AB magnitude of 1 mJy');
+  near(ans('bursts', 0), 1.22 * 0.21 / 100 * 206264.8 / 60, 'GBT resolution');
+  near(ans('bursts', 1), 1.3e-3 / 1e7 * 206264.8e6, 'EHT resolution');
+  near(ans('frb', 0), 4.149 * 500 * (1 / 0.16 - 1 / 0.64) / 1000, 'dispersion delay');
+  near(ans('gw', 2), Math.pow(1.4 * 1.4, 0.6) / Math.pow(2.8, 0.2), 'chirp mass');
+  near(ans('redshift', 1), 2.5 * Math.log10(81), 'Tolman dimming');
+  near(ans('chain', 1), Math.exp(-1), 'Metropolis acceptance');
+});
+
+test('chapters 6-9: the real data give the textbook answers', () => {
+  const t = (id) => OBS.loadTable(OBS.DATASETS[id].file).then(() => OBS.DATASETS[id]);
+  return Promise.all(['cmbspec', 'frbs', 'gw', 'grbs', 'supernovae'].map((id) => OBS.open(id))).then(([cmb, frb, gw, grb, sn]) => {
+    // the CMB: a 2.725 K blackbody to chi2/N ~ 1
+    const c = cmb.table.cols; let chi = 0;
+    for (let i = 0; i < cmb.table.n; i++) chi += ((c.I[i] - A.planckNu(c.f_ghz[i], 2.725)) / c.err[i]) ** 2;
+    assert.ok(chi / cmb.table.n < 3, 'FIRAS fits 2.725 K: ' + chi / cmb.table.n);
+    // fast radio bursts: Omega_b near 0.049 fits the DM-z relation
+    const f = frb.table.cols; let s0 = 0, s1 = 0, n = 0;
+    for (let i = 0; i < frb.table.n; i++) if (f.z[i] > 0) { const r = f.dm[i] - A.dmCosmic(f.z[i], 0.049); s0 += r; n++; s1 += (f.dm[i] - A.dmCosmic(f.z[i], 0)) ; }
+    assert.ok(s0 / n > 100 && s0 / n < 400, 'FRB offset from the Milky Way and hosts: ' + s0 / n);
+    // gravitational waves: a few percent of the mass is radiated
+    const g = gw.table.cols, fr = []; for (let i = 0; i < gw.table.n; i++) if (g.mfinal[i] > 0) fr.push(1 - g.mfinal[i] / (g.m1[i] + g.m2[i]));
+    fr.sort((a, b) => a - b); const med = fr[fr.length >> 1];
+    assert.ok(med > 0.03 && med < 0.055, 'median fraction radiated ' + med);
+    // gamma-ray bursts are isotropic
+    const iso = OBS.isotropy(grb); assert.ok(Math.abs(iso.sinb2) < 3 * iso.err && Math.abs(iso.plane - 0.174) < 0.03, 'bursts isotropic');
+    // supernovae: accelerating beats matter-only by a wide margin
+    const chi2 = OBS.snChi2(sn.table.cols);
+    assert.ok(chi2(1, 0).chi2 - chi2(0.33, 0.67).chi2 > 300, 'supernovae reject a matter-only universe');
+    assert.ok(chi2(0.33, 0.67).chi2 - chi2(0, 0).chi2 < 0, 'and prefer acceleration to an empty universe');
+  });
 });
 
 test('lecture figures point at real pictures and real datasets', () => {

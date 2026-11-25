@@ -236,7 +236,7 @@
   "source": "www.atnf.csiro.au/research/pulsar/psrcat, psrcat_pkg.tar.gz (catalogue 2.9.0)",
   "citation": "Manchester, Hobbs, Teoh & Hobbs 2005, AJ 129, 1993",
   "license": "ATNF Pulsar Catalogue, free to use with citation",
-  "columns_note": "P seconds; Pdot s/s (blank when unmeasured); binary 1 = in a binary; type: AXP, HE, NRAD, RRAT etc.; dist kpc from dispersion measure",
+  "columns_note": "P seconds; Pdot s/s (blank when unmeasured); binary 1 = in a binary; type: AXP, HE, NRAD, RRAT etc.; dist kpc from dispersion measure; ra, dec J2000 degrees; dm pc/cm^3",
   "rows": 4440,
   "columns": [
    "name",
@@ -245,10 +245,13 @@
    "binary",
    "type",
    "assoc",
-   "dist"
+   "dist",
+   "ra",
+   "dec",
+   "dm"
   ],
   "fetched": "2026-11-25",
-  "bytes": 214797
+  "bytes": 319725
  },
  "exoplanets": {
   "title": "Confirmed exoplanets (NASA Exoplanet Archive)",
@@ -484,13 +487,13 @@
   "columns_note": "year (mid-year); sn = yearly mean total sunspot number"
  },
  "grbs": {
-  "title": "Gamma-ray bursts seen by Fermi",
+  "title": "Gamma-ray bursts (Fermi GBM)",
   "rows": 4430,
   "fetched": "2026-11-25",
-  "source": "HEASARC table fermigbrst (Fermi GBM burst catalog)",
-  "citation": "von Kienlin et al. 2020, ApJ 893, 46 (Fermi GBM burst catalog)",
-  "license": "Public (NASA/HEASARC)",
-  "columns_note": "t90 = time containing 90% of the burst counts, seconds; fluence erg/cm2"
+  "source": "HEASARC fermigbrst",
+  "cuts": "T90 > 0; positions from the GBM catalogue (typical error a few degrees)",
+  "citation": "von Kienlin et al. 2020, ApJ 893, 46",
+  "license": "NASA, public domain"
  },
  "spectra": {
   "title": "Stellar spectra across the spectral sequence",
@@ -500,5 +503,95 @@
   "cuts": "Flux binned to 2 nm (median), divided by its 99th percentile.",
   "citation": "SDSS DR17 (Abdurro\u2019uf et al. 2022, ApJS 259, 35)",
   "license": "SDSS data are public"
+ },
+ "supernovae": {
+  "title": "Type Ia supernovae (Pantheon+)",
+  "rows": 1466,
+  "fetched": "2026-11-25",
+  "source": "github.com/PantheonPlusSH0ES/DataRelease, Pantheon+SH0ES.dat",
+  "cuts": "z_HD > 0.01, Cepheid calibrators removed, repeat observations of one supernova averaged (inverse-variance)",
+  "citation": "Scolnic et al. 2022, ApJ 938, 113; Brout et al. 2022, ApJ 938, 110",
+  "license": "Public release"
+ },
+ "cmb_spectrum": {
+  "title": "The CMB spectrum (COBE FIRAS)",
+  "rows": 43,
+  "fetched": "2026-11-25",
+  "source": "lambda.gsfc.nasa.gov, firas_monopole_spec_v1.txt",
+  "cuts": "Monopole spectrum with 1-sigma uncertainties (converted from kJy/sr to MJy/sr)",
+  "citation": "Fixsen et al. 1996, ApJ 473, 576",
+  "license": "NASA, public domain"
+ },
+ "cmb_power": {
+  "title": "The CMB temperature power spectrum (Planck 2018)",
+  "rows": 111,
+  "fetched": "2026-11-25",
+  "source": "irsa.ipac.caltech.edu Planck release 3, COM_PowerSpect_CMB-TT-full/binned_R3.01",
+  "cuts": "l < 30 unbinned; l >= 30 in bins of 30; error = mean of the lower and upper 1-sigma",
+  "citation": "Planck Collaboration 2020, A&A 641, A5 and A6",
+  "license": "ESA Planck Legacy Archive, free use with acknowledgement"
+ },
+ "cmb_theory": {
+  "title": "Planck 2018 best-fit LCDM TT spectrum",
+  "rows": 2507,
+  "fetched": "2026-11-25",
+  "source": "COM_PowerSpect_CMB-base-plikHM-TTTEEE-lowl-lowE-lensing-minimum-theory_R3.01",
+  "cuts": "l <= 2600",
+  "citation": "Planck Collaboration 2020, A&A 641, A6",
+  "license": "ESA Planck Legacy Archive"
+ },
+ "zspec": {
+  "title": "SDSS spectra for measuring redshifts",
+  "rows": 5355,
+  "fetched": "2026-11-25",
+  "source": "data.sdss.org DR17 spec-lite files (see zspec_meta.json)",
+  "cuts": "Highest S/N spectrum of each kind with no masked pixels; median-binned to 0.4 nm; scaled to the 99.5th percentile",
+  "citation": "Abdurro'uf et al. 2022 (SDSS DR17)",
+  "license": "SDSS, public with acknowledgement"
+ },
+ "bpt": {
+  "title": "Emission lines and properties of SDSS galaxies (MPA-JHU)",
+  "rows": 20000,
+  "fetched": "2026-11-25",
+  "source": "SkyServer DR18: SpecObj + galSpecLine + galSpecExtra",
+  "cuts": "0.02 < z < 0.2, every fifth fibre, H-alpha, H-beta, [OIII] 5007 and [NII] 6584 all detected at 3 sigma, log M > 7; a random 20,000 of them",
+  "citation": "Brinchmann et al. 2004; Kauffmann et al. 2003; Tremonti et al. 2004",
+  "license": "SDSS, public with acknowledgement"
+ },
+ "frbs": {
+  "title": "Fast radio bursts",
+  "rows": 183,
+  "fetched": "2026-11-25",
+  "source": "github.com/FRBs/FRB, frb/data/FRBs/FRBs_base.csv",
+  "cuts": "All bursts in the table; z only for localized hosts",
+  "citation": "Prochaska & Zheng 2019; Macquart et al. 2020; Heintz et al. 2020; Gordon et al. 2023 (as compiled in the FRBs repository)",
+  "license": "BSD-3 (repository)"
+ },
+ "gw": {
+  "title": "Gravitational-wave mergers (GWTC)",
+  "rows": 282,
+  "fetched": "2026-11-25",
+  "source": "gwosc.org/eventapi/json/GWTC/",
+  "cuts": "Events with source-frame masses and p_astro >= 0.5; medians of the posteriors",
+  "citation": "LIGO Scientific, Virgo and KAGRA Collaborations, GWTC-1 to GWTC-5 (GWOSC)",
+  "license": "CC BY 4.0 (GWOSC)"
+ },
+ "photfield": {
+  "title": "An r-band image for photometry",
+  "rows": 6,
+  "fetched": "2026-11-25",
+  "source": "legacysurvey.org fits-cutout (ls-dr9, r, 0.262\"/pixel, 200 x 200); SDSS Star table",
+  "cuts": "Pixel values in nanomaggies (AB zero point 22.5), multiplied by 1000 and rounded",
+  "citation": "Dey et al. 2019 (Legacy Surveys); SDSS DR18",
+  "license": "Public with acknowledgement"
+ },
+ "skybands": {
+  "title": "The whole sky at other wavelengths",
+  "rows": 7,
+  "fetched": "2026-11-25",
+  "source": "NASA SkyView all-sky Car projections, Galactic, 0.25 deg/pixel",
+  "cuts": "Log stretch (radio, HI, IR, H-alpha), smoothed log stretch (X-ray and gamma counts), symmetric linear stretch (CMB)",
+  "citation": "Haslam et al. 1982 (408 MHz all-sky survey), via NASA SkyView; HI4PI Collaboration 2016, via NASA SkyView; NASA/WMAP Science Team (9-year ILC map), via NASA SkyView; IRIS (Miville-Deschenes & Lagache 2005, reprocessed IRAS), via NASA SkyView; Finkbeiner 2003 (H-alpha composite), via NASA SkyView; ROSAT All-Sky Survey diffuse background, R6 band (Snowden et al. 1997), via NASA SkyView; CGRO/EGRET (NASA), via NASA SkyView",
+  "license": "NASA SkyView; each survey with acknowledgement"
  }
 }

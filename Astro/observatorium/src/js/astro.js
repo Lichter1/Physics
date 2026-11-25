@@ -172,4 +172,89 @@
   // ------------------------------------------------------------------ pulsars
   A.pulsarB = function (P, Pdot) { return 3.2e19 * Math.sqrt(P * Pdot); };     // gauss, magnetic dipole spin-down
   A.pulsarAge = function (P, Pdot) { return P / (2 * Pdot) / C.yr; };          // characteristic age, years
+
+  // ------------------------------------------------------------------ cosmology (FLRW, matter + Lambda + curvature)
+  /** Expansion rate in units of H0: E(z) = sqrt(Om (1+z)^3 + Ok (1+z)^2 + OL). Radiation ignored (z < 10). */
+  A.E = function (z, Om, OL) { var a = 1 + z; return Math.sqrt(Math.max(1e-12, Om * a * a * a + (1 - Om - OL) * a * a + OL)); };
+  /** Integral of f over [0, z] by Simpson's rule (n even). */
+  function simpson(f, z, n) { n = n || 64; var h = z / n, s = f(0) + f(z); for (var i = 1; i < n; i++) s += (i % 2 ? 4 : 2) * f(i * h); return s * h / 3; }
+  A.simpson = simpson;
+  /** Transverse comoving distance in units of c/H0, with the curvature that 1 - Om - OL implies. */
+  A.dM = function (z, Om, OL) {
+    // integrate in u = ln(1+z), where the integrand (1+z)/E is smooth from z = 0 out to the CMB (z = 1100)
+    var Ok = 1 - Om - OL, I = simpson(function (u) { var x = Math.expm1(u); return (1 + x) / A.E(x, Om, OL); }, Math.log1p(z), 64);
+    if (Math.abs(Ok) < 1e-6) return I;
+    var s = Math.sqrt(Math.abs(Ok));
+    return Ok > 0 ? Math.sinh(s * I) / s : Math.sin(s * I) / s;
+  };
+  /** Luminosity distance in Mpc; angular-diameter distance is D_L / (1+z)^2. */
+  A.DL = function (z, H0, Om, OL) { return (1 + z) * A.dM(z, Om, OL) * C.c / 1e3 / (H0 || C.H0); };
+  A.DA = function (z, H0, Om, OL) { return A.dM(z, Om, OL) * C.c / 1e3 / (H0 || C.H0) / (1 + z); };
+  /** Distance modulus m - M = 5 log10(D_L / 10 pc). */
+  A.distModZ = function (z, H0, Om, OL) { return 5 * Math.log10(A.DL(z, H0, Om, OL) * 1e5); };
+  /** An empty universe (Om = OL = 0, coasting): D_L = (c/H0) z (1 + z/2). */
+  A.distModEmpty = function (z, H0) { return 5 * Math.log10(C.c / 1e3 / (H0 || C.H0) * z * (1 + z / 2) * 1e5); };
+  /** Age of the universe at redshift z, in Gyr: integral over (1+z) of dz / ((1+z) H). */
+  A.hubbleTimeGyr = function (H0) { return 977.8 / (H0 || C.H0); };
+  A.age = function (z, H0, Om, OL) {
+    // substitute a = 1/(1+z): t = (1/H0) * integral_0^a da / (a E(1/a - 1))
+    var a1 = 1 / (1 + (z || 0)), f = function (a) { return a <= 0 ? 0 : 1 / (a * A.E(1 / a - 1, Om, OL)); };
+    return A.hubbleTimeGyr(H0) * simpson(f, a1, 200);
+  };
+  A.lookback = function (z, H0, Om, OL) { return A.age(0, H0, Om, OL) - A.age(z, H0, Om, OL); };
+  /** Deceleration parameter today: q0 = Om/2 - OL. Negative means the expansion is speeding up. */
+  A.q0 = function (Om, OL) { return Om / 2 - OL; };
+
+  // ------------------------------------------------------------------ the cosmic microwave background
+  /** Blackbody intensity B_nu in MJy/sr at frequency f [GHz] (1 MJy/sr = 1e-20 W m^-2 Hz^-1 sr^-1). */
+  A.planckNu = function (fGHz, T) {
+    var nu = fGHz * 1e9, x = C.h * nu / (C.k * T);
+    return 2 * C.h * nu * nu * nu / (C.c * C.c) / Math.expm1(x) * 1e20;
+  };
+  /** Peak of B_nu: nu_max = 58.79 GHz per kelvin. */
+  A.wienNuGHz = function (T) { return 58.789 * T; };
+  /** Number density of blackbody photons, per cm^3: n = 20.28 T^3. */
+  A.photonDensity = function (T) { return 20.286 * T * T * T; };
+
+  // ------------------------------------------------------------------ fast radio bursts
+  /** Mean dispersion measure of the intergalactic medium (pc/cm^3) out to z (Macquart et al. 2020):
+   *  DM = 3 c H0 Ob f_IGM chi_e / (8 pi G m_p) * integral (1+z)/E(z) dz, with f_IGM = 0.84 and chi_e = 0.875. */
+  A.dmCosmic = function (z, Ob, H0, Om) {
+    var h0 = (H0 || C.H0) * 1e3 / (1e6 * C.pc), mp = 1.67262192e-27;
+    var pre = 3 * C.c * h0 / (8 * Math.PI * C.G * mp) / (C.pc * 1e6);   // per unit Ob f chi, in pc/cm^3
+    var om = Om === undefined ? 0.31 : Om;
+    return pre * Ob * 0.84 * 0.875 * simpson(function (x) { return (1 + x) / A.E(x, om, 1 - om); }, z, 24);
+  };
+
+  // ------------------------------------------------------------------ time and the horizon
+  /** Julian Date from a JavaScript time (ms since 1970, UTC). */
+  A.jd = function (ms) { return ms / 86400000 + 2440587.5; };
+  /** Greenwich mean sidereal time, degrees (IAU 1982, good to a second over decades). */
+  A.gmst = function (jd) { var d = jd - 2451545.0, T = d / 36525; return (((280.46061837 + 360.98564736629 * d + 0.000387933 * T * T) % 360) + 360) % 360; };
+  /** Local sidereal time in degrees at east longitude lon. */
+  A.lst = function (jd, lon) { return ((A.gmst(jd) + lon) % 360 + 360) % 360; };
+  /** Equatorial to horizontal: [azimuth from north through east, altitude], degrees. */
+  A.equToHor = function (ra, dec, lst, lat) {
+    var H = (lst - ra) * D2R, d = dec * D2R, p = lat * D2R;
+    var alt = Math.asin(Math.sin(p) * Math.sin(d) + Math.cos(p) * Math.cos(d) * Math.cos(H));
+    var az = Math.atan2(-Math.cos(d) * Math.sin(H), Math.sin(d) * Math.cos(p) - Math.cos(d) * Math.sin(p) * Math.cos(H));
+    return [((az / D2R) % 360 + 360) % 360, alt / D2R];
+  };
+  A.horToEqu = function (az, alt, lst, lat) {
+    var a = az * D2R, h = alt * D2R, p = lat * D2R;
+    var dec = Math.asin(Math.sin(p) * Math.sin(h) + Math.cos(p) * Math.cos(h) * Math.cos(a));
+    var H = Math.atan2(-Math.sin(a) * Math.cos(h), Math.cos(p) * Math.sin(h) - Math.sin(p) * Math.cos(h) * Math.cos(a));
+    return [((lst - H / D2R) % 360 + 360) % 360, dec / D2R];
+  };
+  /** The Sun's apparent position (low precision, ~0.01 deg; Astronomical Almanac). */
+  A.sunPos = function (jd) {
+    var n = jd - 2451545.0, L = (280.460 + 0.9856474 * n) % 360, g = (357.528 + 0.9856003 * n) % 360 * D2R;
+    var lam = (L + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * D2R, eps = (23.439 - 0.0000004 * n) * D2R;
+    var ra = Math.atan2(Math.cos(eps) * Math.sin(lam), Math.cos(lam)) / D2R;
+    return [(ra + 360) % 360, Math.asin(Math.sin(eps) * Math.sin(lam)) / D2R];
+  };
+  /** Airmass at altitude alt [deg] (Kasten & Young 1989; sec z above ~30 deg). */
+  A.airmass = function (alt) { if (alt <= 0) return Infinity; var z = 90 - alt; return 1 / (Math.cos(z * D2R) + 0.50572 * Math.pow(96.07995 - z, -1.6364)); };
+  /** The observatory the course's students are closest to: the Wise Observatory, Mitzpe Ramon. */
+  A.WISE = { name: 'Wise Observatory, Mitzpe Ramon', lat: 30.5967, lon: 34.7633, tz: 2 };
 })(typeof window !== 'undefined' ? window : globalThis);
