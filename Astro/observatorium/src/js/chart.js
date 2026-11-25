@@ -320,11 +320,11 @@
     if (o.dash) ctx.setLineDash(o.dash);
     if (o.type === 'line') {
       var a = this.toPx(o.x1, o.y1), b = this.toPx(o.x2, o.y2), dx = b[0] - a[0], dy = b[1] - a[1];
-      var t0 = -10, t1 = 10;  // extend across the plot
+      var t0 = o.segment ? 0 : -10, t1 = o.segment ? 1 : 10;  // a fit line extends across the plot; a ruler stops at its ends
       ctx.beginPath(); ctx.moveTo(a[0] + t0 * dx, a[1] + t0 * dy); ctx.lineTo(a[0] + t1 * dx, a[1] + t1 * dy); ctx.stroke();
       ctx.setLineDash([]);
-      [a, b].forEach(function (p) { ctx.beginPath(); ctx.arc(p[0], p[1], 6, 0, 7); ctx.fillStyle = C.panel; ctx.fill(); ctx.stroke(); });
-      if (o.label) { ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.fillText(o.label, b[0] + 9, b[1] - 9); }
+      if (o.drag !== false) [a, b].forEach(function (p) { ctx.beginPath(); ctx.arc(p[0], p[1], 6, 0, 7); ctx.fillStyle = C.panel; ctx.fill(); ctx.stroke(); });
+      if (o.label) { ctx.fillStyle = col; ctx.textAlign = o.segment ? 'center' : 'left'; ctx.fillText(o.label, o.segment ? (a[0] + b[0]) / 2 : b[0] + 9, o.segment ? (a[1] + b[1]) / 2 - 8 : b[1] - 9); ctx.textAlign = 'left'; }
     } else if (o.type === 'hline' || o.type === 'vline') {
       var p = o.type === 'hline' ? this.py(ax(o.value, ly)) : this.px(ax(o.value, lx));
       ctx.beginPath();

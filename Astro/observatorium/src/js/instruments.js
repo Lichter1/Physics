@@ -115,10 +115,16 @@
     var ds = OBS.pseudo({ id: 'scope', title: 'Telescope', x: 'x', y: 'y', vars: [v('x', 'Offset east', 'mas', 'x', { rev: true }), v('y', 'Offset north', 'mas', 'y')] }, { x: bx, y: by });
     chart.setDataset(ds); chart.equal = true; chart.pointColour = null;
     chart.setView({ x0: -2.4 * p, x1: 2.4 * p, y0: -1.6 * p, y1: 1.6 * p });
-    var st = { t: 0, marks: [], playing: false };
+    var st = { t: 0, marks: [], playing: false, showTrail: true };
     var trail = { type: 'ref', id: 'trail', xs: [], ys: [], under: false, size: 2.2, alpha: 0.8 };
     function posAt(t) { var s = A.parallaxShift(target.ra, target.dec, t); return [s.x * p, s.y * p]; }
     for (var j = 0; j < 120; j++) { var q = posAt(j / 120); trail.xs.push(q[0]); trail.ys.push(q[1]); }
+    // The ellipse's long axis (along the ecliptic, length 2p) joins the two dates six months apart that are
+    // farthest apart; across it the ellipse is only 2p sin(beta) wide.
+    var tLong = 0, best = 0;
+    for (j = 0; j < 365; j++) { var a0 = posAt(j / 365.25), a1 = posAt(j / 365.25 + 0.5), dd = Math.hypot(a0[0] - a1[0], a0[1] - a1[1]); if (dd > best) { best = dd; tLong = j / 365.25; } }
+    var axisEnds = [posAt(tLong), posAt(tLong + 0.5)];
+    st.longAxis = best;
     // Time runs in days from the March equinox (t = 0). The slider moves one day at a time and shows the date.
     var YEAR = 365.25, MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     function wrap(t) { return ((t % 1) + 1) % 1; }
@@ -128,21 +134,28 @@
     function redraw() {
       var C = OBS.colours(), q = posAt(st.t);
       chart.overlays = [];
-      trail.colour = C['ink-3']; if (st.showTrail) chart.add(trail);
+      trail.colour = C['ink-3'];
+      if (st.showTrail) {
+        chart.add(trail);
+        chart.add({ type: 'line', id: 'axis', x1: axisEnds[0][0], y1: axisEnds[0][1], x2: axisEnds[1][0], y2: axisEnds[1][1], colour: C['ink-2'], width: 1.2, dash: [2, 4], drag: false, segment: true, label: 'long axis = 2p' });
+      }
       st.marks.forEach(function (m, k) { chart.add({ type: 'marker', id: 'm' + k, x: m.x, y: m.y, colour: C.c2, label: m.label, drag: false }); });
       var since = st.marks.length === 1 ? ' · ' + days(st.t - st.marks[0].t) + ' d after mark 1' : '';
       chart.add({ type: 'marker', id: 'star', x: q[0], y: q[1], colour: C.accent, label: target.name + ' · ' + date(st.t) + since, drag: false });
       if (st.marks.length === 2) {
         var a = st.marks[0], b = st.marks[1];
-        chart.add({ type: 'line', id: 'ruler', x1: a.x, y1: a.y, x2: b.x, y2: b.y, colour: C.c2, width: 1, dash: [4, 3], drag: false });
+        chart.add({ type: 'line', id: 'ruler', x1: a.x, y1: a.y, x2: b.x, y2: b.y, colour: C.c2, width: 1.5, dash: [4, 3], drag: false, segment: true });
+      } else if (st.marks.length === 1) {     // a live ruler from the first mark to where the star is now
+        chart.add({ type: 'line', id: 'ruler', x1: st.marks[0].x, y1: st.marks[0].y, x2: q[0], y2: q[1], colour: C.c2, width: 1, dash: [2, 3], drag: false, segment: true });
       }
       chart.draw();
       var sep = st.marks.length === 2 ? Math.hypot(st.marks[0].x - st.marks[1].x, st.marks[0].y - st.marks[1].y) : NaN;
       st.sep = sep;
-      clock.innerHTML = st.marks.length === 1 ? 'Time since your first mark (' + st.marks[0].label + '): <span class="num">' + span(days(st.t - st.marks[0].t)) + '</span>'
+      var live = st.marks.length === 1 ? Math.hypot(q[0] - st.marks[0].x, q[1] - st.marks[0].y) : NaN;
+      clock.innerHTML = st.marks.length === 1 ? 'Since your first mark (' + st.marks[0].label + '): <span class="num">' + span(days(st.t - st.marks[0].t)) + '</span>; the star is now <span class="num">' + OBS.fmt(live / 1000, 3) + '″</span> from it.'
         : st.marks.length === 2 ? 'Between your marks: <span class="num">' + span(days(st.marks[1].t - st.marks[0].t)) + '</span>' : 'Time since your first mark: no mark yet';
-      out.innerHTML = st.marks.length === 2 ? 'The two marks are <span class="num">' + OBS.fmt(sep, 3) + ' mas</span> = <span class="num">' + OBS.fmt(sep / 1000, 3) + '″</span> apart (' + st.marks[0].label + ' → ' + st.marks[1].label + ').'
-        : st.marks.length === 1 ? 'One mark made. Move the date, or jump ahead exactly 6 months, and mark again.' : 'Move through the year, then mark the star’s position twice.';
+      out.innerHTML = st.marks.length === 2 ? 'The two marks are <span class="num">' + OBS.fmt(sep, 3) + ' mas</span> = <span class="num">' + OBS.fmt(sep / 1000, 3) + '″</span> apart (' + st.marks[0].label + ' → ' + st.marks[1].label + '): <span class="num">' + Math.round(100 * sep / best) + '%</span> of the ellipse’s long axis.'
+        : st.marks.length === 1 ? 'One mark made. Move the date, or jump ahead exactly 6 months, and mark again.' : 'Move through the year, then mark the star’s position twice. The dotted line is the long axis of the yearly path.';
       if (onchange) onchange(st);
     }
     var time = UI.slider(tools, { label: 'Date', min: 0, max: 364, value: 0, step: 1, fmt: function (d) { return date(d / YEAR) + ' (day ' + Math.round(d) + ')'; }, oninput: function (d) { st.t = d / YEAR; redraw(); } });
@@ -159,7 +172,7 @@
     UI.button(row, 'Jump ahead 6 months', function () { setT(st.t + 0.5); });
     UI.button(row, 'Clear marks', function () { st.marks = []; redraw(); });
     var clock = UI.readout(tools);
-    var tr = document.createElement('label'); tr.className = 'check'; tr.innerHTML = '<input type="checkbox" id="scope-trail"> Show the whole year’s path';
+    var tr = document.createElement('label'); tr.className = 'check'; tr.innerHTML = '<input type="checkbox" id="scope-trail" checked> Show the whole year’s path and its long axis';
     tools.appendChild(tr); tr.querySelector('input').addEventListener('change', function (e) { st.showTrail = e.target.checked; redraw(); });
     var out = UI.readout(tools);
     redraw();

@@ -68,11 +68,13 @@
         st.scope = OBS.instruments.parallax(I.chart, I.tools, { name: '61 Cyg A', ra: 316.725, dec: 38.749, plx: 286.0 });
         st.input = OBS.ui.number(I.tools, { label: 'Your parallax', unit: 'arcsec', placeholder: 'e.g. 0.5' });
       },
-      task: 'Press “Play a year” to watch the loop. Mark the star on one date, press “Jump ahead 6 months” and mark it again; the counter shows the time between your marks. Try different starting dates until the two marks are as far apart as they get, then type the parallax you deduce.',
+      task: 'Press “Play a year” to watch the loop. The dotted line is the loop’s long axis. Mark the star at one end of it, press “Jump ahead 6 months” and mark it again: the readout says what fraction of the long axis your pair spans. Then type the parallax you deduce.',
       progress: function (app, st) {
-        var s = st.scope.state, sep = s.sep, p = st.input.get(), wide = sep > 0.9 * 2 * 286;
+        var s = st.scope.state, sep = s.sep, p = st.input.get(), frac = sep / s.longAxis, wide = frac > 0.95;
         var good = isFinite(p) && Math.abs(p - 0.286) < 0.015;
-        return { done: wide && good, text: !isFinite(sep) ? 'Mark two positions' : !wide ? 'Separation ' + OBS.fmt(sep / 1000, 3) + '″: not the widest yet (try dates six months apart along the long axis)' : !isFinite(p) ? 'Widest separation found: ' + OBS.fmt(sep / 1000, 3) + '″. Now type the parallax.' : good ? 'Right' : 'Not quite: how is the shift related to p?' };
+        return { done: wide && good, text: !isFinite(sep) ? 'Mark two positions' :
+          !wide ? 'These marks are ' + OBS.fmt(sep / 1000, 3) + '″ apart, ' + Math.round(100 * frac) + '% of the long axis: across the ellipse it is narrower. Start at one end of the dotted long axis and jump 6 months.' :
+          !isFinite(p) ? 'Full width found: ' + OBS.fmt(sep / 1000, 3) + '″. Now type the parallax.' : good ? 'Right' : 'Not quite: how is the full width of the ellipse related to p?' };
       },
       measured: function (app, st) { var p = st.input.get(); return Math.abs(p - 0.57) < 0.05 ? '057' : Math.abs(p - 1.14) < 0.1 ? '114' : '029'; },
       result: function (app, st) {
