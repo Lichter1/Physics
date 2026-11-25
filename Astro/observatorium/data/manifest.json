@@ -1,0 +1,461 @@
+{
+ "sky": {
+  "title": "The naked-eye sky (HYG v4.4)",
+  "source": "HYG database v4.4 (Hipparcos, Yale Bright Star and Gliese catalogues combined), codeberg.org/astronexus/hyg",
+  "cuts": "V < 6.5 (naked-eye limit), plus named stars to V < 8. Distances from Hipparcos parallaxes (van Leeuwen 2007).",
+  "citation": "Nash, D. (astronexus) HYG v4.4; ESA 1997 Hipparcos; van Leeuwen 2007, A&A 474, 653",
+  "license": "CC BY-SA 4.0",
+  "columns_note": "ra, dec in degrees (J2000); mag = Johnson V; ci = B-V colour index; dist in parsecs",
+  "rows": 8868,
+  "columns": [
+   "hip",
+   "ra",
+   "dec",
+   "mag",
+   "ci",
+   "dist",
+   "name",
+   "bayer",
+   "spect"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 444339
+ },
+ "constellations": {
+  "title": "Constellation lines",
+  "source": "Stellarium, skycultures/modern/index.json (github.com/Stellarium/stellarium)",
+  "license": "GPL-2.0 (Stellarium)",
+  "rows": 692,
+  "fetched": "2026-11-25",
+  "columns_note": "pairs of row numbers into sky.csv"
+ },
+ "milkyway": {
+  "title": "Star counts across the whole sky (Gaia DR3)",
+  "source": "Gaia archive, gaiadr3.gaia_source",
+  "query": "SELECT GAIA_HEALPIX_INDEX(6, source_id), COUNT(*) FROM gaiadr3.gaia_source WHERE random_index < 36000000 GROUP BY 1",
+  "cuts": "A 2% random subsample of the 1.8 billion Gaia sources, counted in 49,152 HEALPix cells, resampled to a 720 x 360 RA/Dec grid; log scale.",
+  "citation": "Gaia Collaboration, Vallenari et al. 2023, A&A 674, A1 (Gaia DR3)",
+  "license": "ESA/Gaia/DPAC, CC BY-SA 3.0 IGO",
+  "fetched": "2026-11-25",
+  "rows": 36000000,
+  "columns_note": "uint8 image, value = (log10 count - 1.591) / (4.162 - 1.591)"
+ },
+ "nearby": {
+  "title": "Stars within 100 parsecs (Gaia DR3 / Gaia Catalogue of Nearby Stars)",
+  "source": "Gaia archive, external.gaiaedr3_gcns_main_1 (Gaia Collaboration, Smart et al. 2021, A&A 649, A6), plus gaiadr3.astrophysical_parameters",
+  "query": "parallax > 10 mas, then the HR-diagram quality cuts of Gaia Collaboration, Babusiaux et al. 2018: parallax/error > 10, G flux S/N > 50, BP and RP S/N > 20, BP/RP excess factor between 1.0+0.015(BP-RP)^2 and 1.3+0.06(BP-RP)^2, RUWE < 1.4.",
+  "cuts": "207176 stars pass. Shipped: every red giant (M_G < 3, BP-RP > 0.9; 683), 4000 of 12779 white dwarfs (GCNS probability > 0.5) and 32000 of the other stars, chosen at random. Gaia temperatures, radii, masses and luminosities attached where Gaia has them (a random 6000 were looked up).",
+  "citation": "Gaia Collaboration, Vallenari et al. 2023, A&A 674, A1 (Gaia DR3); Gaia Collaboration, Smart et al. 2021, A&A 649, A6",
+  "license": "ESA/Gaia/DPAC, CC BY-SA 3.0 IGO",
+  "columns_note": "parallax in mas; G magnitude; BP-RP colour; proper motions in mas/yr; rv km/s; teff K; radius, mass, lum in solar units (Gaia FLAME)",
+  "rows": 36683,
+  "columns": [
+   "id",
+   "ra",
+   "dec",
+   "parallax",
+   "phot_g_mean_mag",
+   "bp_rp",
+   "pmra",
+   "pmdec",
+   "rv",
+   "wd",
+   "teff_gspphot",
+   "radius_flame",
+   "mass_flame",
+   "lum_flame"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 2176756
+ },
+ "clusters": {
+  "title": "Star clusters (Gaia DR3)",
+  "source": "Gaia archive, gaiadr3.gaia_source, cone searches",
+  "query": "Cone around each cluster centre with loose parallax and proper-motion windows (see fetch_gaia.py). The Pleiades file is the whole 3-degree field with parallax > 2 mas, so members must be picked out by the player.",
+  "cuts": "NGC 6397 randomly thinned to 6000 stars.",
+  "clusters": {
+   "pleiades": {
+    "label": "Pleiades (M45)",
+    "ebv": 0.045,
+    "age_myr": 112,
+    "dist_pc": 135.2
+   },
+   "hyades": {
+    "label": "Hyades",
+    "ebv": 0.0,
+    "age_myr": 680,
+    "dist_pc": 47.5
+   },
+   "praesepe": {
+    "label": "Praesepe (M44)",
+    "ebv": 0.027,
+    "age_myr": 650,
+    "dist_pc": 186.2
+   },
+   "m67": {
+    "label": "M67",
+    "ebv": 0.041,
+    "age_myr": 4000,
+    "dist_pc": 860
+   },
+   "ngc6397": {
+    "label": "NGC 6397 (globular)",
+    "ebv": 0.18,
+    "age_myr": 13000,
+    "dist_pc": 2480
+   }
+  },
+  "literature": "E(B-V), ages and distances, used only to check answers: Gaia Collaboration, Babusiaux et al. 2018 (A&A 616, A10); Baumgardt & Vasiliev 2021 (MNRAS 505, 5957) for NGC 6397.",
+  "citation": "Gaia Collaboration, Vallenari et al. 2023, A&A 674, A1 (Gaia DR3)",
+  "license": "ESA/Gaia/DPAC, CC BY-SA 3.0 IGO",
+  "rows": 17166,
+  "columns": [
+   "cl",
+   "ra",
+   "dec",
+   "parallax",
+   "pmra",
+   "pmdec",
+   "phot_g_mean_mag",
+   "bp_rp",
+   "rv"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 1029084
+ },
+ "binaries": {
+  "title": "Double-lined spectroscopic binaries that also eclipse (Gaia DR3)",
+  "source": "Gaia archive: gaiadr3.nss_two_body_orbit (nss_solution_type = SB2) matched to gaiadr3.vari_eclipsing_binary",
+  "cuts": "Kept when the eclipse period agrees with the orbit period to 0.2% and both velocity amplitudes exceed 20 km/s. Eclipses mean the orbit is seen nearly edge-on, so sin i is close to 1.",
+  "citation": "Gaia Collaboration, Vallenari et al. 2023, A&A 674, A1 (Gaia DR3); Gaia Collaboration, Arenou et al. 2023, A&A 674, A34; Mowlavi et al. 2023, A&A 674, A16",
+  "license": "ESA/Gaia/DPAC, CC BY-SA 3.0 IGO",
+  "columns_note": "period days; K1, K2, gamma km/s; w degrees; T0 = time of periastron (days, Gaia reference epoch 2016.0); depth = primary eclipse depth (mag)",
+  "rows": 195,
+  "columns": [
+   "id",
+   "ra",
+   "dec",
+   "parallax",
+   "phot_g_mean_mag",
+   "bp_rp",
+   "period",
+   "e",
+   "w",
+   "K1",
+   "K2",
+   "gamma",
+   "T0",
+   "depth"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 21464
+ },
+ "torres": {
+  "title": "Accurate stellar masses (Torres, Andersen & Gimenez 2010)",
+  "source": "arXiv:0908.2624, Table 1 (LaTeX source)",
+  "citation": "Torres, Andersen & Gimenez 2010, A&ARv 18, 67",
+  "license": "Published data; used for teaching with citation",
+  "columns_note": "mass, radius, logL in solar units; teff K; period days",
+  "rows": 190,
+  "columns": [
+   "system",
+   "star",
+   "spt",
+   "period",
+   "mass",
+   "radius",
+   "teff",
+   "logg",
+   "logL"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 9608
+ },
+ "cepheids_ogle": {
+  "title": "Classical Cepheids in the Magellanic Clouds (OGLE-IV)",
+  "source": "OGLE Collection of Variable Stars, www.astrouw.edu.pl/ogle/ogle4/OCVS/{smc,lmc}/cep/cepF.dat and ident.dat",
+  "cuts": "Fundamental-mode classical Cepheids with a mean I magnitude.",
+  "citation": "Soszynski et al. 2015, Acta Astron. 65, 297 (OGLE-IV Cepheids)",
+  "license": "OGLE data, free to use with citation",
+  "columns_note": "P days; I, V intensity-mean magnitudes; Iamp = I-band amplitude",
+  "rows": 5189,
+  "columns": [
+   "id",
+   "gal",
+   "ra",
+   "dec",
+   "P",
+   "I",
+   "V",
+   "Iamp"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 347947
+ },
+ "cepheids_gaia": {
+  "title": "Classical Cepheids measured by Gaia (DR3)",
+  "source": "Gaia archive: gaiadr3.vari_cepheid joined to gaiadr3.gaia_source",
+  "cuts": "type_best_classification = 'DCEP', fundamental mode. Milky Way Cepheids kept only with parallax/error > 5 and RUWE < 1.4.",
+  "citation": "Gaia Collaboration, Vallenari et al. 2023, A&A 674, A1 (Gaia DR3); Ripepi et al. 2023, A&A 674, A17",
+  "license": "ESA/Gaia/DPAC, CC BY-SA 3.0 IGO",
+  "columns_note": "parallax mas (no zero-point correction applied here; the app adds +0.017 mas, Lindegren et al. 2021); P days; G, BP, RP intensity-averaged magnitudes",
+  "rows": 5699,
+  "columns": [
+   "id",
+   "region",
+   "ra",
+   "dec",
+   "parallax",
+   "parallax_error",
+   "P",
+   "G",
+   "BP",
+   "RP"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 475239
+ },
+ "cepheid_lc": {
+  "title": "Cepheid light curves (OGLE-IV, I band)",
+  "source": "www.astrouw.edu.pl/ogle/ogle4/OCVS/lmc/cep/phot/I/",
+  "citation": "Soszynski et al. 2015, Acta Astron. 65, 297",
+  "license": "OGLE data, free to use with citation",
+  "columns_note": "t = HJD - 2450000; mag = I",
+  "rows": 1930,
+  "columns": [
+   "id",
+   "t",
+   "mag",
+   "err"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 80584
+ },
+ "pulsars": {
+  "title": "Pulsars (ATNF Pulsar Catalogue)",
+  "source": "www.atnf.csiro.au/research/pulsar/psrcat, psrcat_pkg.tar.gz (catalogue 2.9.0)",
+  "citation": "Manchester, Hobbs, Teoh & Hobbs 2005, AJ 129, 1993",
+  "license": "ATNF Pulsar Catalogue, free to use with citation",
+  "columns_note": "P seconds; Pdot s/s (blank when unmeasured); binary 1 = in a binary; type: AXP, HE, NRAD, RRAT etc.; dist kpc from dispersion measure",
+  "rows": 4440,
+  "columns": [
+   "name",
+   "P",
+   "Pdot",
+   "binary",
+   "type",
+   "assoc",
+   "dist"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 214797
+ },
+ "exoplanets": {
+  "title": "Confirmed exoplanets (NASA Exoplanet Archive)",
+  "source": "exoplanetarchive.ipac.caltech.edu TAP, table pscomppars (one row per planet)",
+  "citation": "NASA Exoplanet Archive, operated by Caltech under contract with NASA (DOI 10.26133/NEA13)",
+  "license": "Public (NASA)",
+  "columns_note": "orbital period days; semi-major axis AU; mass and radius in Jupiter units; eqt K; star teff K, mass and radius solar; distance pc",
+  "rows": 6473,
+  "columns": [
+   "pl_name",
+   "hostname",
+   "method",
+   "disc_year",
+   "pl_orbper",
+   "pl_orbsmax",
+   "pl_bmassj",
+   "pl_radj",
+   "pl_eqt",
+   "pl_orbeccen",
+   "st_teff",
+   "st_mass",
+   "st_rad",
+   "sy_dist",
+   "ra",
+   "dec"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 749448
+ },
+ "kepler": {
+  "title": "Two transiting planets seen by Kepler (quarter 2): HAT-P-7 b and HAT-P-11 b",
+  "source": "MAST: archive.stsci.edu/missions/kepler/lightcurves/0106/010666592/kplr010666592-2009259160929_llc.fits (HAT-P-7 = KIC 10666592) and .../0107/010748390/kplr010748390-2009259160929_llc.fits (HAT-P-11 = KIC 10748390)",
+  "cuts": "PDCSAP flux, finite values, divided by a 2-day running median; points more than 5 sigma above the median removed.",
+  "citation": "Borucki et al. 2010, Science 327, 977 (Kepler); Pal et al. 2008, ApJ 680, 1450 (HAT-P-7 b); Bakos et al. 2010, ApJ 710, 1724 (HAT-P-11 b)",
+  "license": "Public (NASA/MAST)",
+  "columns_note": "t = BJD - 2454833 (Kepler time, days); f = relative flux",
+  "rows": 8030,
+  "columns": [
+   "star",
+   "t",
+   "f"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 214677
+ },
+ "microlensing": {
+  "title": "Microlensing light curves (OGLE-IV Early Warning System, 2019)",
+  "source": "ogle.astrouw.edu.pl/ogle4/ews/2019/ (events 2019-BLG-0148 and 2019-BLG-0628, phot.dat)",
+  "events": {
+   "2019-BLG-0148": {
+    "tmax": 2458651.232,
+    "tE": 58.205,
+    "u0": 0.279,
+    "Amax": 3.687,
+    "fbl": 1.0,
+    "I0": 13.403
+   },
+   "2019-BLG-0628": {
+    "tmax": 2458694.871,
+    "tE": 48.944,
+    "u0": 0.091,
+    "Amax": 11.058,
+    "fbl": 0.948,
+    "I0": 15.869
+   }
+  },
+  "cuts": "Points within 200 days of the peak.",
+  "citation": "Udalski 2003, Acta Astron. 53, 291 (EWS); Udalski, Szymanski & Szymanski 2015, Acta Astron. 65, 1 (OGLE-IV)",
+  "license": "OGLE asks to be contacted before its EWS photometry is used in publications. Fine for private study; ask OGLE before sharing this page publicly.",
+  "columns_note": "t = HJD - 2450000; mag = I",
+  "rows": 1092,
+  "columns": [
+   "event",
+   "t",
+   "mag",
+   "err"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 41256
+ },
+ "smallbodies": {
+  "title": "Asteroids and trans-Neptunian objects (JPL Small-Body Database)",
+  "source": "ssd-api.jpl.nasa.gov/sbdb_query.api",
+  "cuts": "Numbered asteroids brighter than H = 15.5 (121409): a random 30% of the main belt (inner, middle and outer alike) plus every other class; every TNO (8397). a < 120 AU, bound orbits.",
+  "citation": "JPL Solar System Dynamics, Small-Body Database",
+  "license": "Public (NASA/JPL)",
+  "columns_note": "a AU; e; i degrees; H absolute magnitude",
+  "rows": 52613,
+  "columns": [
+   "pdes",
+   "class",
+   "a",
+   "e",
+   "i",
+   "H"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 1663074
+ },
+ "globulars": {
+  "title": "Globular clusters of the Milky Way (Harris catalogue, 2010 edition)",
+  "source": "physics.mcmaster.ca/~harris/mwgc.dat",
+  "citation": "Harris 1996, AJ 112, 1487 (2010 edition, arXiv:1012.3224)",
+  "license": "Free to use with citation",
+  "columns_note": "l, b Galactic degrees; distances kpc; X toward the Galactic centre, Y in the direction of rotation, Z to the north Galactic pole (Sun-centred, kpc)",
+  "rows": 157,
+  "columns": [
+   "id",
+   "name",
+   "ra",
+   "dec",
+   "l",
+   "b",
+   "R_sun",
+   "R_gc",
+   "X",
+   "Y",
+   "Z"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 9619
+ },
+ "rotation_curves": {
+  "title": "Rotation curves of 175 disk galaxies (SPARC)",
+  "source": "astroweb.case.edu/SPARC/Rotmod_LTG.zip",
+  "citation": "Lelli, McGaugh & Schombert 2016, AJ 152, 157",
+  "license": "Free to use with citation",
+  "columns_note": "R kpc; Vobs, eV observed speed and error km/s; Vgas, Vdisk, Vbul: speeds the gas, the stellar disk (for M/L = 1 at 3.6 um) and the bulge would give on their own, km/s",
+  "rows": 3391,
+  "columns": [
+   "gal",
+   "R",
+   "Vobs",
+   "eV",
+   "Vgas",
+   "Vdisk",
+   "Vbul"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 137772
+ },
+ "sparc": {
+  "title": "SPARC galaxy table",
+  "source": "astroweb.case.edu/SPARC/SPARC_Lelli2016c.mrt",
+  "citation": "Lelli, McGaugh & Schombert 2016, AJ 152, 157",
+  "license": "Free to use with citation",
+  "columns_note": "T Hubble type code (0 = S0 ... 11 = BCD); D Mpc; L36 = 3.6 um luminosity, 1e9 Lsun; Reff kpc; MHI 1e9 Msun; Vflat km/s (0 = no flat part); Q quality 1-3",
+  "rows": 175,
+  "columns": [
+   "gal",
+   "T",
+   "D",
+   "inc",
+   "L36",
+   "Reff",
+   "MHI",
+   "Vflat",
+   "eVflat",
+   "Q"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 8667
+ },
+ "galaxies": {
+  "title": "Nearby galaxies with Galaxy Zoo classifications (SDSS DR18)",
+  "source": "skyserver.sdss.org/dr18, SpecObj x PhotoObj x zooSpec",
+  "query": "class = 'GALAXY', zWarning = 0, 0.02 < z < 0.05, a quarter of objects (objID mod 4 = 0)",
+  "cuts": "Petrosian magnitudes corrected for Galactic extinction; r < 17.77 (the spectroscopic survey limit); 14000 kept at random. Velocity dispersions kept when error < 20%.",
+  "citation": "SDSS DR18 (Almeida et al. 2023, ApJS 267, 44); Galaxy Zoo: Lintott et al. 2011, MNRAS 410, 166",
+  "license": "SDSS data are public",
+  "columns_note": "u, g, r magnitudes; r50 = half-light radius arcsec; sigma = stellar velocity dispersion km/s; p_el, p_sp = Galaxy Zoo vote fractions (debiased) for elliptical and spiral",
+  "rows": 14000,
+  "columns": [
+   "ra",
+   "dec",
+   "z",
+   "u",
+   "g",
+   "r",
+   "r50",
+   "sigma",
+   "p_el",
+   "p_sp"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 905776
+ },
+ "coma": {
+  "title": "Galaxies toward the Coma cluster (SDSS DR18)",
+  "source": "skyserver.sdss.org/dr18, SpecObj x PhotoObj",
+  "query": "class = 'GALAXY', zWarning = 0, 0.003 < z < 0.08, 192 < RA < 198, 25.4 < Dec < 30.6",
+  "citation": "SDSS DR18 (Almeida et al. 2023, ApJS 267, 44)",
+  "license": "SDSS data are public",
+  "columns_note": "z redshift; r, g extinction-corrected magnitudes",
+  "rows": 1532,
+  "columns": [
+   "ra",
+   "dec",
+   "z",
+   "r",
+   "g"
+  ],
+  "fetched": "2026-11-25",
+  "bytes": 58914
+ },
+ "_about": {
+  "built": "2026-11-25",
+  "note": "Every number in the Observatorium comes from these files. See pipeline/README.md to rebuild them."
+ }
+}

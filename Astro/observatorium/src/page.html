@@ -1,0 +1,79 @@
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 26h24M7 26V17a9 9 0 0 1 18 0v9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8v18" stroke="currentColor" stroke-width="2"/><path d="M14 9l9-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <div><h1>Observatorium</h1><p class="tag">General Astronomy 1, retraced with real data</p></div>
+    </div>
+    <nav class="chapters" id="chapters" aria-label="Chapters"></nav>
+    <div class="top-right"><span class="progress num" id="progress"></span><button type="button" class="btn ghost" id="theme">Plate view</button></div>
+  </header>
+
+  <main class="grid">
+    <section class="pane logbook" aria-label="Logbook">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" data-tab="missions" aria-selected="true">Missions</button>
+        <button type="button" role="tab" data-tab="notebook" aria-selected="false">Notebook</button>
+        <button type="button" role="tab" data-tab="quiz" aria-selected="false">Check yourself</button>
+        <button type="button" role="tab" data-tab="data" aria-selected="false">Data</button>
+      </div>
+      <div class="lb-scroll">
+        <div id="lb-missions">
+          <article class="mission" id="lb-card" hidden></article>
+          <div id="lb-list"></div>
+          <details class="howto">
+            <summary>How this observatory works</summary>
+            <p>The sky and the data lens show the same real objects. Select in one and they light up in the other.</p>
+            <p>Each mission retraces a discovery: read the briefing, lock in a prediction, then do the measurement the astronomers did. When it is done, new quantities unlock (distance, luminosity, temperature, radius, mass) and appear as axes for every dataset. Zoom out through the scale ladder on the sky as the chapters go from stars to galaxies.</p>
+          </details>
+        </div>
+        <div id="lb-notebook" hidden></div>
+        <div id="lb-quiz" hidden></div>
+        <div id="lb-data" hidden></div>
+      </div>
+    </section>
+
+    <section class="pane skypane" aria-label="The sky">
+      <div class="pane-head">
+        <h2>The sky</h2>
+        <div class="ctl-bar">
+          <div class="seg" role="group" aria-label="Projection"><button type="button" class="seg-b" data-smode="dome" aria-pressed="true">Dome</button><button type="button" class="seg-b" data-smode="allsky" aria-pressed="false">Whole sky</button></div>
+          <div class="seg" role="group" aria-label="Coordinates"><button type="button" class="seg-b" data-sframe="equ" aria-pressed="true">Equatorial</button><button type="button" class="seg-b" data-sframe="gal" aria-pressed="false">Galactic</button></div>
+          <div class="seg" role="group" aria-label="Layers">
+            <button type="button" class="seg-b" id="layer-milkyway">Milky Way</button><button type="button" class="seg-b" id="layer-constellations">Lines</button><button type="button" class="seg-b" id="layer-grid">Grid</button><button type="button" class="seg-b" id="layer-labels">Names</button>
+          </div>
+          <div class="seg" role="group" aria-label="Pointer"><button type="button" class="seg-b" data-stool="turn" aria-pressed="true">Turn</button><button type="button" class="seg-b" data-stool="circle" aria-pressed="false">Select circle</button></div>
+        </div>
+      </div>
+      <div class="skywrap">
+        <ol class="ladder" id="ladder" aria-label="Scale ladder: zoom out from the sky to the galaxies"></ol>
+        <div class="skycanvas">
+          <canvas id="sky" aria-label="Sky map. Drag to turn, scroll to zoom, shift-drag to select a circle."></canvas>
+          <p class="boot" id="boot" hidden>Loading the sky…</p>
+        </div>
+      </div>
+      <div class="readbar"><span id="sky-read"></span><span id="sky-hover" class="hover"></span></div>
+    </section>
+
+    <section class="pane lens" aria-label="Data lens">
+      <div class="pane-head">
+        <h2>Data lens</h2>
+        <p class="lens-inst" id="lens-inst" hidden></p>
+        <div class="ctl-bar" id="lens-ctl">
+          <label class="sel"><span>Dataset</span><select id="ds-sel"></select></label>
+          <label class="sel" id="sub-wrap" hidden><span id="sub-label">Subset</span><select id="sub-sel"></select></label>
+          <label class="sel"><span>Across</span><select id="x-sel"></select></label>
+          <label class="sel"><span>Up</span><select id="y-sel"></select></label>
+          <label class="sel"><span>Colour by</span><select id="c-sel"></select></label>
+          <label class="sel" id="bins-wrap" hidden><span>Bins</span><input type="range" id="bins" min="10" max="300" value="40"></label>
+          <div class="seg" role="group" aria-label="Pointer"><button type="button" class="seg-b" data-ltool="select" aria-pressed="true">Select</button><button type="button" class="seg-b" data-ltool="pan" aria-pressed="false">Pan</button></div>
+          <button type="button" class="btn small ghost" id="fit">Fit view</button>
+        </div>
+        <p class="lens-sub muted small" id="lens-sub"></p>
+      </div>
+      <p class="lens-note" id="lens-note" hidden></p>
+      <div class="chartwrap"><canvas id="chart" aria-label="Data lens chart"></canvas><div class="legend" id="legend"></div><div class="pop" id="pop" hidden></div></div>
+      <div class="readbar"><span id="lens-read"></span><span id="lens-hover" class="hover"></span></div>
+      <div class="tools" id="tools"></div>
+    </section>
+  </main>
+</div>

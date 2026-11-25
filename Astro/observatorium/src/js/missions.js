@@ -1,0 +1,742 @@
+/* Observatorium — missions. Each one retraces a step someone took with real data:
+ *   brief    who, when, what they could measure; the variables, the relation, what it lets you deduce
+ *   predict  a choice you lock in before looking
+ *   observe  the lens and the sky are set up; a task the page checks for you
+ *   explain  your numbers, what they mean, the real history, and where it is in the course
+ * A mission can unlock concepts: new derived variables appear in every dataset's axis menus. */
+(function (G) {
+  'use strict';
+  var OBS = G.OBS, A = OBS.astro;
+  function fmt(v, s) { return '<span class="num">' + OBS.fmt(v, s || 3) + '</span>'; }
+  function fix(v, d) { return '<span class="num">' + OBS.fix(v, d) + '</span>'; }
+  function median(a) { a = a.filter(isFinite).sort(function (p, q) { return p - q; }); return a.length ? a[a.length >> 1] : NaN; }
+  function pick(app, col) { var c = OBS.column(app.chart.ds, col); return app.chart.selected().map(function (i) { return c[i]; }); }
+  function share(arr, fn) { return arr.length ? arr.filter(fn).length / arr.length : 0; }
+  function pct(x) { return '<span class="num">' + Math.round(100 * x) + '%</span>'; }
+
+  OBS.CHAPTERS = [
+    { n: 1, title: 'Reading starlight', lecture: 'Lecture 1 · light, blackbodies, basic observations of stars, the HR diagram, clusters', hw: 'HW1, HW2 Q4' },
+    { n: 2, title: 'Lives of stars', lecture: 'Lecture 2 · stellar evolution, remnants, pulsars, variable stars', hw: 'HW2, HW3 Q1, HW5' },
+    { n: 3, title: 'Planets and lenses', lecture: 'Lecture 3 · exoplanets and how they are found, gravitational microlensing', hw: 'HW3 Q2, HW4 Q1–2' },
+    { n: 4, title: 'The Sun’s family and the Galaxy', lecture: 'Lecture 4 · the solar system, the Milky Way, dark matter, MOND', hw: 'HW4 Q1, HW5 MOND' },
+    { n: 5, title: 'Island universes', lecture: 'Lecture 5 · galaxies, their types, clusters and scaling relations', hw: 'HW5' },
+    { n: 6, title: 'The Universe', lecture: 'Lectures 6 onward: add the notes and these missions open', locked: true }
+  ];
+
+  var M = OBS.MISSIONS = [
+    // =================================================================================== chapter 1
+    {
+      id: 'sky', ch: 1, title: 'A sky without order', era: '≈ 130 BC – 1856', who: 'Hipparchus; Norman Pogson',
+      course: 'Lecture 1 §1.1, §1.4', hw: 'HW1 Q1–2',
+      brief: 'For two thousand years, every star catalogue held the same three numbers: where the star is, how bright it looks, and its colour. Hipparchus sorted stars into six magnitudes; in 1856 Pogson made the scale exact: five magnitudes are a factor of 100 in light, and a bigger magnitude is fainter.',
+      vars: [['α, δ', 'Position on the sky', 'degrees', 'Measured against other stars'], ['V', 'Apparent brightness', 'mag', 'How much light reaches us'], ['B − V', 'Colour', 'mag', 'Blue magnitude minus visual; bigger is redder']],
+      relation: 'f = L / 4πd²: the light we receive mixes how much a star gives out (L) with how far it is (d).',
+      deduce: 'From the sky alone: nothing about what a star is. That is the problem this chapter solves.',
+      question: 'Sirius and Rigel look almost equally bright (V = −1.46 and 0.13). Do they give out similar amounts of light?',
+      choices: [['yes', 'Yes: similar brightness means similar power'], ['unknown', 'Not necessarily: we do not know how far away each one is'], ['rigel', 'No: Rigel is bluer, so it must be weaker']],
+      answer: 'unknown',
+      setup: function (app) {
+        return app.open('sky', { x: 'ci', y: 'mag' }).then(function () { app.sky.goTo(88, 0, 100, { mode: 'dome', frame: 'equ' }); });
+      },
+      task: 'Each dot in the lens is one naked-eye star. Drag a box around the brightest stars, the ones above V = 1.0 at the top of the chart. Watch where they are on the sky.',
+      progress: function (app) {
+        var m = pick(app, 'mag'), n = m.length, ok = n >= 8 && n <= 30 && m.every(function (x) { return x < 1.6; });
+        return { done: ok, text: n ? n + ' stars selected' + (m.some(function (x) { return x >= 1.6; }) ? ', some fainter than V = 1.6: draw a smaller box' : n < 8 ? ': box a few more of the brightest' : '') : 'Nothing selected yet' };
+      },
+      result: function (app) {
+        var c = app.chart.ds.table.cols, sel = app.chart.selected();
+        var blue = sel.filter(function (i) { return c.ci[i] < 0.3; }).length, red = sel.filter(function (i) { return c.ci[i] > 1.0; }).length;
+        var names = sel.map(function (i) { return c.name[i]; }).filter(Boolean).slice(0, 12).join(', ');
+        return 'You selected ' + fmt(sel.length, 2) + ' stars: ' + names + '. ' + fmt(blue, 2) + ' are blue (B − V < 0.3) and ' + fmt(red, 2) + ' are red (B − V > 1). The brightest stars come in every colour and lie all over the sky.';
+      },
+      explain: 'A star looks bright if it is powerful or if it is close, and from here the two are the same thing. Rigel is in fact about 5,000 times more powerful than Sirius but some 100 times farther away. Without distances, a chart of colour against brightness is a cloud with no physics in it. The next missions add distance, then temperature, size and mass, one relation at a time.',
+      real: 'Hipparchus’ catalogue (around 130 BC) reached us through Ptolemy’s Almagest. Pogson defined the modern scale in 1856. The Hipparcos satellite (1989–93) measured the stars in this chart to a thousandth of a magnitude.'
+    },
+    {
+      id: 'parallax', ch: 1, title: 'A year-long wobble', era: '1838', who: 'Friedrich Bessel', course: 'Lecture 1 §1.4 (distance)', hw: 'HW1 Q2 (the 2p trap)', unlocks: ['parallax'],
+      brief: 'As the Earth goes round the Sun, a nearby star seems to trace a small ellipse against much more distant stars. Bessel chose 61 Cygni because it moves fast across the sky, a hint that it is close, and measured it with a heliometer for a year.',
+      vars: [['p', 'Parallax', 'arcsec', 'Half the full width of the yearly ellipse'], ['d', 'Distance', 'parsec', '1 pc is where p = 1″ (3.26 light-years)']],
+      relation: 'd [pc] = 1 / p [arcsec]. The ellipse is the Earth’s orbit seen from the star.',
+      deduce: 'A distance for every star with a measurable parallax. Then flux plus distance gives luminosity.',
+      question: 'Six months apart, 61 Cygni sits 0.57 arcseconds from where it was. What is its parallax?',
+      choices: [['057', '0.57″'], ['029', '0.29″, half of it'], ['114', '1.14″, twice it']],
+      answer: '029',
+      setup: function (app, st) {
+        app.sky.goTo(316.725, 38.749, 12, { mode: 'dome', frame: 'equ' });
+        app.markers([{ ra: 316.725, dec: 38.749, label: '61 Cygni' }]);
+        var I = app.instrument('Telescope on 61 Cygni A (offsets in milliarcseconds; proper motion removed)');
+        st.scope = OBS.instruments.parallax(I.chart, I.tools, { name: '61 Cyg A', ra: 316.725, dec: 38.749, plx: 286.0 });
+        st.input = OBS.ui.number(I.tools, { label: 'Your parallax', unit: 'arcsec', placeholder: 'e.g. 0.5' });
+      },
+      task: 'Press “Play a year” to watch the loop. Then mark the star at two dates six months apart where it is farthest apart (try June and December), and type the parallax you deduce.',
+      progress: function (app, st) {
+        var s = st.scope.state, sep = s.sep, p = st.input.get(), wide = sep > 0.9 * 2 * 286;
+        var good = isFinite(p) && Math.abs(p - 0.286) < 0.015;
+        return { done: wide && good, text: !isFinite(sep) ? 'Mark two positions' : !wide ? 'Separation ' + OBS.fmt(sep / 1000, 3) + '″: not the widest yet (try dates six months apart along the long axis)' : !isFinite(p) ? 'Widest separation found: ' + OBS.fmt(sep / 1000, 3) + '″. Now type the parallax.' : good ? 'Right' : 'Not quite: how is the shift related to p?' };
+      },
+      measured: function (app, st) { var p = st.input.get(); return Math.abs(p - 0.57) < 0.05 ? '057' : Math.abs(p - 1.14) < 0.1 ? '114' : '029'; },
+      result: function (app, st) {
+        var p = st.input.get(), d = 1 / p;
+        return 'Your parallax: ' + fix(p, 3) + '″, so d = 1/p = ' + fix(d, 2) + ' pc = ' + fix(d * 3.2616, 1) + ' light-years. The light you see from 61 Cygni left it about ' + fmt(d * 3.2616, 2) + ' years ago.';
+      },
+      explain: 'Over half a year the Earth moves from one side of its orbit to the other, 2 AU, so the star crosses the full width of its ellipse: twice the parallax. That is the trap in HW1 Q2: a 0.2″ shift in half a year means p = 0.1″. The ellipse is flatter for stars near the ecliptic (its short axis is p sin β); 61 Cygni is at ecliptic latitude 52°.',
+      real: 'Bessel announced p = 0.314″ in 1838; the modern value is 0.286″. Henderson (α Centauri) and Struve (Vega) measured parallaxes at almost the same time. Hipparcos measured 118,000 parallaxes; Gaia has measured 1.5 billion, and its parallax for 61 Cyg A is 286.0 ± 0.1 mas.',
+      unlockText: 'Parallax and distance now appear in the axis menus.'
+    },
+    {
+      id: 'hrd', ch: 1, title: 'Correct for distance', era: '1905–1913', who: 'Ejnar Hertzsprung; Henry Norris Russell', course: 'Lecture 1 §1.5', hw: 'HW1 Q2c', needs: ['parallax'], unlocks: ['invsq'],
+      brief: 'Once parallaxes existed, Hertzsprung and Russell did the obvious thing: put every star at the same distance, on paper. The apparent brightness becomes the absolute magnitude, how bright the star would look from 10 parsecs.',
+      vars: [['m', 'Apparent magnitude', 'mag', 'Measured'], ['d', 'Distance', 'pc', 'From parallax (unlocked)'], ['M', 'Absolute magnitude', 'mag', 'm − 5 log₁₀(d/10 pc)']],
+      relation: 'M = m − 5 log₁₀(d / 10 pc), and L ∝ 10^(−0.4 M). A difference of 5 magnitudes is a factor 100 in power.',
+      deduce: 'The luminosity of each star, and whether stars come in all combinations of colour and power.',
+      question: 'These are 36,000 stars within 100 pc, measured by Gaia. In colour against apparent brightness they form a smear. If you replace apparent brightness by absolute magnitude, what happens?',
+      choices: [['smear', 'Still a smear: stars come in every mix of colour and power'], ['bands', 'They collapse into a few narrow bands'], ['line', 'They fall on one straight line']],
+      answer: 'bands',
+      setup: function (app) {
+        return app.open('nearby', { x: 'bp_rp', y: 'G' }).then(function () { app.sky.setMode('allsky'); });
+      },
+      task: 'Switch the vertical axis to “Absolute magnitude M_G”. Then box the thin sequence of faint, white stars in the lower left, about 10 magnitudes below the Sun.',
+      progress: function (app) {
+        if (app.chart.yid !== 'MG') return { done: false, text: 'Change the vertical axis to Absolute magnitude M_G' };
+        var wd = pick(app, 'wd'), mg = pick(app, 'MG'), f = share(wd, function (x) { return x === 'white dwarf'; });
+        return { done: wd.length >= 80 && f > 0.7, text: wd.length ? wd.length + ' selected, ' + Math.round(100 * f) + '% of them in the faint white sequence' + (f <= 0.7 ? ': tighten the box' : wd.length < 80 ? ': box more of it' : '') : 'Box the faint sequence below the main one' };
+      },
+      measured: function () { return 'bands'; },
+      result: function (app) {
+        var mg = pick(app, 'MG'), c = pick(app, 'bp_rp'), m = median(mg);
+        var all = OBS.column(app.chart.ds, 'MG'), col = OBS.column(app.chart.ds, 'bp_rp'), wd = OBS.column(app.chart.ds, 'wd'), n = all.length, g = 0, w = 0;
+        for (var i = 0; i < n; i++) { if (wd[i] === 'white dwarf') w++; else if (all[i] < 3.5 && col[i] > 0.9) g++; }
+        return 'Your stars have median M_G = ' + fix(m, 1) + ' and colour ' + fix(median(c), 2) + ': as white as the Sun or whiter, yet ' + fmt(Math.pow(10, 0.4 * (m - 4.67)), 2) + ' times fainter. In the whole sample (which keeps every giant and a quarter of the white dwarfs) there are ' + fmt(g, 3) + ' red giants and ' + fmt(n - g - w, 3) + ' main-sequence stars.';
+      },
+      explain: 'Stars are not random. Most lie on the main sequence, a band where hotter means more powerful; these are stars burning hydrogen in their cores, and their position is set by their mass. Above it to the right are giants, cool yet bright, so they must be huge. Below to the left are white dwarfs, hot yet faint, so they must be tiny. You can only see this once distance is taken out.',
+      real: 'Hertzsprung noticed giants and dwarfs in 1905–07; Russell drew the diagram for stars with parallaxes in 1913. Gaia’s 2018 version, made from 4 million stars with exactly these cuts, is the sharpest ever made (Gaia Collaboration, Babusiaux et al. 2018).',
+      unlockText: 'Absolute magnitude and luminosity now appear in the axis menus.'
+    },
+    {
+      id: 'thermometer', ch: 1, title: 'Colour is a thermometer', era: '1893–1900', who: 'Wilhelm Wien; Max Planck', course: 'Lecture 1 §1.2–1.4', hw: 'HW1 Q2–3', unlocks: ['thermo'],
+      brief: 'A hot dense body glows with a spectrum that depends only on its temperature: Planck’s blackbody curve. Stars are close to blackbodies, so the ratio of their light in two filters tells their surface temperature, whatever their size or distance.',
+      vars: [['F_BP / F_RP', 'Colour: blue light over red light', 'BP − RP in mag', 'Gaia’s two filters'], ['T', 'Surface temperature', 'K', 'The blackbody with the same colour']],
+      relation: 'B_λ(T) = 2hc²/λ⁵ · 1/(e^{hc/λkT} − 1). In a ratio of two bands, R and d cancel; only T is left. Peak: λ_max = 2.898 mm·K / T.',
+      deduce: 'A temperature for every star from photometry alone.',
+      question: 'A star is much redder than the Sun (BP − RP = 2.5 against the Sun’s 0.82). Its surface is…',
+      choices: [['hotter', 'hotter than the Sun'], ['cooler', 'cooler than the Sun'], ['cant', 'impossible to tell from colour alone']],
+      answer: 'cooler',
+      setup: function (app, st) {
+        return OBS.open('nearby').then(function (ds) {
+          var c = ds.table.cols;
+          function find(target) {
+            var best = -1, bd = 1;
+            for (var i = 0; i < ds.table.n; i++) if (isFinite(c.teff_gspphot[i]) && !c.wd[i] && c.id[i]) { var d = Math.abs(c.bp_rp[i] - target); if (d < bd) { bd = d; best = i; } }
+            return { label: (target < 0.3 ? 'Hot star' : target < 1.2 ? 'Sun-like star' : 'Red dwarf'), bprp: c.bp_rp[best], teff: c.teff_gspphot[best], id: c.id[best] };
+          }
+          st.stars = [find(0.15), find(0.82), find(2.5)];
+          var I = app.instrument('Spectrograph: a blackbody seen through Gaia’s blue (BP) and red (RP) filters');
+          st.matched = {};
+          st.spec = OBS.instruments.spectrograph(I.chart, I.tools, st.stars, function (s) {
+            var star = st.stars[s.star];
+            if (Math.abs(A.bbBpRp(s.T) - star.bprp) < 0.03) st.matched[s.star] = s.T;
+          });
+        });
+      },
+      task: 'For each of the three real Gaia stars, slide the blackbody’s temperature until its colour matches the star’s measured colour. Watch the peak move.',
+      progress: function (app, st) {
+        var n = Object.keys(st.matched).length;
+        return { done: n === 3, text: n + ' of 3 stars matched' };
+      },
+      result: function (app, st) {
+        var rows = st.stars.map(function (s, k) {
+          var T = st.matched[k];
+          return '<tr><td>' + s.label + '</td><td>' + fix(s.bprp, 2) + '</td><td>' + fmt(T, 3) + ' K</td><td>' + fmt(s.teff, 3) + ' K</td></tr>';
+        }).join('');
+        return '<table class="mini"><thead><tr><th>Star</th><th>BP − RP</th><th>Your blackbody</th><th>Gaia’s temperature</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      },
+      explain: 'Redder means cooler: Wien’s law moves the peak to longer wavelengths as T falls. Your blackbody temperatures agree with Gaia’s for the hot and Sun-like stars. For the red dwarf the blackbody reads too cold, because molecules in its cool atmosphere (titanium oxide, water) absorb blue light and make it redder than a blackbody of its temperature. From here on the page uses a colour–temperature relation fitted to Gaia’s own temperatures for 2,816 nearby stars. Tick “Show the limits”: on the long-wavelength side the curve follows Rayleigh–Jeans, B ∝ T/λ⁴, and a colour there is the same for every temperature. That is HW1 Q2b: you can only read T where the spectrum turns over.',
+      real: 'Wien’s displacement law (1893) and Planck’s formula (1900). Gaia’s BP and RP photometers measure the colours of 1.5 billion stars; its GSP-Phot pipeline fits a full spectrum, not just a colour.',
+      unlockText: 'Temperature now appears in the axis menus.'
+    },
+    {
+      id: 'radius', ch: 1, title: 'How big is a white dwarf?', era: '1915–1926', who: 'Walter Adams; Arthur Eddington', course: 'Lecture 1 §1.5; Lecture 2 §2.4', hw: 'HW2 Q2', needs: ['parallax', 'invsq', 'thermo'], unlocks: ['stefan'],
+      brief: 'Luminosity and temperature together give size: a star radiates σT⁴ from every square metre, so its power tells its area. In 1915 Adams found that faint Sirius B is hotter than Sirius A. Eddington worked out what that means for its size.',
+      vars: [['L', 'Luminosity', 'L☉', 'Unlocked'], ['T', 'Temperature', 'K', 'Unlocked'], ['R', 'Radius', 'R☉', '√L · (5772 K / T)²']],
+      relation: 'L = 4πR²σT⁴. On a chart of log L against log T, lines of constant radius are straight.',
+      deduce: 'The size of every star, and where giants and dwarfs sit.',
+      question: 'White dwarfs are as hot as the Sun or hotter, yet thousands of times fainter. Compared with the Sun they must be…',
+      choices: [['same', 'about the same size'], ['small', 'about 100 times smaller, the size of the Earth'], ['large', 'larger but much less dense']],
+      answer: 'small',
+      setup: function (app) {
+        return app.open('nearby', { x: 'T', y: 'L' }).then(function () {
+          var C = OBS.colours();
+          [0.01, 0.1, 1, 10, 100].forEach(function (R) {
+            app.chart.add({ type: 'curve', id: 'R' + R, f: function (T) { return A.lumFromRT(R, T); }, colour: C['ink-3'], dash: [4, 4], width: 1, label: 'R = ' + R + ' R☉', labelAt: 3200 });
+          });
+          app.chart.add({ type: 'marker', id: 'sun', x: 5772, y: 1, label: 'Sun', drag: false });
+        });
+      },
+      task: 'Dashed lines mark constant radius. Box the white dwarfs (hot but faint, bottom middle) and read off their size.',
+      progress: function (app) {
+        var wd = pick(app, 'wd'), f = share(wd, function (x) { return x === 'white dwarf'; });
+        return { done: wd.length >= 50 && f > 0.7, text: wd.length ? wd.length + ' selected, ' + Math.round(100 * f) + '% white dwarfs' : 'Box the white dwarfs' };
+      },
+      result: function (app) {
+        var R = median(pick(app, 'R')), all = OBS.column(app.chart.ds, 'R'), mx = 0;
+        for (var i = 0; i < all.length; i++) if (isFinite(all[i]) && all[i] > mx) mx = all[i];
+        return 'Median radius of your white dwarfs: ' + fmt(R, 2) + ' R☉ = ' + fmt(R / 0.009168, 2) + ' Earth radii. The largest star in the sample has R ≈ ' + fmt(mx, 2) + ' R☉: the radii span a factor of ' + fmt(mx / R, 2) + '.';
+      },
+      explain: 'A white dwarf packs about 0.6 solar masses into a ball the size of the Earth: a teaspoon would weigh tonnes. Ordinary pressure cannot hold that up; electron degeneracy pressure does, and only up to the Chandrasekhar mass, about 1.4 M☉ (HW2 Q2). Note the trap in HW2: heavier white dwarfs are smaller.',
+      real: 'Adams measured Sirius B’s spectrum in 1915; Eddington called the implied density “absurd” in 1924; Fowler explained it with quantum degeneracy in 1926, and Chandrasekhar found the mass limit in 1930.',
+      unlockText: 'Radius now appears in the axis menus.'
+    },
+    {
+      id: 'binary', ch: 1, title: 'Weighing a star', era: '1889 →', who: 'Edward Pickering, Antonia Maury, Hermann Vogel', course: 'Lecture 1 §1.4 (mass)', hw: 'HW2 Q4', unlocks: ['kepler'],
+      brief: 'The only direct way to weigh a star is to watch something orbit it. In a spectroscopic binary the two stars’ spectral lines shift back and forth as they swing round each other. If the pair also eclipses, we see the orbit edge-on.',
+      vars: [['P', 'Orbital period', 'days', 'Time for the curves to repeat'], ['K₁, K₂', 'Velocity amplitudes', 'km/s', 'Half the swing of each Doppler curve'], ['i', 'Inclination', '°', '≈ 90° because it eclipses']],
+      relation: 'M₁ + M₂ = P (K₁ + K₂)³ (1 − e²)^{3/2} / (2πG sin³i), and M₁/M₂ = K₂/K₁.',
+      deduce: 'Both masses, and the size of the orbit.',
+      question: 'Two stars orbit each other. Which one swings back and forth faster?',
+      choices: [['heavy', 'The heavier one'], ['light', 'The lighter one'], ['same', 'Both the same']],
+      answer: 'light',
+      setup: function (app, st) {
+        return OBS.open('binaries').then(function (ds) {
+          var c = ds.table.cols, i = c.id.indexOf('3684484600212307712'), b = {};
+          ['period', 'e', 'w', 'K1', 'K2', 'gamma', 'ra', 'dec', 'phot_g_mean_mag', 'parallax'].forEach(function (k) { b[k] = c[k][i]; });
+          st.b = b;
+          app.sky.goTo(b.ra, b.dec, 8, { mode: 'dome', frame: 'equ' });
+          app.markers([{ ra: b.ra, dec: b.dec, label: 'Gaia DR3 3684484600212307712' }]);
+          var I = app.instrument('Velocity curves of Gaia DR3 3684484600212307712 (G = ' + b.phot_g_mean_mag.toFixed(1) + ', ' + (1000 / b.parallax).toFixed(0) + ' pc), from Gaia’s orbit fit');
+          st.bin = OBS.instruments.binary(I.chart, I.tools, b);
+        });
+      },
+      task: 'Drag the four dashed rules to the top and bottom of each star’s curve. The readout turns them into amplitudes.',
+      progress: function (app, st) {
+        var s = st.bin.state, e1 = Math.abs(s.K1 / st.b.K1 - 1), e2 = Math.abs(s.K2 / st.b.K2 - 1);
+        return { done: e1 < 0.04 && e2 < 0.04, text: 'K₁ ' + (e1 < 0.04 ? 'read well' : 'not yet') + ' · K₂ ' + (e2 < 0.04 ? 'read well' : 'not yet') };
+      },
+      measured: function (app, st) { return st.b.K2 > st.b.K1 ? 'light' : 'heavy'; },
+      result: function (app, st) {
+        var s = st.bin.state, m = A.binaryMasses(st.b.period, s.K1, s.K2, st.b.e, 90), g = A.binaryMasses(st.b.period, st.b.K1, st.b.K2, st.b.e, 90);
+        return 'From your readings: M₁ = ' + fmt(m.M1, 3) + ' M☉ and M₂ = ' + fmt(m.M2, 3) + ' M☉, ' + fmt(m.aRsun, 3) + ' solar radii apart. Gaia’s own fit gives ' + fmt(g.M1, 3) + ' and ' + fmt(g.M2, 3) + ' M☉. The fainter star swings faster (K₂ = ' + fix(st.b.K2, 0) + ' km/s against ' + fix(st.b.K1, 0) + ') and is the lighter one.';
+      },
+      explain: 'Both stars circle their common centre of mass, so M₁v₁ = M₂v₂: the light star has the big orbit and the high speed (the trap in HW2 Q4). The period and the summed speeds give the orbit size, and Kepler’s third law turns size and period into total mass. Without the eclipse you only get M sin³i.',
+      real: 'Mizar was the first spectroscopic binary (Pickering and Maury, 1889). Gaia DR3 (2022) published fitted orbits for 443,205 binaries; this pair is one of 407 whose two velocity curves were both measured and which also eclipse.',
+      unlockText: 'Masses from orbits now appear in the axis menus.'
+    },
+    {
+      id: 'masslum', ch: 1, title: 'Mass sets the light', era: '1924', who: 'Arthur Eddington', course: 'Lecture 1 §1.5; Lecture 2 §2.1', hw: 'HW2 Q3', needs: ['kepler'], unlocks: ['masslum'],
+      brief: 'With masses from binaries, Eddington found that the luminosity of a main-sequence star depends almost only on its mass. These are 190 stars weighed to 3% from eclipsing binaries.',
+      vars: [['M', 'Mass', 'M☉', 'From the binary orbit'], ['L', 'Luminosity', 'L☉', '4πR²σT⁴']],
+      relation: 'L ∝ M^a: a straight line on a log–log plot, with slope a. Fuel ∝ M, burn rate ∝ L, so lifetime t ∝ M / L ∝ M^(1−a).',
+      deduce: 'A mass for any main-sequence star from its luminosity, and how long it will live.',
+      question: 'A main-sequence star ten times the Sun’s mass gives out how much more light?',
+      choices: [['10', 'About 10 times'], ['100', 'About 100 times'], ['5000', 'Several thousand times']],
+      answer: '5000',
+      setup: function (app) {
+        return app.open('torres', { x: 'mass', y: 'L', colourBy: 'stage' }).then(function () {
+          app.chart.add({ type: 'line', id: 'fit', x1: 0.8, y1: 0.8, x2: 8, y2: 8, colour: OBS.colours().accent, label: 'your line' });
+        });
+      },
+      task: 'Drag the two round handles until the line runs through the main-sequence stars. The slope is the power a in L ∝ M^a.',
+      progress: function (app) {
+        var L = app.chart.lineFit('fit'), rms = app.chart.lineRms('fit');
+        return { done: L.slope > 3.1 && L.slope < 4.6 && rms < 0.4, text: 'Slope a = ' + L.slope.toFixed(2) + ', scatter ' + rms.toFixed(2) + ' dex' };
+      },
+      result: function (app) {
+        var a = app.chart.lineFit('fit').slope;
+        A.ML_SLOPE = a; OBS.store.set('mlslope', a);
+        Object.keys(OBS.DATASETS).forEach(function (k) { OBS.forget(OBS.DATASETS[k]); });
+        return 'Your slope: a = ' + fix(a, 2) + '. A 10 M☉ star is ' + fmt(Math.pow(10, a), 2) + ' times as luminous as the Sun and lives about ' + fmt(A.lifetime(10, a) / 1e6, 2) + ' million years; a 0.5 M☉ star lives ' + fmt(A.lifetime(0.5, a) / 1e9, 2) + ' billion years. The page now uses your slope for masses and lifetimes.';
+      },
+      explain: 'Heavier stars squeeze their cores harder, run hotter and burn far faster, so they shine much more and die young. The lecture quotes L ∝ M^3.5; these data give about 3.9, steeper below 2 M☉ and shallower above. That one exponent is behind HW2 Q3 and the cluster ages in the next chapter.',
+      real: 'Eddington’s mass–luminosity relation (1924), from a handful of binaries. The data here are the 95 systems of Torres, Andersen and Giménez (2010), whose masses and radii are good to 3%.',
+      unlockText: 'Main-sequence masses and lifetimes now appear in the axis menus, computed with your slope.'
+    },
+    {
+      id: 'pleiades', ch: 1, title: 'A cluster hiding in the field', era: '1930; 1997–2018', who: 'Robert Trumpler; the Hipparcos and Gaia teams', course: 'Lecture 1 §1.6', hw: 'HW1 Q4', needs: ['parallax', 'invsq'],
+      brief: 'Stars in a cluster were born together, so they share a distance and a motion. That makes a cluster a calibrated sample: its main sequence can be compared with the nearby one to give its distance, without a parallax.',
+      vars: [['μ_α*, μ_δ', 'Proper motion', 'mas/yr', 'Drift across the sky'], ['G, BP − RP', 'Brightness and colour', 'mag', 'Measured'], ['m − M', 'Distance modulus', 'mag', 'The shift between the cluster’s sequence and the nearby one']],
+      relation: 'm − M = 5 log₁₀(d / 10 pc) + A (A = dimming by dust).',
+      deduce: 'The cluster’s distance, from photometry alone.',
+      question: 'In a chart of the stars’ motion across the sky, the Pleiades will show up as…',
+      choices: [['clump', 'a tight clump, apart from the other stars'], ['spread', 'spread out like everything else'], ['line', 'a line']],
+      answer: 'clump',
+      setup: function (app, st) {
+        st.stage = 0;
+        app.sky.goTo(56.75, 24.12, 9, { mode: 'dome', frame: 'equ' });
+        return app.open('clusters', { sub: 'pleiades', x: 'pmra', y: 'pmdec', colourBy: 'none' }).then(function () {
+          app.chart.setView({ x0: -40, x1: 60, y0: -90, y1: 30 });
+        });
+      },
+      task: 'Stage 1: these are all 8,547 Gaia stars within 3° of the Pleiades with parallax > 2 mas. Find the clump in proper motion and box it. Its stars light up on the sky.',
+      progress: function (app, st) {
+        var ch = app.chart;
+        if (st.stage === 0) {
+          var sel = ch.selected(), c = ch.ds.table.cols, mem = sel.filter(function (i) { return OBS.isMember(c, i); }).length;
+          var ok = sel.length >= 300 && mem / sel.length > 0.8;
+          if (ok) {
+            st.stage = 1; st.members = sel.slice();
+            var keep = new Uint8Array(ch.ds.table.n); sel.forEach(function (i) { keep[i] = 1; });
+            return OBS.open('nearby').then(function (nb) {
+              var xs = OBS.column(nb, 'bp_rp'), ys = OBS.column(nb, 'MG');
+              ch.setFilter(function (cc, i) { return keep[i] === 1; });
+              ch.setAxes('bp_rp', 'G'); ch.clearSel();
+              app.note('Stage 2: your ' + sel.length + ' stars, colour against apparent brightness. The grey points are the 100 pc stars at their absolute magnitudes.');
+              st.slide = OBS.instruments.slideRef(ch, app.tools, { xs: xs, ys: ys, value: 2, min: 0, max: 10, label: 'Shift the nearby stars down by (distance modulus)', onchange: function (mu, out) { st.mu = mu; out.innerHTML = 'Shift ' + fix(mu, 2) + ' mag → distance ' + fmt(A.distFromMu(mu - 2.74 * 0.045), 3) + ' pc (after 0.12 mag of dust)'; } });
+            }).then(function () { return { done: false, text: 'Stage 2: slide the nearby main sequence down onto the cluster' }; });
+          }
+          return { done: false, text: sel.length ? sel.length + ' selected, ' + Math.round(100 * mem / Math.max(1, sel.length)) + '% moving with the cluster' : 'Box the clump' };
+        }
+        var mu = st.mu, good = mu > 5.55 && mu < 6.05;
+        return { done: good, text: 'Stage 2: shift ' + mu.toFixed(2) + ' mag' + (good ? ': matched' : '') };
+      },
+      result: function (app, st) {
+        var d = A.distFromMu(st.mu - 2.74 * 0.045), c = app.chart.ds.table.cols;
+        var p = median(st.members.map(function (i) { return c.parallax[i] + A.GAIA_ZP; }));
+        return 'Main-sequence fitting: ' + fmt(d, 3) + ' pc. Gaia’s parallaxes of the same ' + st.members.length + ' stars: median ' + fix(p, 2) + ' mas, so ' + fmt(1000 / p, 3) + ' pc. Two independent methods agree.';
+      },
+      explain: 'Members share a motion, so they stand out in proper motion even though on the sky they are mixed with thousands of field stars. Members share a distance, so in colour against apparent magnitude they draw a clean main sequence, shifted from the nearby one by the distance modulus. This is how distances to farther clusters, too far for parallax, were found: clusters are the second rung of the distance ladder (HW1 Q4 uses the same idea).',
+      real: 'In 1997 Hipparcos put the Pleiades at 118 pc, while main-sequence fitting said 133. The “Pleiades problem” lasted 17 years, until radio interferometry (Melis et al. 2014, 136 pc) and then Gaia (135 pc) sided with the stellar physics.'
+    },
+    // =================================================================================== chapter 2
+    {
+      id: 'turnoff', ch: 2, title: 'Clocks in clusters', era: '1952 →', who: 'Allan Sandage; Martin Schwarzschild', course: 'Lecture 2 §2.1–2.3', hw: 'HW2 Q3, HW3 Q1b', needs: ['parallax', 'invsq', 'masslum'],
+      brief: 'All stars in a cluster were born at once, but they age at different speeds. Massive stars use up their hydrogen first and leave the main sequence. The point where a cluster’s main sequence ends, the turn-off, falls as the cluster ages.',
+      vars: [['M_G', 'Absolute magnitude (cluster distance)', 'mag', 'From each cluster’s Gaia parallax, corrected for dust'], ['L_TO', 'Turn-off luminosity', 'L☉', 'Where the main sequence ends'], ['t', 'Age', 'yr', 'Lifetime of a turn-off star']],
+      relation: 'M_TO = L_TO^(1/a) (your mass–luminosity slope), and t ≈ 10 Gyr · (M_TO / M☉)^(1 − a).',
+      deduce: 'The age of each cluster, and so a lower limit on the age of the Galaxy.',
+      question: 'In an old cluster the main sequence…',
+      choices: [['top', 'stops lower down: the bright blue stars are gone'], ['full', 'still reaches up to the bright blue stars'], ['shift', 'moves to the right as a whole']],
+      answer: 'top',
+      setup: function (app, st) {
+        return app.open('clusters', { sub: '*', x: 'bp_rp0', y: 'MGc', colourBy: 'cluster', filter: function (c, i) { return c.cl[i] !== 'hyades' && OBS.isMember(c, i); } }).then(function () {
+          var C = OBS.colours(), pal = [C.c1, C.c2, C.c3, C.c4];
+          app.chart.setView({ x0: -0.4, x1: 2.2, y0: -3, y1: 8 });
+          st.lines = [['pleiades', 'Pleiades', -0.5], ['praesepe', 'Praesepe', 1.5], ['m67', 'M67', 4.5], ['ngc6397', 'NGC 6397', 6.0]];
+          var cats = app.chart.categories().cats;
+          st.lines.forEach(function (l) { app.chart.add({ type: 'hline', id: l[0], value: l[2], label: l[1] + ' turn-off', colour: pal[cats.indexOf(OBS.CLUSTERS[l[0]].label)] || C.accent, dash: [6, 4] }); });
+        });
+      },
+      task: 'Four clusters, each star placed at its cluster’s distance. Drag each coloured rule to the brightness where that cluster’s main sequence ends and turns off to the right.',
+      progress: function (app, st) {
+        var R = { pleiades: [-3, 0.3], praesepe: [-0.6, 1.4], m67: [2.0, 3.5], ngc6397: [2.9, 4.3] }, ok = 0, msg = [];
+        st.lines.forEach(function (l) { var v = app.chart.get(l[0]).value, r = R[l[0]]; if (v >= r[0] && v <= r[1]) ok++; else msg.push(l[1]); });
+        return { done: ok === 4, text: ok + ' of 4 turn-offs placed' + (msg.length ? '. Still off: ' + msg.join(', ') : '') };
+      },
+      result: function (app, st) {
+        var lit = { pleiades: '112 Myr', praesepe: '650 Myr', m67: '4 Gyr', ngc6397: '13 Gyr' }, a = A.ML_SLOPE;
+        var rows = st.lines.map(function (l) {
+          var MG = app.chart.get(l[0]).value, col = { pleiades: -0.1, praesepe: 0.2, m67: 0.65, ngc6397: 0.58 }[l[0]];
+          var L = A.lumFromMG(MG, col), M = A.massFromL(L, a), t = A.lifetime(M, a);
+          return '<tr><td>' + l[1] + '</td><td>' + fix(MG, 1) + '</td><td>' + fmt(L, 2) + '</td><td>' + fmt(M, 2) + '</td><td>' + (t > 1e9 ? fmt(t / 1e9, 2) + ' Gyr' : fmt(t / 1e6, 2) + ' Myr') + '</td><td>' + lit[l[0]] + '</td></tr>';
+        }).join('');
+        return '<table class="mini"><thead><tr><th>Cluster</th><th>M_G at turn-off</th><th>L [L☉]</th><th>M [M☉]</th><th>Your age</th><th>Models</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      },
+      explain: 'The turn-off falls with age because the stars that remain on the main sequence are lighter and longer-lived. Your simple clock works well for the young clusters. It reads too young for the old ones, by about 2× for M67 and 3× for NGC 6397, for two reasons: turn-off stars have already brightened as helium built up in their cores, and the metal-poor stars of a globular cluster are brighter for their mass. Stellar-evolution models (isochrones) correct both. Look also at M67’s blue stragglers above its turn-off (stars that gained mass from a companion), its red giants, and NGC 6397’s horizontal branch.',
+      real: 'Sandage and Schwarzschild (1952) explained the turn-off with stellar evolution; Sandage dated globular clusters through the 1950s–70s. The oldest globulars, about 13 billion years old, set a minimum age for the Universe that cosmology must respect.'
+    },
+    {
+      id: 'leavitt', ch: 2, title: 'Leavitt’s law', era: '1908–1912', who: 'Henrietta Swan Leavitt', course: 'Lecture 2 (variable stars); Lecture 4 (the distance ladder)', hw: 'HW5 (distance ladder)', unlocks: ['leavitt'],
+      brief: 'At Harvard, Leavitt measured thousands of variable stars on photographic plates of the Magellanic Clouds. The Clouds are far away compared with their own size, so all their stars are at nearly the same distance: any pattern in apparent brightness is a pattern in true brightness.',
+      vars: [['P', 'Pulsation period', 'days', 'From the light curve'], ['⟨m⟩', 'Mean apparent magnitude', 'mag', 'Averaged over a cycle']],
+      relation: '⟨m⟩ = a log₁₀ P + b for stars at one distance. Pulsating stars are a standard candle if a and b are universal.',
+      deduce: 'A star’s luminosity from its period, and so its distance from its flux.',
+      question: 'Leavitt plotted period against brightness for Cepheids in the Small Magellanic Cloud. She found that…',
+      choices: [['slow', 'the brighter ones pulse more slowly'], ['fast', 'the brighter ones pulse faster'], ['none', 'there is no relation']],
+      answer: 'slow',
+      setup: function (app, st) {
+        st.stage = 0;
+        app.sky.goTo(80.9, -69.75, 14, { mode: 'dome', frame: 'equ' });
+        app.markers([{ ra: 80.9, dec: -69.75, label: 'Large Magellanic Cloud' }, { ra: 13.19, dec: -72.83, label: 'Small Magellanic Cloud' }]);
+        return app.open('cep_lc', { sub: 'OGLE-LMC-CEP-1109' }).then(function () {
+          st.fold = OBS.instruments.fold(app.chart, app.tools, { P0: 5, min: 1, max: 40, fine: 0.05, start: false, shift: true });
+        });
+      },
+      task: 'Stage 1: five years of OGLE measurements of one Cepheid in the LMC. Tick “Fold”, then slide the trial period until the scattered points line up into one clean pulse.',
+      progress: function (app, st) {
+        var ch = app.chart;
+        if (st.stage === 0) {
+          var x = OBS.column(ch.ds, 't'), y = OBS.column(ch.ds, 'mag'), t = [], m = [];
+          for (var i = 0; i < x.length; i++) if (ch.mask[i]) { t.push(x[i]); m.push(y[i]); }
+          var s = OBS.instruments.foldScatter(t, m, st.fold.P), best = OBS.instruments.foldScatter(t, m, 11.8606);
+          if (ch.fold && s < 1.6 * best) {
+            st.stage = 1; st.P = st.fold.P;
+            return app.open('cep_ogle', { sub: 'smc', x: 'P', y: 'I' }).then(function () {
+              app.sky.goTo(13.19, -72.83, 8);
+              ch = app.chart;
+              ch.add({ type: 'line', id: 'pl', x1: 2, y1: 16, x2: 20, y2: 16, colour: OBS.colours().accent, label: 'your line' });
+              app.note('Stage 2: 2,750 Cepheids in the Small Magellanic Cloud, mean I-band brightness against period (log scale).');
+              return { done: false, text: 'Stage 2: fit a line through the Cepheids' };
+            });
+          }
+          return { done: false, text: ch.fold ? 'Folding at ' + st.fold.P.toFixed(4) + ' d: scatter ' + (s / best).toFixed(1) + '× the sharpest' : 'Tick “Fold” first' };
+        }
+        var L = ch.lineFit('pl'), rms = ch.lineRms('pl');
+        return { done: L && L.slope < -2.5 && L.slope > -3.6 && rms < 0.4, text: 'Stage 2: slope ' + (L ? L.slope.toFixed(2) : '–') + ' mag per decade of period, scatter ' + rms.toFixed(2) + ' mag' };
+      },
+      result: function (app, st) {
+        var L = app.chart.lineFit('pl');
+        st.slope = L.slope; OBS.store.set('plslope', L.slope);
+        return 'Your period for OGLE-LMC-CEP-1109: ' + fix(st.P, 3) + ' days (OGLE: 11.861). Your law: I = ' + fix(L.slope, 2) + ' log₁₀ P + ' + fix(L.intercept, 2) + '. A Cepheid with a 30-day period is ' + fix(-L.slope * Math.log10(30), 1) + ' magnitudes, about ' + fmt(Math.pow(10, -0.4 * L.slope * Math.log10(30)), 2) + ' times, brighter than a 1-day one.';
+      },
+      explain: 'Cepheids are giants that swell and shrink because a layer of helium in their envelope traps heat when compressed and releases it when expanded. Bigger, more luminous Cepheids pulse more slowly, much as a big bell rings lower. Since all these stars are at one distance, the slope is real. What Leavitt could not get was the zero point: how bright a 10-day Cepheid really is. That needs Cepheids with known distances: the next mission.',
+      real: 'Leavitt published 1,777 variables in 1908 and the period–luminosity relation for 25 SMC Cepheids in 1912. Hubble used her law in 1924 to show that the Andromeda nebula is a separate galaxy. OGLE has since found about 10,000 Cepheids in the Magellanic Clouds.',
+      unlockText: 'You have the slope of the period–luminosity law. Calibrate it next.'
+    },
+    {
+      id: 'yardstick', ch: 2, title: 'A yardstick for the cosmos', era: '1913; 2019', who: 'Ejnar Hertzsprung; the Araucaria project', course: 'Lecture 4 (distance ladder); Lecture 5', hw: 'HW5 (distance ladder)', needs: ['parallax', 'invsq', 'leavitt'],
+      brief: 'Gaia measured parallaxes for hundreds of Milky Way Cepheids. Their absolute magnitudes calibrate Leavitt’s law; comparing them with the Large Magellanic Cloud’s Cepheids at the same period gives the LMC’s distance. To beat the dust, use the Wesenheit brightness W = G − 1.90 (BP − RP), which dust leaves unchanged.',
+      vars: [['W', 'Dust-proof brightness', 'mag', 'G − 1.90 (BP − RP)'], ['M_W', 'Absolute W', 'mag', 'From Gaia parallax'], ['μ', 'Distance modulus', 'mag', 'W − M_W at the same period']],
+      relation: 'μ = m − M = 5 log₁₀(d / 10 pc). Five magnitudes is a factor 10 in distance.',
+      deduce: 'The distance to the LMC: the anchor for every extragalactic distance.',
+      question: 'Two Cepheids pulse with the same period. One looks 5 magnitudes fainter. How much farther away is it?',
+      choices: [['5', '5 times'], ['10', '10 times'], ['100', '100 times']],
+      answer: '10',
+      setup: function (app, st) {
+        return OBS.open('cep_gaia').then(function (ds) {
+          var reg = OBS.column(ds, 'region'), P = OBS.column(ds, 'P'), MW = OBS.column(ds, 'MW'), c = ds.table.cols, xs = [], ys = [];
+          for (var i = 0; i < ds.table.n; i++) if (reg[i] === 'mw' && (c.parallax[i] + A.GAIA_ZP) / c.parallax_error[i] > 10 && isFinite(MW[i])) { xs.push(P[i]); ys.push(MW[i]); }
+          st.nref = xs.length;
+          app.sky.goTo(80.9, -69.75, 16, { mode: 'dome', frame: 'equ' });
+          return app.open('cep_gaia', { sub: 'lmc', x: 'P', y: 'W' }).then(function () {
+            app.chart.setView({ x0: 0.8, x1: 60, y0: 9, y1: 19 });
+            app.note('Coloured: Gaia Cepheids in the LMC (apparent W). Grey: ' + xs.length + ' Milky Way Cepheids at their absolute W (parallax better than 10%).');
+            st.slide = OBS.instruments.slideRef(app.chart, app.tools, { xs: xs, ys: ys, value: 12, min: 5, max: 25, label: 'Shift the Milky Way Cepheids by μ', onchange: function (mu, out) { st.mu = mu; out.innerHTML = 'μ = ' + fix(mu, 2) + ' → LMC at ' + fmt(A.distFromMu(mu) / 1000, 3) + ' kpc'; } });
+          });
+        });
+      },
+      task: 'Slide the grey Milky Way Cepheids down until they lie on the LMC’s.',
+      progress: function (app, st) { var ok = st.mu > 18.25 && st.mu < 18.95; return { done: ok, text: 'μ = ' + st.mu.toFixed(2) + (ok ? ': on top' : '') }; },
+      result: function (app, st) {
+        var d = A.distFromMu(st.mu) / 1000;
+        return 'Your distance to the Large Magellanic Cloud: ' + fmt(d, 3) + ' kpc, about ' + fmt(d * 3262, 2) + ' light-years. The best modern value, from eclipsing binaries, is 49.6 ± 0.6 kpc (Pietrzyński et al. 2019).';
+      },
+      explain: 'Matching the two sequences is the same move as main-sequence fitting for the Pleiades, one rung further out. Gaia’s Cepheids put the LMC a few percent beyond the eclipsing-binary distance: LMC Cepheids have fewer heavy elements, which changes their brightness at a given period by about 0.1–0.2 mag. Calibrating that metallicity term is part of today’s debate over the Hubble constant.',
+      real: 'Hertzsprung made the first calibration in 1913 from 13 Galactic Cepheids’ motions, and got the SMC far too close. Baade found in 1952 that there are two kinds of Cepheids, which doubled the size of the Universe overnight. The SH0ES team (Riess et al.) uses Cepheids calibrated like this to measure H₀.'
+    },
+    {
+      id: 'pulsars', ch: 2, title: 'Lighthouses', era: '1967; 1982', who: 'Jocelyn Bell Burnell and Antony Hewish; Don Backer', course: 'Lecture 2 §2.4 (remnants, P–Ṗ diagram)', hw: 'HW2 Q1',
+      brief: 'In 1967 Jocelyn Bell found a radio source ticking every 1.337 seconds: a spinning neutron star sweeping a beam past the Earth. A pulsar slows down as its magnetic field radiates away its spin energy. Two numbers per pulsar, P and Ṗ, tell its field and its age.',
+      vars: [['P', 'Spin period', 's', 'Time between pulses'], ['Ṗ', 'Spin-down rate', 's/s', 'Change of period per second'], ['B, τ', 'Field and age', 'G, yr', 'B ≈ 3.2×10¹⁹ √(PṖ),  τ = P / 2Ṗ']],
+      relation: 'Magnetic-dipole braking: lines of constant B and constant age are straight on a log P – log Ṗ chart.',
+      deduce: 'Which pulsars are young and strongly magnetised, which are old, and where the fastest ones come from.',
+      question: 'Millisecond pulsars spin fastest of all. Are they the youngest?',
+      choices: [['young', 'Yes: they have not slowed down yet'], ['old', 'No: they are old pulsars spun up again by a companion'], ['same', 'They are the same age as the rest']],
+      answer: 'old',
+      setup: function (app) {
+        return app.open('pulsars', { x: 'P', y: 'Pdot', colourBy: 'bin' }).then(function () {
+          var C = OBS.colours();
+          [1e8, 1e10, 1e12, 1e14].forEach(function (B) { app.chart.add({ type: 'curve', id: 'B' + B, f: function (P) { return Math.pow(B / 3.2e19, 2) / P; }, colour: C['ink-3'], dash: [4, 4], width: 1, label: 'B = 10^' + Math.log10(B) + ' G', labelAt: B > 1e13 ? 3 : B > 1e11 ? 0.3 : 0.004 }); });
+          [1e3, 1e6, 1e9].forEach(function (T) { app.chart.add({ type: 'curve', id: 'T' + T, f: function (P) { return P / (2 * T * A.C.yr); }, colour: C.c5, dash: [2, 3], width: 1, label: 'τ = 10^' + Math.log10(T) + ' yr', labelAt: T > 1e8 ? 0.002 : 1 }); });
+          app.chart.add({ type: 'marker', id: 'crab', x: 0.0334, y: 4.21e-13, label: 'Crab pulsar', drag: false });
+        });
+      },
+      task: 'Box the millisecond pulsars, the separate group at the bottom left. The readout below the chart counts how many are in binaries.',
+      progress: function (app) { var P = pick(app, 'P'), m = median(P); return { done: P.length >= 200 && m < 0.02, text: P.length + ' selected, median period ' + OBS.fmt(m * 1000, 2) + ' ms' }; },
+      result: function (app) {
+        var b = pick(app, 'bin'), all = OBS.column(app.chart.ds, 'bin'), P = OBS.column(app.chart.ds, 'P'), ob = 0, on = 0, ages = pick(app, 'age');
+        for (var i = 0; i < all.length; i++) if (P[i] > 0.1) { on++; if (all[i] === 'binary') ob++; }
+        return pct(share(b, function (x) { return x === 'binary'; })) + ' of your millisecond pulsars are in binaries, against ' + pct(ob / on) + ' of ordinary pulsars. Their median characteristic age is ' + fmt(median(ages) / 1e9, 2) + ' billion years.';
+      },
+      explain: 'A newborn pulsar like the Crab starts at the top left: young, fast-ageing, with a field of 10¹² G. It drifts down to the right as it slows, until the beam switches off. Millisecond pulsars are old neutron stars that were spun up by gas falling onto them from a companion star in a binary: hence the binaries, the weak fields (10⁸ G) and the great ages.',
+      real: 'Bell and Hewish found the first pulsar in 1967 (Hewish shared the 1974 Nobel Prize; Bell did not). Backer et al. found the first millisecond pulsar in 1982, and Alpar et al. proposed recycling the same year. The Hulse–Taylor binary pulsar (1974) was the first evidence for gravitational waves.'
+    },
+    // =================================================================================== chapter 3
+    {
+      id: 'transit', ch: 3, title: 'A shadow crosses a star', era: '2000; 2009', who: 'David Charbonneau, Greg Henry; the Kepler mission', course: 'Lecture 3 (exoplanet detection)', hw: 'HW4 Q1 (occultations)', unlocks: ['transit'],
+      brief: 'If a planet’s orbit is edge-on to us, the planet blocks a little of its star once every orbit. Kepler stared at 150,000 stars for four years. Here are 89 days of HAT-P-7.',
+      vars: [['P', 'Orbital period', 'days', 'Time between dips'], ['ΔF/F', 'Transit depth', '', 'Fraction of the starlight blocked'], ['R★', 'Star’s radius', 'R☉', 'From its luminosity and temperature']],
+      relation: 'ΔF / F = (R_p / R★)². Kepler’s third law turns P into the orbit size.',
+      deduce: 'The planet’s size, its orbit, and with a radial-velocity mass, its density.',
+      question: 'A planet twice as wide as Jupiter crosses the same star. Compared with Jupiter’s, its transit dip is…',
+      choices: [['2', 'twice as deep'], ['4', 'four times as deep'], ['same', 'just as deep, but longer']],
+      answer: '4',
+      setup: function (app, st) {
+        app.sky.goTo(292.25, 47.97, 18, { mode: 'dome', frame: 'equ' });
+        app.markers([{ ra: 292.2474, dec: 47.9695, label: 'HAT-P-7' }]);
+        return app.open('kepler', { sub: 'HAT-P-7' }).then(function () {
+          st.fold = OBS.instruments.fold(app.chart, app.tools, { P0: 1.3, min: 0.5, max: 10, fine: 0.01, start: false, shift: true });
+          app.chart.add({ type: 'hline', id: 'depth', value: 0.9985, label: 'bottom of the dip', colour: OBS.colours().c2, dash: [5, 4] });
+        });
+      },
+      task: 'Find the dips, tick “Fold” and tune the trial period until all the dips stack on top of each other. Then drag the rule to the bottom of the dip.',
+      progress: function (app, st) {
+        var P = st.fold.P, okP = app.chart.fold && Math.abs(P / 2.204737 - 1) < 0.002, d = 1 - app.chart.get('depth').value, okD = Math.abs(d / 0.0067 - 1) < 0.15;
+        return { done: okP && okD, text: (app.chart.fold ? 'Period ' + P.toFixed(4) + ' d' + (okP ? ' (dips stacked)' : '') : 'Tick “Fold”') + ' · depth ' + (d * 100).toFixed(2) + '%' + (okD ? '' : '') };
+      },
+      result: function (app, st) {
+        var d = 1 - app.chart.get('depth').value, k = Math.sqrt(d), Rs = 2.0, Rp = k * Rs * A.C.Rsun / A.C.Rjup, a = Math.pow(1.47 * Math.pow(st.fold.P / 365.25, 2), 1 / 3);
+        return 'Depth ' + fix(d * 100, 2) + '% → R_p / R★ = ' + fix(k, 3) + '. HAT-P-7 has R★ = 2.0 R☉, so the planet is ' + fix(Rp, 2) + ' Jupiter radii across. Its year is ' + fix(st.fold.P, 4) + ' days; with the star’s 1.47 M☉, Kepler’s third law puts it ' + fix(a, 3) + ' AU from the star, 13 times closer than Mercury is to the Sun.';
+      },
+      explain: 'Area blocked over area of the star: double the planet’s width and you block four times the light. HAT-P-7 b is a hot Jupiter, slightly larger than Jupiter and heated above 2,000 K. Look at the bottom of the folded dip: it is rounded, because the star’s edge is darker than its centre (limb darkening). For a harder case, switch the star to HAT-P-11: a Neptune-sized planet with a dip of 0.4%, and starspots that the planet crosses.',
+      real: 'Charbonneau et al. and Henry et al. (1999–2000) saw the first transit, of HD 209458 b, with a 10 cm telescope. Kepler (2009–2018) found more than 2,600 planets this way; TESS continues across the whole sky.',
+      unlockText: 'Transit depth now gives planet sizes.'
+    },
+    {
+      id: 'census', ch: 3, title: 'Who finds which planets', era: '1995 →', who: 'Michel Mayor and Didier Queloz', course: 'Lecture 3 (detection methods, hot Jupiters, statistics)', hw: '',
+      brief: 'In 1995 Mayor and Queloz found a planet half as massive as Jupiter orbiting 51 Pegasi every 4.2 days, far closer than anyone expected. Today about 6,500 planets are known. Every detection method sees some planets more easily than others.',
+      vars: [['P, a', 'Orbital period and size', 'days, AU', 'Transits and Doppler wobble'], ['M_p', 'Planet mass', 'M_Jup', 'Doppler (M sin i) or timing'], ['method', 'How it was found', '', 'Transit, radial velocity, microlensing, imaging, …']],
+      relation: 'A transit is seen only if the orbit is edge-on: probability ≈ R★ / a. A Doppler wobble scales as M_p / √a.',
+      deduce: 'Which planets are common, and which only look common because they are easy to find.',
+      question: 'Most known planets were found by transits. Does that mean most planets orbit close to their stars?',
+      choices: [['yes', 'Yes: the census says so'], ['bias', 'No: transits are far easier to catch for close-in planets'], ['cant', 'It is impossible to say anything']],
+      answer: 'bias',
+      setup: function (app) { return app.open('exoplanets', { x: 'P', y: 'Mp', colourBy: 'method' }).then(function () { app.sky.setMode('allsky'); }); },
+      task: 'Box the hot Jupiters: planets heavier than about 0.3 Jupiter masses with periods shorter than about 10 days (the clump at the top left).',
+      progress: function (app) { var P = pick(app, 'P'), Mp = pick(app, 'Mp'); return { done: P.length >= 150 && median(P) < 6 && median(Mp) > 0.4, text: P.length + ' selected, median period ' + OBS.fmt(median(P), 2) + ' d, median mass ' + OBS.fmt(median(Mp), 2) + ' M_Jup' }; },
+      result: function (app) {
+        var m = pick(app, 'method'), f = share(m, function (x) { return x === 'Transit'; });
+        return pct(f) + ' of your hot Jupiters were found by transits. A planet on a 3-day orbit round a Sun-like star transits for about one observer in ' + fmt(1 / (A.C.Rsun / (Math.pow(3 / 365.25, 2 / 3) * A.C.AU)), 2) + '; on Jupiter’s 12-year orbit, about one in ' + fmt(1 / (A.C.Rsun / (5.2 * A.C.AU)), 2) + '.';
+      },
+      explain: 'Each method leaves its own footprint in this chart. Transits favour big planets on short orbits; radial velocities favour heavy ones; microlensing finds planets a few AU out, thousands of parsecs away; imaging finds young giants far from their stars. Careful surveys correct for these biases and find that hot Jupiters are rare, around 1% of Sun-like stars, while smaller planets are common.',
+      real: 'Mayor and Queloz shared the 2019 Nobel Prize for 51 Pegasi b. The data are from the NASA Exoplanet Archive’s table of confirmed planets.'
+    },
+    {
+      id: 'microlens', ch: 3, title: 'A star brightens for a month', era: '1936; 1986; 1993', who: 'Albert Einstein; Bohdan Paczyński; the OGLE team', course: 'Lecture 3 (history of lensing); Lecture 4 (MACHOs)', hw: 'HW3 Q2, HW4 Q2',
+      brief: 'Mass bends light. When a star passes almost exactly in front of a more distant one, it acts as a lens: the background star’s images are too close together to separate, but their total brightness rises and falls. Paczyński proposed in 1986 to watch millions of stars toward the Galactic bulge to catch this.',
+      vars: [['t₀', 'Time of closest approach', 'days', 'Peak of the light curve'], ['t_E', 'Einstein time', 'days', 'Time to cross one Einstein radius: R_E / v'], ['u₀', 'Closest approach', 'Einstein radii', 'Sets the peak magnification'], ['f_s', 'Source fraction', '', 'Share of the baseline light that is lensed (the rest is blended neighbours)']],
+      relation: 'A(u) = (u² + 2) / (u √(u² + 4)),  u(t) = √(u₀² + ((t − t₀)/t_E)²).',
+      deduce: 'How long the lens took to pass, and so a combination of its mass, distance and speed.',
+      question: 'A foreground star drifts in front of a background star. The background star…',
+      choices: [['dim', 'dims, because the foreground star blocks it'], ['bright', 'brightens and fades again, the same in every colour'], ['colour', 'changes colour']],
+      answer: 'bright',
+      setup: function (app, st) {
+        app.sky.goTo(266.4, -29.0, 30, { mode: 'dome', frame: 'gal' });
+        app.markers([{ ra: 269.8946, dec: -29.0638, label: 'OGLE-2019-BLG-0148' }]);
+        return Promise.all([app.open('microlensing', { sub: '2019-BLG-0148' }), OBS.loadJSON('manifest')]).then(function (r) {
+          var p = r[1].microlensing.events['2019-BLG-0148'], ds = app.chart.ds, err = OBS.column(ds, 'mag') && ds.table.cols.err;
+          st.ews = p;
+          var T0 = p.tmax - 2450000;
+          function f(t, q) { return A.paczynski(t, q.t0, q.tE, q.u0, q.fbl, q.I0); }
+          var errf = function (i) { return Math.sqrt(err[i] * err[i] + 0.008 * 0.008); };
+          app.chart.setView({ x0: T0 - 150, x1: T0 + 150 });
+          st.model = OBS.instruments.model(app.chart, app.tools, {
+            label: 'Paczyński curve', f: f, err: errf,
+            params: [
+              { id: 't0', label: 'Time of peak t₀', min: T0 - 60, max: T0 + 60, value: T0 - 35, fmt: function (x) { return (x).toFixed(1); }, unit: 'HJD − 2450000' },
+              { id: 'tE', label: 'Einstein time t_E', min: 5, max: 200, value: 20, log: true, unit: 'd' },
+              { id: 'u0', label: 'Closest approach u₀', min: 0.01, max: 1.5, value: 0.8, log: true, unit: 'R_E' },
+              { id: 'fbl', label: 'Source fraction f_s', min: 0.2, max: 1, value: 1, fmt: function (x) { return x.toFixed(2); } },
+              { id: 'I0', label: 'Baseline brightness', min: p.I0 - 0.3, max: p.I0 + 0.3, value: p.I0 + 0.1, fmt: function (x) { return x.toFixed(3); }, unit: 'mag' }
+            ],
+            describe: function (q) { return 'Peak magnification A(u₀) = ' + fix(A.magnification(q.u0), 2) + '.'; }
+          });
+          var q = { t0: T0, tE: p.tE, u0: p.u0, fbl: p.fbl, I0: p.I0 }, xs = OBS.column(ds, 't'), ys = OBS.column(ds, 'mag'), s = 0, n = 0;
+          for (var i = 0; i < xs.length; i++) if (app.chart.mask[i]) { var dd = (ys[i] - f(xs[i], q)) / errf(i); s += dd * dd; n++; }
+          st.target = 1.5 * s / (n - 5);
+        });
+      },
+      task: 'Adjust the five sliders until the model runs through the points. Aim for χ²/N below the target shown.',
+      progress: function (app, st) { var r = st.model.p._fit.red; return { done: r < st.target, text: 'χ²/N = ' + OBS.fmt(r, 3) + ' (target below ' + OBS.fmt(st.target, 2) + ')' }; },
+      result: function (app, st) {
+        var p = st.model.p, e = st.ews;
+        return 'Your fit: t_E = ' + fix(p.tE, 1) + ' d, u₀ = ' + fix(p.u0, 3) + ', peak magnification ' + fix(A.magnification(p.u0), 2) + ', source fraction ' + fix(p.fbl, 2) + '. OGLE’s automatic fit: t_E = ' + fix(e.tE, 1) + ' d, u₀ = ' + fix(e.u0, 3) + '.';
+      },
+      explain: 'The curve is symmetric because the lens moves in a straight line, and it has the same shape in every colour because gravity bends all wavelengths equally: two signatures that tell lensing from a variable star. t_E is the only physical number in a single light curve, and it mixes the lens mass, the distances and the speed (the trap in HW3 Q2): a 0.3 M☉ star halfway to the bulge, moving at 150 km/s, gives about 30–40 days. A planet round the lens adds a short spike when one of the images passes near it (HW3 Q2b).',
+      real: 'Einstein worked out stellar microlensing in 1936 and thought it would never be seen. Paczyński’s 1986 proposal led to the OGLE, MACHO and EROS surveys; the first events were seen in 1993. Microlensing showed that compact objects (MACHOs) cannot be most of the Milky Way’s dark matter (Lecture 4).'
+    },
+    // =================================================================================== chapter 4
+    {
+      id: 'kirkwood', ch: 4, title: 'Gaps in the belt', era: '1866', who: 'Daniel Kirkwood', course: 'Lecture 4 (asteroids, Kuiper belt, TNOs)', hw: '',
+      brief: 'By 1866 about 90 asteroids were known, and Kirkwood noticed that none orbited at certain distances from the Sun. Here are 50,000 orbits from JPL’s Small-Body Database.',
+      vars: [['a', 'Orbit size (semi-major axis)', 'AU', 'From the orbit fit'], ['P', 'Orbital period', 'yr', 'P² = a³'], ['P / P_J', 'Period over Jupiter’s', '', '(a / 5.203)^{3/2}']],
+      relation: 'Kepler’s third law, P² = a³. An asteroid whose period is a simple fraction of Jupiter’s gets a kick at the same place every few orbits.',
+      deduce: 'Where Jupiter clears the belt, and where it gathers asteroids instead.',
+      question: 'Jupiter orbits at 5.2 AU. Where would you expect few asteroids?',
+      choices: [['even', 'Nowhere special: they are spread evenly'], ['res', 'Where an asteroid’s year is a simple fraction of Jupiter’s'], ['near', 'Only close to Jupiter']],
+      answer: 'res',
+      setup: function (app, st) {
+        return app.open('smallbodies', { x: 'a', y: '#' }).then(function () {
+          app.chart.bins = 220; app.chart.setView({ x0: 1.9, x1: 3.6 });
+          var C = OBS.colours();
+          st.rules = ['g1', 'g2', 'g3'];
+          [2.2, 2.65, 3.1].forEach(function (x, k) { app.chart.add({ type: 'vline', id: st.rules[k], value: x, label: 'gap ' + (k + 1), colour: [C.c1, C.c2, C.c4][k], dash: [5, 4] }); });
+        });
+      },
+      task: 'This histogram counts asteroids by orbit size. Drag the three rules into the three deepest gaps between 2.2 and 3.4 AU.',
+      progress: function (app, st) {
+        var G = [2.065, 2.502, 2.825, 2.958, 3.279], used = {}, ok = 0;
+        st.rules.forEach(function (r) { var x = app.chart.get(r).value; G.forEach(function (g, k) { if (Math.abs(x - g) < 0.03 && !used[k]) { used[k] = 1; ok++; } }); });
+        return { done: ok === 3, text: ok + ' of 3 rules in a gap' };
+      },
+      result: function (app, st) {
+        var FR = [[1, 4], [1, 3], [2, 5], [3, 7], [1, 2], [3, 5], [2, 3], [1, 1]];
+        return '<table class="mini"><thead><tr><th>Gap</th><th>a [AU]</th><th>P / P_Jupiter</th><th>Nearest fraction</th></tr></thead><tbody>' + st.rules.map(function (r, k) {
+          var a = app.chart.get(r).value, q = Math.pow(a / 5.2026, 1.5), best = FR.reduce(function (b, f) { return Math.abs(f[0] / f[1] - q) < Math.abs(b[0] / b[1] - q) ? f : b; });
+          return '<tr><td>' + (k + 1) + '</td><td>' + fix(a, 3) + '</td><td>' + fix(q, 3) + '</td><td>' + best[0] + '/' + best[1] + '</td></tr>';
+        }).join('') + '</tbody></table>';
+      },
+      explain: 'Each gap sits where an asteroid would go round the Sun 3, 5/2, 7/3 or 2 times for each orbit of Jupiter. Repeated kicks at the same point of the orbit pump up the eccentricity until the asteroid crosses Mars’ orbit and is removed. Resonances can also protect: switch the vertical axis to eccentricity and widen the range to 6 AU to see the Hildas piled up at 3:2 (4.0 AU) and the Trojans sharing Jupiter’s orbit (1:1). Beyond Neptune, Pluto and the “plutinos” sit at Neptune’s 3:2 resonance, 39.4 AU.',
+      real: 'Kirkwood (1866–67) explained the gaps with Jupiter’s resonances. The Kuiper belt’s first member after Pluto, 1992 QB₁, was found by Jewitt and Luu in 1992.'
+    },
+    {
+      id: 'shapley', ch: 4, title: 'Where is the centre?', era: '1918', who: 'Harlow Shapley', course: 'Lecture 4 (the Milky Way, the Great Debate)', hw: '',
+      brief: 'Globular clusters are bright and visible from far away. Shapley measured distances to them from their variable stars and found them crowded into one part of the sky, around Sagittarius. Here are all 157 in the Harris catalogue.',
+      vars: [['l, b', 'Galactic position', '°', 'Along and across the Milky Way'], ['R☉', 'Distance', 'kpc', 'From RR Lyrae stars'], ['X, Y, Z', 'Position in space', 'kpc', 'Sun at the origin']],
+      relation: 'The clusters orbit the centre of the Galaxy, so their swarm is centred on it.',
+      deduce: 'Our distance from the centre of the Milky Way.',
+      question: 'The globular clusters crowd into one part of the sky. What does that mean?',
+      choices: [['local', 'Nothing in particular: a local clump'], ['off', 'The Sun is far from the centre of the Galaxy, and the clusters surround that centre'], ['dust', 'Dust hides the clusters in other directions']],
+      answer: 'off',
+      setup: function (app, st) {
+        return app.open('globulars', { x: 'X', y: 'Y' }).then(function () {
+          app.sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal' });
+          app.chart.equal = true; app.chart.setView({ x0: -25, x1: 35, y0: -25, y1: 25 });
+          app.chart.add({ type: 'marker', id: 'sun', x: 0, y: 0, label: 'Sun', drag: false });
+          app.chart.add({ type: 'point', id: 'centre', x: 0, y: 12, label: 'centre?', colour: OBS.colours().c2 });
+        });
+      },
+      task: 'The sky shows where the clusters are; the lens shows them from above the Galactic plane. Drag the cross to the middle of the swarm.',
+      progress: function (app) { var p = app.chart.get('centre'), d = Math.hypot(p.x - 7.0, p.y - 0.1); return { done: d < 1.5, text: 'Cross at X = ' + p.x.toFixed(1) + ', Y = ' + p.y.toFixed(1) + ' kpc' + (d < 1.5 ? ': in the middle' : '') }; },
+      result: function (app) {
+        var p = app.chart.get('centre'), R = Math.hypot(p.x, p.y);
+        return 'You put the centre of the Galaxy ' + fmt(R, 2) + ' kpc from the Sun, about ' + fmt(R * 3262, 2) + ' light-years, toward Sagittarius.';
+      },
+      explain: 'The clusters form a round swarm around the Galaxy’s centre, and we are far out in the disk. The median of the clusters is a little short of the true distance because clusters on the far side, behind the dust of the bulge, are harder to find. The modern distance, from the orbit of the star S2 round the black hole Sgr A*, is 8.2 kpc (GRAVITY Collaboration 2019).',
+      real: 'Shapley got about 15 kpc in 1918, too large because nobody yet knew that dust dims distant objects (Trumpler showed it in 1930). In the 1920 Great Debate he argued, wrongly, that the spiral nebulae were inside the Milky Way; Curtis argued they were other galaxies.'
+    },
+    {
+      id: 'rotation', ch: 4, title: 'Too fast at the edge', era: '1970–1985', who: 'Vera Rubin and Kent Ford; Albert Bosma', course: 'Lecture 4 (dark matter, MOND)', hw: 'HW5 (MOND questions)',
+      brief: 'Gas far out in a spiral galaxy orbits its centre. Its speed tells how much mass lies inside its orbit. NGC 3198’s hydrogen extends to 44 kpc, far beyond its stars. SPARC gives the measured speeds, and the speeds the stars and gas alone would produce.',
+      vars: [['V(R)', 'Orbital speed', 'km/s', '21-cm and Hα Doppler shifts'], ['V_bar', 'Speed from visible matter', 'km/s', 'Stars (times a mass-to-light ratio) and gas'], ['Υ', 'Mass-to-light ratio', 'M☉ / L☉', 'Mass of stars per unit light']],
+      relation: 'V² = G M(<R) / R. Visible matter alone: V_bar² = V_gas² + Υ V_disk². A dark halo adds V_h²; MOND changes the force law instead.',
+      deduce: 'How much unseen mass the galaxy needs, and where it is.',
+      question: 'Gas far beyond the stars of NGC 3198 orbits…',
+      choices: [['fall', 'more slowly the farther out it is'], ['flat', 'at the same speed, however far out'], ['rise', 'faster the farther out it is']],
+      answer: 'flat',
+      setup: function (app, st) {
+        return app.open('rotation', { sub: 'NGC3198' }).then(function () {
+          var ds = app.chart.ds, c = ds.table.cols, R = c.R, map = {}, C = OBS.colours();
+          for (var i = 0; i < ds.table.n; i++) if (app.chart.mask[i]) map[R[i]] = i;
+          function idx(r) { return map[r]; }
+          function bar(r, p) { var i = idx(r); return i === undefined ? NaN : A.vBaryon(c.Vgas[i], c.Vdisk[i], c.Vbul[i], p.Y, 0.7); }
+          app.chart.setView({ x0: 0, x1: 47, y0: 0, y1: 200 });
+          st.mond = false;
+          var box = document.createElement('label'); box.className = 'check'; box.innerHTML = '<input type="checkbox" id="rc-mond"> Use modified gravity (MOND, a₀ = 1.2×10⁻¹⁰ m/s²) instead of a dark halo';
+          app.tools.appendChild(box);
+          box.querySelector('input').addEventListener('change', function (e) { st.mond = e.target.checked; st.model.update(); });
+          function model(r, p) {
+            var vb = bar(r, p);
+            if (!isFinite(vb)) return NaN;
+            if (st.mond) return A.vMond(vb, r, 1.2e-10);
+            var vh = A.vHalo(r, p.vh, p.rc);
+            return Math.sqrt(vb * Math.abs(vb) + vh * vh);
+          }
+          // curves are drawn through the measured radii only
+          function curve(fn) { var rs = Object.keys(map).map(Number).sort(function (a, b) { return a - b; }); return function (x) { var j = 0; while (j < rs.length - 1 && rs[j + 1] < x) j++; if (x < rs[0] || x > rs[rs.length - 1]) return NaN; var r0 = rs[j], r1 = rs[Math.min(rs.length - 1, j + 1)], f0 = fn(r0), f1 = fn(r1); return r1 === r0 ? f0 : f0 + (f1 - f0) * (x - r0) / (r1 - r0); }; }
+          st.model = OBS.instruments.model(app.chart, app.tools, {
+            label: 'model', err: function (i) { return Math.max(2, c.eV[i]); },
+            f: function (x, p) { return idx(x) !== undefined ? model(x, p) : curve(function (r) { return model(r, p); })(x); },
+            extra: [{ id: 'vbar', label: 'stars + gas', colour: C.c4, f: function (x, p) { return curve(function (r) { return bar(r, p); })(x); } }],
+            params: [
+              { id: 'Y', label: 'Stellar mass-to-light ratio Υ', min: 0.1, max: 2.5, value: 0.5, fmt: function (x) { return x.toFixed(2); }, unit: 'M☉/L☉' },
+              { id: 'vh', label: 'Dark halo: speed far out', min: 0, max: 250, value: 0, fmt: function (x) { return Math.round(x); }, unit: 'km/s' },
+              { id: 'rc', label: 'Dark halo: core radius', min: 0.3, max: 30, value: 5, log: true, unit: 'kpc' }
+            ],
+            onchange: function (p, q) { if (p.vh < 3 && !st.mond) st.bestNoDM = Math.min(st.bestNoDM || Infinity, q.red); if (st.mond) st.bestMond = Math.min(st.bestMond || Infinity, q.red); }
+          });
+        });
+      },
+      task: 'First keep the halo speed at 0 and try to fit the data with stars and gas alone by changing Υ. Then add a dark halo until χ²/N is below 2. Try the MOND box too.',
+      progress: function (app, st) {
+        var q = st.model.p._fit, tried = isFinite(st.bestNoDM);
+        return { done: tried && !st.mond && st.model.p.vh > 20 && q.red < 2, text: (tried ? 'Best without dark matter: χ²/N = ' + OBS.fmt(st.bestNoDM, 3) + '. ' : 'Try without a halo first. ') + 'Now: χ²/N = ' + OBS.fmt(q.red, 3) };
+      },
+      result: function (app, st) {
+        var c = app.chart.ds.table.cols, sel = app.chart.shown(), last = sel[sel.length - 1], R = c.R[last], V = c.Vobs[last], p = st.model.p;
+        var Mdyn = A.massEnclosed(V, R), vb = A.vBaryon(c.Vgas[last], c.Vdisk[last], c.Vbul[last], p.Y, 0.7), Mbar = A.massEnclosed(vb, R);
+        return 'Within ' + fix(R, 1) + ' kpc the measured speed of ' + fix(V, 0) + ' km/s needs ' + fmt(Mdyn, 2) + ' M☉. Your stars and gas (Υ = ' + fix(p.Y, 2) + ') supply ' + fmt(Mbar, 2) + ' M☉: ' + fix(Mdyn / Mbar, 1) + ' times less. Best fit with no dark matter: χ²/N = ' + fmt(st.bestNoDM, 2) + '; with a halo: ' + fmt(p._fit.red, 2) + (isFinite(st.bestMond) ? '; with MOND: ' + fmt(st.bestMond, 2) : '') + '.';
+      },
+      explain: 'If the mass were where the light is, speeds would fall as 1/√R beyond the stars, like the planets round the Sun. They stay flat, so the enclosed mass keeps growing in proportion to R: there is a halo of matter that does not shine. MOND, with one universal constant and no halo (HW5), brings χ²/N from about 200 down to about 10 for this galaxy: far closer than Newton with the visible matter alone, though not as close as a halo with two free parameters (a slightly larger distance to NGC 3198 helps it). That MOND does this well across hundreds of galaxies, and badly for galaxy clusters, is why both ideas are still argued about.',
+      real: 'Rubin and Ford measured flat rotation in Andromeda from 1970; Bosma (1978) extended curves with 21-cm radio data; van Albada et al. (1985) made NGC 3198 the textbook case for a dark halo. Milgrom proposed MOND in 1983.'
+    },
+    // =================================================================================== chapter 5
+    {
+      id: 'redblue', ch: 5, title: 'Red and blue galaxies', era: '1926; 2001; 2007', who: 'Edwin Hubble; Iskra Strateva; Galaxy Zoo volunteers', course: 'Lecture 5 (galaxy types)', hw: 'HW5 (the Hubble sequence)',
+      brief: 'Hubble sorted galaxies by shape: ellipticals, spirals, irregulars. The Sloan Digital Sky Survey measured colours for a million; Galaxy Zoo asked the public to classify their shapes. Here are 14,000 nearby SDSS galaxies.',
+      vars: [['u − r', 'Colour', 'mag', 'Ultraviolet minus red light'], ['M_r', 'Absolute magnitude', 'mag', 'Distance from redshift, d = cz / H₀'], ['shape', 'Galaxy Zoo classification', '', 'Vote fractions from volunteers']],
+      relation: 'Blue light comes from hot, young, short-lived stars. A galaxy that stops forming stars turns red within a billion years.',
+      deduce: 'Which galaxies are still forming stars, and whether that goes with shape.',
+      question: 'Compared with spiral galaxies, elliptical galaxies are…',
+      choices: [['redder', 'redder'], ['bluer', 'bluer'], ['same', 'the same colour']],
+      answer: 'redder',
+      setup: function (app) { return app.open('galaxies', { x: 'Mr', y: 'ur', colourBy: 'none' }).then(function () { app.chart.setView({ x0: -23.5, x1: -16, y0: 0.6, y1: 3.4 }); app.sky.setMode('allsky'); }); },
+      task: 'Box the red sequence: the tight band of red galaxies across the top of the chart.',
+      progress: function (app) { var u = pick(app, 'ur'); return { done: u.length >= 800 && median(u) > 2.35, text: u.length + ' selected, median u − r = ' + OBS.fix(median(u), 2) }; },
+      result: function (app) {
+        var m = pick(app, 'morph'), all = OBS.column(app.chart.ds, 'morph'), sel = app.chart.sel, rest = [];
+        for (var i = 0; i < all.length; i++) if (!sel[i] && app.chart.mask[i]) rest.push(all[i]);
+        return 'Of your red galaxies, ' + pct(share(m, function (x) { return x === 'elliptical'; })) + ' were called elliptical by Galaxy Zoo and ' + pct(share(m, function (x) { return x === 'spiral'; })) + ' spiral. Of all the others: ' + pct(share(rest, function (x) { return x === 'elliptical'; })) + ' elliptical and ' + pct(share(rest, function (x) { return x === 'spiral'; })) + ' spiral.';
+      },
+      explain: 'Galaxies come in two colour families: a blue cloud of star-forming disks and a red sequence that has stopped making stars. Shape and colour go together, but not perfectly: some red galaxies are spirals that ran out of gas, and a few blue ones are ellipticals that recently gained some. Switch “Colour by” to the Galaxy Zoo shape to see it point by point.',
+      real: 'Hubble’s classification (1926), the tuning fork. Strateva et al. (2001) found the colour bimodality in early SDSS data. Galaxy Zoo (Lintott et al. 2008) gathered tens of millions of classifications from volunteers.'
+    },
+    {
+      id: 'zwicky', ch: 5, title: 'Weighing a cluster of galaxies', era: '1933', who: 'Fritz Zwicky', course: 'Lecture 5 (galaxy clusters, dark matter)', hw: 'HW5',
+      brief: 'Zwicky measured the speeds of eight galaxies in the Coma cluster and found them moving far too fast for the visible mass to hold them together. Here are 1,532 galaxies with SDSS redshifts in a 5° field around Coma.',
+      vars: [['cz', 'Recession speed', 'km/s', 'Doppler shift of the spectrum'], ['σ', 'Spread of speeds', 'km/s', 'Standard deviation of cz in the cluster'], ['R', 'Cluster size', 'Mpc', 'From the angle and the distance cz / H₀']],
+      relation: 'Virial theorem for a bound cluster: M ≈ 3σ²R / G.',
+      deduce: 'The mass of the cluster, and how it compares with the mass in its stars.',
+      question: 'Galaxies in the Coma cluster move relative to each other at about…',
+      choices: [['100', '100 km/s'], ['1000', '1,000 km/s'], ['10000', '10,000 km/s']],
+      answer: '1000',
+      setup: function (app) {
+        app.sky.goTo(194.95, 27.98, 9, { mode: 'dome', frame: 'equ' });
+        app.markers([{ ra: 194.953, dec: 27.981, label: 'Coma cluster' }]);
+        return app.open('coma', { x: 'cz', y: '#' }).then(function () { app.chart.bins = 70; app.chart.setView({ x0: 0, x1: 24000 }); });
+      },
+      task: 'Most galaxies in this direction belong to Coma, which shows as a spike in the speed histogram. Box the spike (drag across it).',
+      progress: function (app) {
+        var v = pick(app, 'cz'), n = v.length, m = v.reduce(function (a, x) { return a + x; }, 0) / Math.max(1, n);
+        var s = Math.sqrt(v.reduce(function (a, x) { return a + (x - m) * (x - m); }, 0) / Math.max(1, n - 1));
+        return { done: n >= 400 && m > 6400 && m < 7600 && s > 650 && s < 1250, text: n + ' galaxies, mean cz ' + Math.round(m) + ' km/s, spread σ = ' + Math.round(s) + ' km/s' };
+      },
+      result: function (app) {
+        var c = app.chart.ds.table.cols, sel = app.chart.selected(), v = sel.map(function (i) { return c.z[i] * 299792.458; });
+        var m = v.reduce(function (a, x) { return a + x; }, 0) / v.length, s = Math.sqrt(v.reduce(function (a, x) { return a + (x - m) * (x - m); }, 0) / (v.length - 1));
+        var d = m / A.C.H0, r2 = 0, Lr = 0;
+        sel.forEach(function (i) { var sep = A.sep(c.ra[i], c.dec[i], 194.953, 27.981) * Math.PI / 180 * d; r2 += sep * sep; Lr += Math.pow(10, -0.4 * (c.r[i] - A.distMod(d * 1e6) - 4.65)); });
+        var R = Math.sqrt(r2 / sel.length), Mv = A.virialMass(s, R), Ms = 5 * Lr;
+        return 'σ = ' + fmt(s, 3) + ' km/s; distance cz/H₀ = ' + fmt(d, 3) + ' Mpc; rms radius of your galaxies ' + fix(R, 2) + ' Mpc. Virial mass M ≈ 3σ²R/G = ' + fmt(Mv, 2) + ' M☉. The galaxies’ red light adds up to ' + fmt(Lr, 2) + ' L☉; at 5 M☉ per L☉ that is ' + fmt(Ms, 2) + ' M☉ in stars, ' + fmt(Mv / Ms, 2) + ' times less than the cluster needs.';
+      },
+      explain: 'Galaxies in Coma move at about 1,000 km/s relative to each other. With a size of a few megaparsecs, they would fly apart in a billion years unless tens of times more mass than the stars holds them in. Part of the missing mass is hot X-ray gas, several times the mass of the stars, but even with it most of the mass is dark. Lensing of background galaxies by clusters gives the same answer.',
+      real: 'Zwicky (1933) called the missing mass “dunkle Materie”. With the Hubble constant of the time, 558 km/s/Mpc, he overestimated the mass-to-light ratio, but the conclusion has survived every test since.'
+    },
+    {
+      id: 'tully', ch: 5, title: 'Spin tells power', era: '1977', who: 'Brent Tully and Richard Fisher', course: 'Lecture 5 (scaling relations: Tully–Fisher, Faber–Jackson)', hw: 'HW5 (MOND, distance ladder)',
+      brief: 'The faster a disk galaxy spins, the more mass it has, and so the more light. The spin can be measured from the width of a single radio line without knowing the distance, which makes the relation a distance indicator.',
+      vars: [['V_flat', 'Flat rotation speed', 'km/s', 'Width of the 21-cm line or the rotation curve'], ['L', 'Luminosity', '10⁹ L☉', 'At 3.6 μm, where the light traces the stars’ mass']],
+      relation: 'L ∝ V^a: a straight line on log–log axes. MOND predicts M_bar = V⁴ / (G a₀), slope 4 exactly.',
+      deduce: 'A galaxy’s luminosity from its spin, and its distance from its flux.',
+      question: 'A disk galaxy spins twice as fast as another. It is about how much brighter?',
+      choices: [['2', '2 times'], ['4', '4 times'], ['16', 'about 16 times']],
+      answer: '16',
+      setup: function (app) {
+        return app.open('sparc', { x: 'Vflat', y: 'L36', filter: function (c, i) { return c.Vflat[i] > 0 && c.Q[i] < 3; } }).then(function () {
+          app.chart.add({ type: 'line', id: 'tf', x1: 60, y1: 0.5, x2: 250, y2: 3, colour: OBS.colours().accent, label: 'your line' });
+        });
+      },
+      task: 'Drag the line through the galaxies. Its slope is the power a in L ∝ V^a.',
+      progress: function (app) { var L = app.chart.lineFit('tf'), r = app.chart.lineRms('tf'); return { done: L.slope > 3.0 && L.slope < 4.6 && r < 0.45, text: 'Slope a = ' + L.slope.toFixed(2) + ', scatter ' + r.toFixed(2) + ' dex' }; },
+      result: function (app) {
+        var L = app.chart.lineFit('tf');
+        return 'Your relation: L ∝ V^' + fix(L.slope, 2) + '. A galaxy spinning at 200 km/s should give out about ' + fmt(Math.pow(10, L.at(Math.log10(200))), 2) + '×10⁹ L☉ at 3.6 μm. Measure its flux and you have its distance.';
+      },
+      explain: 'Twice the speed means about 2⁴ = 16 times the light. The relation is tight in the infrared, where the light follows the stellar mass, and tighter still when the gas mass is added (the baryonic Tully–Fisher relation), with a slope close to 4. For elliptical galaxies the same idea with the spread of star speeds σ is the Faber–Jackson relation, L ∝ σ⁴.',
+      real: 'Tully and Fisher published the relation in 1977 and used it to measure distances to the Virgo cluster. Lelli, McGaugh and Schombert’s SPARC sample (2016) measures it with Spitzer 3.6 μm photometry.'
+    }
+  ];
+
+  // ---------------------------------------------------------------- check yourself (before and after)
+  OBS.QUIZ = [
+    { q: 'A star shifts by 0.2″ against the background between January and July. Its distance is', c: ['5 pc', '10 pc', '20 pc'], a: 1 },
+    { q: 'Two stars have the same colour; one looks 100 times fainter than the other. From these numbers alone you can say', c: ['it is 10 times farther away', 'it gives out 100 times less light', 'nothing about its distance or power'], a: 2 },
+    { q: 'You measure the ratio of a 30,000 K star’s brightness at two radio wavelengths. You can find its temperature from it', c: ['yes, Wien’s law works at any wavelength', 'no, in the Rayleigh–Jeans tail the ratio is the same for every hot body', 'only if you know its distance'], a: 1 },
+    { q: 'A star is twice as hot as the Sun and has the same luminosity. Its radius is', c: ['¼ of the Sun’s', '½ of the Sun’s', 'the same as the Sun’s'], a: 0 },
+    { q: 'In a binary, star A’s spectral lines swing by ±40 km/s and star B’s by ±80 km/s. The heavier star is', c: ['A', 'B', 'they have equal mass'], a: 0 },
+    { q: 'Cluster X’s main sequence ends at M_G = 3; cluster Y’s at M_G = 0. The older one is', c: ['X', 'Y', 'you cannot tell without spectra'], a: 0 },
+    { q: 'A Cepheid in a distant galaxy has a 30-day period and looks 25 magnitudes fainter than its absolute magnitude. Its distance is', c: ['1 Mpc', '1 kpc', '1 Gpc'], a: 0 },
+    { q: 'A planet blocks 1% of its star’s light. Its radius is', c: ['1% of the star’s', '10% of the star’s', '0.01% of the star’s'], a: 1 },
+    { q: 'Far out in a disk galaxy the rotation speed stays constant with radius. The mass inside radius R grows like', c: ['R', '1/R', 'it stays constant'], a: 0 },
+    { q: 'A microlensing light curve differs from a variable star because it is', c: ['periodic', 'the same in every colour and symmetric in time', 'redder at the peak'], a: 1 },
+    { q: 'An asteroid at 2.5 AU goes round the Sun this many times per orbit of Jupiter (5.2 AU)', c: ['2', '3', '5'], a: 1 },
+    { q: 'Most red galaxies in the local Universe are', c: ['spirals full of dust', 'ellipticals that no longer form stars', 'very distant galaxies'], a: 1 }
+  ];
+})(typeof window !== 'undefined' ? window : globalThis);
