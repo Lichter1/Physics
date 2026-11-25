@@ -119,14 +119,19 @@
     var trail = { type: 'ref', id: 'trail', xs: [], ys: [], under: false, size: 2.2, alpha: 0.8 };
     function posAt(t) { var s = A.parallaxShift(target.ra, target.dec, t); return [s.x * p, s.y * p]; }
     for (var j = 0; j < 120; j++) { var q = posAt(j / 120); trail.xs.push(q[0]); trail.ys.push(q[1]); }
-    var MONTHS = ['21 Mar', '21 Apr', '21 May', '21 Jun', '21 Jul', '21 Aug', '21 Sep', '21 Oct', '21 Nov', '21 Dec', '21 Jan', '21 Feb'];
-    function date(t) { return MONTHS[Math.floor(((t % 1) + 1) % 1 * 12 + 1e-6) % 12]; }
+    // Time runs in days from the March equinox (t = 0). The slider moves one day at a time and shows the date.
+    var YEAR = 365.25, MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    function wrap(t) { return ((t % 1) + 1) % 1; }
+    function date(t) { var d = new Date(Date.UTC(2026, 2, 20) + Math.round(wrap(t) * YEAR) * 864e5); return d.getUTCDate() + ' ' + MON[d.getUTCMonth()]; }
+    function days(dt) { return Math.round(wrap(dt) * YEAR); }
+    function span(n) { return n + (n === 1 ? ' day' : ' days') + ' (' + (n / YEAR * 12).toFixed(1) + ' months)'; }
     function redraw() {
       var C = OBS.colours(), q = posAt(st.t);
       chart.overlays = [];
       trail.colour = C['ink-3']; if (st.showTrail) chart.add(trail);
       st.marks.forEach(function (m, k) { chart.add({ type: 'marker', id: 'm' + k, x: m.x, y: m.y, colour: C.c2, label: m.label, drag: false }); });
-      chart.add({ type: 'marker', id: 'star', x: q[0], y: q[1], colour: C.accent, label: target.name + ' · ' + date(st.t), drag: false });
+      var since = st.marks.length === 1 ? ' · ' + days(st.t - st.marks[0].t) + ' d after mark 1' : '';
+      chart.add({ type: 'marker', id: 'star', x: q[0], y: q[1], colour: C.accent, label: target.name + ' · ' + date(st.t) + since, drag: false });
       if (st.marks.length === 2) {
         var a = st.marks[0], b = st.marks[1];
         chart.add({ type: 'line', id: 'ruler', x1: a.x, y1: a.y, x2: b.x, y2: b.y, colour: C.c2, width: 1, dash: [4, 3], drag: false });
@@ -134,21 +139,26 @@
       chart.draw();
       var sep = st.marks.length === 2 ? Math.hypot(st.marks[0].x - st.marks[1].x, st.marks[0].y - st.marks[1].y) : NaN;
       st.sep = sep;
+      clock.innerHTML = st.marks.length === 1 ? 'Time since your first mark (' + st.marks[0].label + '): <span class="num">' + span(days(st.t - st.marks[0].t)) + '</span>'
+        : st.marks.length === 2 ? 'Between your marks: <span class="num">' + span(days(st.marks[1].t - st.marks[0].t)) + '</span>' : 'Time since your first mark: no mark yet';
       out.innerHTML = st.marks.length === 2 ? 'The two marks are <span class="num">' + OBS.fmt(sep, 3) + ' mas</span> = <span class="num">' + OBS.fmt(sep / 1000, 3) + '″</span> apart (' + st.marks[0].label + ' → ' + st.marks[1].label + ').'
-        : st.marks.length === 1 ? 'One mark made. Move the date and mark again.' : 'Move through the year, then mark the star’s position twice.';
+        : st.marks.length === 1 ? 'One mark made. Move the date, or jump ahead exactly 6 months, and mark again.' : 'Move through the year, then mark the star’s position twice.';
       if (onchange) onchange(st);
     }
-    var time = UI.slider(tools, { label: 'Date', min: 0, max: 1, value: 0, step: 1 / 120, fmt: function (t) { return date(t); }, oninput: function (t) { st.t = t; redraw(); } });
+    var time = UI.slider(tools, { label: 'Date', min: 0, max: 364, value: 0, step: 1, fmt: function (d) { return date(d / YEAR) + ' (day ' + Math.round(d) + ')'; }, oninput: function (d) { st.t = d / YEAR; redraw(); } });
+    function setT(t) { st.t = wrap(t); time.set(Math.min(364, Math.round(st.t * YEAR)), true); redraw(); }
     var row = UI.row(tools);
     UI.button(row, 'Play a year', function () {
       if (st.playing) return; st.playing = true; var t0 = performance.now(), start = st.t;
-      (function step(now) { var u = (now - t0) / 6000; st.t = (start + u) % 1; time.set(st.t, true); redraw(); if (u < 1) G.requestAnimationFrame(step); else st.playing = false; })(t0);
+      (function step(now) { var u = Math.min(1, (now - t0) / 6000); setT(start + u); if (u < 1) G.requestAnimationFrame(step); else st.playing = false; })(t0);
     });
     UI.button(row, 'Mark position', function () {
       var q = posAt(st.t); if (st.marks.length >= 2) st.marks = [];
-      st.marks.push({ x: q[0], y: q[1], label: date(st.t) }); redraw();
+      st.marks.push({ x: q[0], y: q[1], t: st.t, label: date(st.t) }); redraw();
     }, 'primary');
+    UI.button(row, 'Jump ahead 6 months', function () { setT(st.t + 0.5); });
     UI.button(row, 'Clear marks', function () { st.marks = []; redraw(); });
+    var clock = UI.readout(tools);
     var tr = document.createElement('label'); tr.className = 'check'; tr.innerHTML = '<input type="checkbox" id="scope-trail"> Show the whole year’s path';
     tools.appendChild(tr); tr.querySelector('input').addEventListener('change', function (e) { st.showTrail = e.target.checked; redraw(); });
     var out = UI.readout(tools);

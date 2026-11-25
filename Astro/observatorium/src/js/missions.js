@@ -68,7 +68,7 @@
         st.scope = OBS.instruments.parallax(I.chart, I.tools, { name: '61 Cyg A', ra: 316.725, dec: 38.749, plx: 286.0 });
         st.input = OBS.ui.number(I.tools, { label: 'Your parallax', unit: 'arcsec', placeholder: 'e.g. 0.5' });
       },
-      task: 'Press “Play a year” to watch the loop. Then mark the star at two dates six months apart where it is farthest apart (try June and December), and type the parallax you deduce.',
+      task: 'Press “Play a year” to watch the loop. Mark the star on one date, press “Jump ahead 6 months” and mark it again; the counter shows the time between your marks. Try different starting dates until the two marks are as far apart as they get, then type the parallax you deduce.',
       progress: function (app, st) {
         var s = st.scope.state, sep = s.sep, p = st.input.get(), wide = sep > 0.9 * 2 * 286;
         var good = isFinite(p) && Math.abs(p - 0.286) < 0.015;

@@ -227,9 +227,57 @@
     [].forEach.call(document.querySelectorAll('[data-tab]'), function (b) { b.addEventListener('click', function () { OBS.logbook.tab(b.dataset.tab); }); });
   }
 
+  // ------------------------------------------------------------------------------------------ layout
+  // The divider sets how the width (or, when stacked, the height) is shared between the sky and the lens;
+  // any pane can fold into a slim tab. Remembered per browser.
+  var LAY = OBS.store.get('layout', null) || { f: 0.52, fold: {} };
+  function layoutMode() { var w = G.innerWidth; return w <= 860 ? 'narrow' : w <= 1280 ? 'medium' : 'wide'; }
+  function applyLayout() {
+    var g = document.querySelector('.grid'), m = layoutMode(), F = LAY.fold, f = LAY.f, both = !F.sky && !F.lens;
+    ['wide', 'medium', 'narrow'].forEach(function (k) { g.classList.toggle(k, k === m); });
+    [['logbook', 'pane-logbook'], ['sky', 'pane-sky'], ['lens', 'pane-lens']].forEach(function (p) {
+      $(p[1]).classList.toggle('folded', !!F[p[0]]);
+    });
+    $('split').classList.toggle('off', !both);
+    $('split').setAttribute('aria-orientation', m === 'wide' ? 'vertical' : 'horizontal');
+    $('split').setAttribute('aria-valuenow', Math.round(100 * f));
+    if (m === 'wide') {
+      g.style.gridTemplateColumns = (F.logbook ? '56px' : 'minmax(330px, 390px)') + ' ' +
+        (F.sky ? '44px' : 'minmax(0, ' + (F.lens ? 1 : f) + 'fr)') + ' 12px ' + (F.lens ? '44px' : 'minmax(0, ' + (F.sky ? 1 : 1 - f) + 'fr)');
+      g.style.gridTemplateRows = '';
+    } else if (m === 'medium') {
+      g.style.gridTemplateColumns = (F.logbook ? '56px' : 'minmax(320px, 370px)') + ' minmax(0, 1fr)';
+      g.style.gridTemplateRows = (F.sky ? 'auto' : 'minmax(240px, ' + (F.lens ? 1 : f) + 'fr)') + ' 12px ' + (F.lens ? 'auto' : 'minmax(260px, ' + (F.sky ? 1 : 1 - f) + 'fr)');
+    } else { g.style.gridTemplateColumns = ''; g.style.gridTemplateRows = ''; }
+    OBS.store.set('layout', LAY);
+    if (chart) chart.draw();
+    if (sky) sky.draw(true);
+  }
+  function bindLayout() {
+    [].forEach.call(document.querySelectorAll('[data-fold]'), function (b) { b.addEventListener('click', function () { LAY.fold[b.dataset.fold] = true; applyLayout(); }); });
+    [].forEach.call(document.querySelectorAll('[data-unfold]'), function (b) { b.addEventListener('click', function () { LAY.fold[b.dataset.unfold] = false; applyLayout(); }); });
+    var s = $('split'), drag = false;
+    s.addEventListener('pointerdown', function (e) { drag = true; s.setPointerCapture(e.pointerId); s.classList.add('dragging'); e.preventDefault(); });
+    s.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var a = $('pane-sky').getBoundingClientRect(), b = $('pane-lens').getBoundingClientRect();
+      var f = layoutMode() === 'wide' ? (e.clientX - a.left) / (b.right - a.left) : (e.clientY - a.top) / (b.bottom - a.top);
+      LAY.f = OBS.clamp(f, 0.15, 0.85); applyLayout();
+    });
+    function end() { drag = false; s.classList.remove('dragging'); }
+    s.addEventListener('pointerup', end); s.addEventListener('pointercancel', end);
+    s.addEventListener('dblclick', function () { LAY.f = 0.52; applyLayout(); });
+    s.addEventListener('keydown', function (e) {
+      var d = { ArrowLeft: -0.05, ArrowUp: -0.05, ArrowRight: 0.05, ArrowDown: 0.05 }[e.key];
+      if (d) { LAY.f = OBS.clamp(LAY.f + d, 0.15, 0.85); applyLayout(); e.preventDefault(); }
+    });
+    var rt; G.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(applyLayout, 120); });
+    applyLayout();
+  }
+
   // ------------------------------------------------------------------------------------------ start
   function start() {
-    buildApp(); bindTheme(); bindLens(); bindSky(); bindTabs();
+    buildApp(); bindTheme(); bindLens(); bindSky(); bindTabs(); bindLayout();
     OBS.on('pick', card);
     OBS.logbook.renderChapters(); OBS.logbook.renderList();
     $('boot').hidden = false;

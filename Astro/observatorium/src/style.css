@@ -71,10 +71,36 @@ h1, h2, h3, h4 { margin: 0; text-wrap: balance; }
 
 /* ---------------------------------------------------------------- panes */
 .grid {
-  display: grid; grid-template-columns: minmax(330px, 390px) minmax(0, 1.05fr) minmax(0, 1fr); gap: 12px; min-height: 0;
+  display: grid; grid-template-columns: minmax(330px, 390px) minmax(0, 1.05fr) 12px minmax(0, 1fr); gap: 0; min-height: 0;
   padding-block: 12px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.logbook { margin-right: 12px; }
+
+/* layout: a divider between the sky and the lens, and panes that fold into a tab */
+.split { display: flex; align-items: center; justify-content: center; cursor: col-resize; touch-action: none; }
+.split span { width: 4px; height: 48px; border-radius: 2px; background: var(--rule); transition: background 0.15s; }
+.split:hover span, .split:focus-visible span, .split.dragging span { background: var(--accent); }
+.split:focus-visible { outline: none; }
+.split.off { pointer-events: none; }
+.split.off span { visibility: hidden; }
+.grid.medium .split { cursor: row-resize; }
+.grid.medium .split span { width: 48px; height: 4px; }
+.grid.medium .logbook { grid-column: 1; grid-row: 1 / span 3; }
+.grid.medium .skypane { grid-column: 2; grid-row: 1; }
+.grid.medium .split { grid-column: 2; grid-row: 2; }
+.grid.medium .lens { grid-column: 2; grid-row: 3; }
+.fold { margin-left: auto; font: inherit; font-size: 12px; padding: 2px 9px; border: 1px solid var(--rule); border-radius: var(--r); background: none; color: var(--ink-2); cursor: pointer; }
+.fold:hover { color: var(--ink); border-color: var(--accent); }
+.tabs .fold { align-self: center; }
+.unfold { display: none; }
+.pane.folded > :not(.unfold) { display: none !important; }
+.pane.folded .unfold {
+  display: flex; align-items: center; justify-content: center; gap: 8px; flex: 1; width: 100%; min-height: 40px; padding: 10px 6px;
+  border: 0; background: var(--panel); color: var(--ink-2); font: inherit; font-family: var(--serif); font-size: 15px; letter-spacing: 0.04em; cursor: pointer;
+}
+.pane.folded .unfold:hover { color: var(--ink); background: var(--panel-2); }
+.grid.wide .pane.folded .unfold, .grid.medium .logbook.folded .unfold { writing-mode: vertical-rl; }
 .pane-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 14px 8px; background: var(--panel); border-bottom: 1px solid var(--rule); }
 .pane-head h2 { font-family: var(--serif); font-weight: 500; font-size: 16px; letter-spacing: 0.04em; }
 .ctl-bar { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
@@ -239,12 +265,13 @@ table.kv tr.locked td { color: var(--ink-3); font-style: italic; }
 
 /* ---------------------------------------------------------------- narrower screens */
 @media (max-width: 1280px) {
-  .grid { grid-template-columns: minmax(320px, 370px) minmax(0, 1fr); grid-template-rows: minmax(360px, 1fr) minmax(420px, 1.1fr); }
-  .logbook { grid-row: 1 / span 2; }
+  .grid { grid-template-columns: minmax(320px, 370px) minmax(0, 1fr); grid-template-rows: minmax(300px, 1fr) 12px minmax(340px, 1.1fr); }
 }
 @media (max-width: 860px) {
   .app { height: auto; display: block; }
-  .grid { display: flex; flex-direction: column; }
+  .grid { display: flex; flex-direction: column; gap: 12px; }
+  .logbook { margin-right: 0; }
+  .split { display: none; }
   .lb-scroll { overflow: visible; }
   .skywrap { min-height: 64vh; flex: none; height: 64vh; }
   .skycanvas { min-height: 0; }

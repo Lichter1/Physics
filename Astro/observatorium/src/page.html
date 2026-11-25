@@ -9,12 +9,14 @@
   </header>
 
   <main class="grid">
-    <section class="pane logbook" aria-label="Logbook">
+    <section class="pane logbook" id="pane-logbook" aria-label="Logbook">
+      <button type="button" class="unfold" data-unfold="logbook">Show the logbook</button>
       <div class="tabs" role="tablist">
         <button type="button" role="tab" data-tab="missions" aria-selected="true">Missions</button>
         <button type="button" role="tab" data-tab="notebook" aria-selected="false">Notebook</button>
         <button type="button" role="tab" data-tab="quiz" aria-selected="false">Check yourself</button>
         <button type="button" role="tab" data-tab="data" aria-selected="false">Data</button>
+        <button type="button" class="fold" data-fold="logbook" title="Hide the logbook to give the sky and the lens more room">Hide</button>
       </div>
       <div class="lb-scroll">
         <div id="lb-missions">
@@ -32,9 +34,11 @@
       </div>
     </section>
 
-    <section class="pane skypane" aria-label="The sky">
+    <section class="pane skypane" id="pane-sky" aria-label="The sky">
+      <button type="button" class="unfold" data-unfold="sky">Show the sky</button>
       <div class="pane-head">
         <h2>The sky</h2>
+        <button type="button" class="fold" data-fold="sky" title="Hide the sky to give the data lens all the room">Hide</button>
         <div class="ctl-bar">
           <div class="seg" role="group" aria-label="Projection"><button type="button" class="seg-b" data-smode="dome" aria-pressed="true">Dome</button><button type="button" class="seg-b" data-smode="allsky" aria-pressed="false">Whole sky</button></div>
           <div class="seg" role="group" aria-label="Coordinates"><button type="button" class="seg-b" data-sframe="equ" aria-pressed="true">Equatorial</button><button type="button" class="seg-b" data-sframe="gal" aria-pressed="false">Galactic</button></div>
@@ -54,9 +58,13 @@
       <div class="readbar"><span id="sky-read"></span><span id="sky-hover" class="hover"></span></div>
     </section>
 
-    <section class="pane lens" aria-label="Data lens">
+    <div class="split" id="split" role="separator" tabindex="0" aria-valuemin="15" aria-valuemax="85" aria-label="Resize the sky and the data lens (arrow keys; double-click to reset)"><span></span></div>
+
+    <section class="pane lens" id="pane-lens" aria-label="Data lens">
+      <button type="button" class="unfold" data-unfold="lens">Show the data lens</button>
       <div class="pane-head">
         <h2>Data lens</h2>
+        <button type="button" class="fold" data-fold="lens" title="Hide the data lens to give the sky all the room">Hide</button>
         <p class="lens-inst" id="lens-inst" hidden></p>
         <div class="ctl-bar" id="lens-ctl">
           <label class="sel"><span>Dataset</span><select id="ds-sel"></select></label>

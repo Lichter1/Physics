@@ -22,7 +22,7 @@ const body = read('page.html') + '\n<script>\n' + code + '</script>\n';
 
 // 1. the published page and its data
 const dist = join(root, 'dist');
-rmSync(dist, { recursive: true, force: true });
+rmSync(join(dist, 'data'), { recursive: true, force: true });  // keep dist/ itself, so a preview server running in it survives a rebuild
 mkdirSync(join(dist, 'data'), { recursive: true });
 writeFileSync(join(dist, 'index.html'), head + '\n' + body);
 // a full document around the same page, for previewing dist/ on a local server
