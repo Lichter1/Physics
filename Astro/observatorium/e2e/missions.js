@@ -49,6 +49,7 @@ const SOLVE = {
   const base = process.argv[2] || 'http://localhost:8765/preview.html', shots = process.argv[3];
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 1600, height: 950 }, deviceScaleFactor: 1, colorScheme: 'dark' });
+  await p.addInitScript(() => { try { localStorage.setItem('observatorium.toured', 'true'); } catch (e) { /* no storage */ } });   // no tour here: e2e/tour.js tests it
   const errs = [];
   p.on('pageerror', (e) => errs.push(e.message));
   p.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });

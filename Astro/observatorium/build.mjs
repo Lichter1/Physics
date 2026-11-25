@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const read = (p) => readFileSync(join(root, 'src', p), 'utf8');
-export const SCRIPTS = ['core', 'astro', 'catalog', 'chart', 'sky', 'instruments', 'explainers', 'missions', 'lectures', 'lecture', 'logbook', 'main'];
+export const SCRIPTS = ['core', 'astro', 'catalog', 'chart', 'sky', 'instruments', 'explainers', 'missions', 'lectures', 'lecture', 'logbook', 'tour', 'main'];
 
 const head = [
   '<title>Observatorium</title>',

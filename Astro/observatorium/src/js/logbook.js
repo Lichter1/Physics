@@ -59,6 +59,7 @@
   LB.toPredict = function () { if (!cur.m || OBS.lecture.blocked(cur.m) && !OBS.state.sandbox) return; cur.step = 1; renderCard(); };
   OBS.on('lecture', function () { if (cur.m && cur.step === 0) renderCard(); });
   /** Leave the mission card; if the lens still shows a lecture, give it back its data. */
+  LB.leave = leave;
   function leave() {
     cur.m = null; stopTimer(); renderCard(); LB.renderList();
     if (OBS.app.lensMode() === 'lecture') OBS.app.open(OBS.app.chart.ds && OBS.DATASETS[OBS.app.chart.ds.id] ? OBS.app.chart.ds.id : 'sky');

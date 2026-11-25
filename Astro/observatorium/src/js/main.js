@@ -292,12 +292,14 @@
   // ------------------------------------------------------------------------------------------ start
   function start() {
     buildApp(); bindTheme(); bindLens(); bindSky(); bindTabs(); bindLayout();
+    [$('tour-btn')].concat([].slice.call(document.querySelectorAll('[data-tour]'))).forEach(function (b) { b.addEventListener('click', function () { OBS.tour.start(); }); });
     OBS.on('pick', card);
     OBS.logbook.renderChapters(); OBS.logbook.renderList();
     $('boot').hidden = false;
     sky.init().then(function () { return app.open('sky'); }).then(function () {
       $('boot').hidden = true;
       sky.goTo(88, 0, 110, { mode: 'dome', frame: 'equ', instant: true });
+      OBS.tour.maybe();
     }).catch(function (e) { $('boot').textContent = 'Could not load the star data: ' + e.message; });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();

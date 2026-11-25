@@ -37,7 +37,10 @@
 
   // ---------------------------------------------------------------- events
   var handlers = {};
-  OBS.on = function (ev, fn) { (handlers[ev] = handlers[ev] || []).push(fn); };
+  OBS.on = function (ev, fn) {
+    (handlers[ev] = handlers[ev] || []).push(fn);
+    return function () { handlers[ev] = (handlers[ev] || []).filter(function (h) { return h !== fn; }); };
+  };
   OBS.emit = function (ev, data) { (handlers[ev] || []).slice().forEach(function (fn) { fn(data); }); };
 
   // ---------------------------------------------------------------- CSV
