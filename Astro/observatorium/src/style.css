@@ -251,6 +251,42 @@ details.src dl { display: grid; grid-template-columns: 70px 1fr; gap: 4px 10px; 
 details.src dt { color: var(--ink-3); }
 details.src dd { margin: 0; overflow-wrap: anywhere; }
 
+/* the lecture hall (in the lens pane) */
+.lens.lecturing > :not(.pane-head):not(.lecture):not(.unfold) { display: none !important; }
+.lens.lecturing .pane-head > :not(h2):not(.fold) { display: none !important; }
+.lecture { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 22px 20px; display: flex; flex-direction: column; gap: 12px; background: var(--panel); }
+.lec-head h3 { font-family: var(--serif); font-weight: 600; font-size: 26px; line-height: 1.15; }
+.lec-body { font-size: 16px; }
+.lec-body p { margin: 0 0 10px; }
+.lec-eq { overflow-x: auto; overflow-y: hidden; padding: 6px 12px; border-left: 2px solid var(--accent); background: var(--panel-2); border-radius: 0 var(--r) var(--r) 0; font-size: 1.05em; }
+.lec-eq mjx-container { margin: 6px 0 !important; }
+.lec-ex { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; }
+.ex-stage canvas { display: block; width: 100%; border-radius: 4px; }
+.ex-ctl { display: flex; flex-direction: column; gap: 6px; }
+.ex-out { margin: 0; font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
+.ex-out b { color: var(--ink); font-weight: 600; }
+.lec-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; border-top: 1px solid var(--rule); padding-top: 12px; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--ink-3); background: none; padding: 0; cursor: pointer; }
+.dot.on { background: var(--accent); border-color: var(--accent); }
+.lec-nav { display: flex; gap: 8px; }
+.scroll-x { overflow-x: auto; }
+.toc { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 2px; }
+.toc-b { font: inherit; font-family: var(--serif); font-size: 15px; text-align: left; background: none; border: 0; padding: 3px 4px; color: var(--ink-2); cursor: pointer; border-radius: 4px; }
+.toc-b:hover { color: var(--ink); background: var(--panel-2); }
+.toc-b.on { color: var(--ink); box-shadow: inset 2px 0 0 var(--accent); }
+.practice { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 12px; }
+.practice p { margin: 0 0 6px; font-family: var(--serif); font-size: 15px; }
+.pr-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pr-row input { width: 110px; font: inherit; font-family: var(--mono); padding: 4px 6px; background: var(--panel-2); color: var(--ink); border: 1px solid var(--rule); border-radius: var(--r); }
+.pr-row .unit { color: var(--ink-3); font-size: 12.5px; }
+.pr-msg { font-size: 13px; }
+.pr-msg.ok { color: var(--ok); }
+.pr-msg.miss { color: var(--warn); }
+.pr-sol { font-size: 13.5px; margin-top: 4px; }
+.pr-sol summary { cursor: pointer; color: var(--ink-2); }
+.readbar .credit { flex-basis: 100%; font-size: 11px; color: var(--ink-3); }
+
 /* object card */
 .pop {
   position: absolute; left: 66px; top: 14px; width: min(320px, calc(100% - 84px)); max-height: calc(100% - 28px); overflow: auto;

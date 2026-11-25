@@ -55,6 +55,19 @@ disagreements are where the physics is. The missions keep them and explain them 
 | 4.2 | The globular-cluster swarm centres about 7 kpc away, not 8.2 | Clusters behind the bulge are harder to find |
 | 4.3 | MOND fits NGC 3198 to χ²/N ≈ 10, a fitted dark halo to ≈ 1 | Both ideas are still argued about; the data say how well each does |
 
+**A lecture before every exercise.** Each mission opens in the lecture hall: four or five short steps of
+theory and reasoning, each with its equation, often a live explainer (the parallax geometry, two stars round
+their centre of mass, a planet crossing a limb-darkened star, a lens forming two images), and a cue that turns
+the dome to what is being discussed. Opening a mission swings the sky to its target at once, before the
+prediction. After the exercise come one or two practice problems in the style of the homework, checked on the
+spot, with worked solutions. The unit tests recompute every practice answer from the physics module.
+
+**Real photographs when the subject is an object.** The sky has two looks. *Drawn* is the analysis view:
+catalogue stars as points you can select. *Photo* is the observing view: ESO's all-sky panorama (S. Brunier,
+CC BY 4.0) with close-ups from the Digitized Sky Survey (the photographic plates of the Palomar and UK Schmidt
+telescopes), SDSS and the Legacy Surveys, reprojected live and blended in where they exist. Lecture cues switch
+to photographs for nebulae, clusters and galaxies.
+
 **Free exploration is always open.** Outside missions, any dataset can be put on any unlocked axes, selected,
 and followed onto the sky. Teacher mode in the Notebook unlocks everything.
 

@@ -58,7 +58,10 @@ const SOLVE = {
   for (const id of ids) {
     errs.length = 0;
     await p.evaluate((id) => OBS.logbook.start(OBS.MISSIONS.find((x) => x.id === id)), id);
-    await p.click('#m-next');
+    const beats = await p.evaluate(() => document.querySelectorAll('#lecture .dot').length);
+    for (let k = 1; k < beats; k++) await p.click('#lec-next');          // read the lecture step by step
+    if (shots && ['sky', 'parallax', 'pleiades', 'microlens'].includes(id)) await p.screenshot({ path: `${shots}/lecture-${id}.png` });
+    await p.click('#lec-pred');
     await p.evaluate((id) => document.querySelector('input[name="pred"][value="' + OBS.MISSIONS.find((m) => m.id === id).answer + '"]').click(), id);
     await p.click('#m-next');
     await p.waitForTimeout(1800);

@@ -1,20 +1,29 @@
 /* Observatorium — the sky: a dome you can turn and zoom (stereographic) or the whole sky at once (Hammer),
- * in equatorial or Galactic coordinates. The glow is Gaia's star counts; the stars are real catalogue stars.
+ * in equatorial or Galactic coordinates. Two looks:
+ *   drawn  catalogue stars as glowing points over Gaia's star-count glow
+ *   photo  real photographs: ESO's all-sky Milky Way panorama, with Digitized Sky Survey and Legacy Survey
+ *          close-ups blended in at full resolution wherever they exist
  * Whatever the data lens shows is drawn here too, and a selection in one is a selection in the other. */
 (function (G) {
   'use strict';
   var OBS = G.OBS, A = OBS.astro, R2D = 180 / Math.PI, D2R = Math.PI / 180;
+  // ICRS -> Galactic (same matrix as astro.js)
+  var RG = [[-0.0548755604162154, -0.8734370902348850, -0.4838350155487132],
+    [0.4941094278755837, -0.4448296299600112, 0.7469822444972189],
+    [-0.8676661490190047, -0.1980763734312015, 0.4559837761750669]];
 
   function Sky(canvas) {
     this.cv = canvas; this.ctx = canvas.getContext('2d');
     this.mode = 'dome'; this.frame = 'equ';
     this.lon0 = 83; this.lat0 = 5; this.fov = 110;     // looking at Orion
-    this.layers = { milkyway: true, constellations: true, grid: false, labels: true };
+    this.layers = { milkyway: true, constellations: true, grid: false, labels: true, photo: false };
     this.markers = [];
     this.chart = null; this.ds = null;
-    this.mw = null; this.bg = null; this.con = null;
+    this.mw = null; this.bg = null; this.con = null; this.images = null;
     this.drag = null; this.anim = null; this.listeners = [];
     this._mwCanvas = document.createElement('canvas');
+    this._pix = {};           // decoded photographs: id -> {w, h, data}
+    this._loading = {};
     this._bind();
   }
   var P = Sky.prototype;
@@ -22,6 +31,7 @@
 
   P.init = function () {
     var self = this;
+    OBS.loadJSON('images').then(function (m) { self.images = m; OBS.emit('skyimages', m); }, function () { self.images = null; });
     return Promise.all([OBS.loadJSON('milkyway'), OBS.open('sky'), OBS.loadJSON('constellations')]).then(function (r) {
       var mw = r[0], bin = atob(mw.data), img = new Uint8Array(bin.length);
       for (var i = 0; i < bin.length; i++) img[i] = bin.charCodeAt(i);
@@ -30,16 +40,14 @@
       self.draw(true);
     });
   };
-  P.setDataset = function (ds, chart) { this.ds = ds; this.chart = chart; this._pos = null; this.draw(); };
+  P.setDataset = function (ds, chart) { this.ds = ds; this.chart = chart; this.draw(); };
 
   // ------------------------------------------------------------------------------------- coordinates
-  /** Frame coordinates (lon, lat) of an equatorial position. */
   P.toFrame = function (ra, dec) { return this.frame === 'gal' ? A.equToGal(ra, dec) : [ra, dec]; };
   P.fromFrame = function (lon, lat) { return this.frame === 'gal' ? A.galToEqu(lon, lat) : [lon, lat]; };
   P._posOf = function (ds) {
-    // frame coordinates of every object in a dataset, cached per frame
-    var key = ds.id + ':' + this.frame;
-    var t = ds.table; t.computed.__sky = t.computed.__sky || {};
+    var key = ds.id + ':' + this.frame, t = ds.table;
+    t.computed.__sky = t.computed.__sky || {};
     if (t.computed.__sky[key]) return t.computed.__sky[key];
     var ra = OBS.column(ds, 'ra'), de = OBS.column(ds, 'dec'), n = ra.length, lo = new Float64Array(n), la = new Float64Array(n);
     for (var i = 0; i < n; i++) { var p = this.toFrame(ra[i], de[i]); lo[i] = p[0]; la[i] = p[1]; }
@@ -52,7 +60,6 @@
     this.W = w; this.H = h; this.dpr = dpr; this.cx = w / 2; this.cy = h / 2;
     this.scale = this.mode === 'dome' ? (w / 2) / (2 * Math.tan(this.fov * D2R / 4)) : Math.min(w / (4 * Math.SQRT2), h / (2 * Math.SQRT2)) * 0.96;
   };
-  /** Project frame (lon, lat) in degrees to screen; null when behind you. */
   P.project = function (lon, lat) {
     var l = lon * D2R, b = lat * D2R, l0 = this.lon0 * D2R, b0 = this.lat0 * D2R, x, y;
     if (this.mode === 'dome') {
@@ -68,7 +75,6 @@
     }
     return [this.cx - x * this.scale, this.cy - y * this.scale];
   };
-  /** Screen -> frame (lon, lat), or null outside the map. */
   P.unproject = function (X, Y) {
     var x = (this.cx - X) / this.scale, y = (this.cy - Y) / this.scale, l0 = this.lon0 * D2R, b0 = this.lat0 * D2R, lon, lat;
     if (this.mode === 'dome') {
@@ -85,6 +91,11 @@
     lon *= R2D; lon = ((lon % 360) + 360) % 360;
     return [lon, lat * R2D];
   };
+  /** Unit vectors (in the view's frame) of the centre, east and north there: a fast inverse projection. */
+  P._basis = function () {
+    var l = this.lon0 * D2R, b = this.lat0 * D2R, cl = Math.cos(l), sl = Math.sin(l), cb = Math.cos(b), sb = Math.sin(b);
+    return { c: [cb * cl, cb * sl, sb], e: [-sl, cl, 0], n: [-sb * cl, -sb * sl, cb] };
+  };
 
   // ------------------------------------------------------------------------------------- drawing
   P.draw = function (full) {
@@ -95,20 +106,23 @@
   P._draw = function (full) {
     if (!this.bg) return;
     this.size();
-    var ctx = this.ctx, C = OBS.colours(), dpr = this.dpr;
+    var ctx = this.ctx, C = OBS.colours(), dpr = this.dpr, photo = this.layers.photo && this.images;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = C.bg; ctx.fillRect(0, 0, this.W, this.H);
+    var sky = photo ? '#000' : C.sky;
     if (this.mode === 'allsky') {
       ctx.beginPath(); ctx.ellipse(this.cx, this.cy, 2 * Math.SQRT2 * this.scale, Math.SQRT2 * this.scale, 0, 0, 7);
-      ctx.fillStyle = C.sky; ctx.fill();
-    } else { ctx.fillStyle = C.sky; ctx.fillRect(0, 0, this.W, this.H); }
-    if (this.layers.milkyway) this._milkyWay(ctx, C, full || !this.drag);
-    if (this.layers.grid) this._grid(ctx, C);
+      ctx.fillStyle = sky; ctx.fill();
+    } else { ctx.fillStyle = sky; ctx.fillRect(0, 0, this.W, this.H); }
+    if (photo) this._photo(ctx, full || !this.drag);
+    else if (this.layers.milkyway) this._milkyWay(ctx, C, full || !this.drag);
+    if (this.layers.grid) this._grid(ctx, C, photo);
     var fg = this.ds && this.ds.pos && this.ds.id !== 'sky';
-    if (this.layers.constellations && (!fg || this.mode === 'dome')) this._constellations(ctx, C);
-    this._stars(ctx, C, fg);
-    if (fg) this._dataset(ctx, C);
-    this._markers(ctx, C);
+    if (this.layers.constellations && (!fg || this.mode === 'dome')) this._constellations(ctx, C, photo);
+    if (photo) this._starLabels(ctx, C, true); else this._stars(ctx, C, fg);
+    if (fg) this._dataset(ctx, C, photo);
+    else if (photo && this.ds && this.ds.id === 'sky') this._skySelection(ctx, C);
+    this._markers(ctx, C, photo);
     if (this.drag && this.drag.kind === 'circle' && this.drag.r) {
       var d = this.drag; ctx.strokeStyle = C.sel; ctx.setLineDash([4, 3]); ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(d.x0, d.y0, d.r, 0, 7); ctx.stroke(); ctx.setLineDash([]);
@@ -123,7 +137,7 @@
   }
   P._milkyWay = function (ctx, C, fine) {
     var f = fine ? 3 : 6, w = Math.ceil(this.W / f), h = Math.ceil(this.H / f);
-    var key = [this.mode, this.frame, this.lon0.toFixed(3), this.lat0.toFixed(3), this.fov.toFixed(3), w, h, C.dark].join();
+    var key = ['mw', this.mode, this.frame, this.lon0.toFixed(3), this.lat0.toFixed(3), this.fov.toFixed(3), w, h, C.dark].join();
     var mc = this._mwCanvas;
     if (this._mwKey !== key) {
       mc.width = w; mc.height = h;
@@ -146,8 +160,114 @@
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(mc, 0, 0, w * f, h * f);
   };
-  P._grid = function (ctx, C) {
-    ctx.strokeStyle = C.grid; ctx.lineWidth = 1; ctx.globalAlpha = 0.8;
+
+  // ------------------------------------------------------------------------------------- photographs
+  /** Decode a photograph into pixels (once; at most a few close-ups are kept in memory). */
+  P._pixels = function (key, file) {
+    var self = this;
+    if (this._pix[key]) { this._pix[key].used = performance.now(); return this._pix[key]; }
+    if (this._loading[key]) return null;
+    this._loading[key] = true;
+    var img = new Image();
+    img.onload = function () {
+      var c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+      var x = c.getContext('2d'); x.drawImage(img, 0, 0);
+      var d;
+      try { d = x.getImageData(0, 0, c.width, c.height).data; } catch (e) { self._loading[key] = false; return; }
+      self._pix[key] = { w: c.width, h: c.height, data: d, used: performance.now() };
+      var keys = Object.keys(self._pix).filter(function (k) { return k !== 'allsky'; });
+      if (keys.length > 5) { keys.sort(function (a, b) { return self._pix[a].used - self._pix[b].used; }); delete self._pix[keys[0]]; }
+      self._loading[key] = false; self._mwKey = null; self.draw(true);
+    };
+    img.onerror = function () { self._loading[key] = false; };
+    img.src = (G.OBS_INLINE && G.OBS_INLINE[file]) || ('data/' + file);
+    return null;
+  };
+  /** The close-ups worth drawing at this view: near the centre, and not far smaller than a pixel. */
+  P._visibleCutouts = function () {
+    if (!this.images) return [];
+    var c = this.fromFrame(this.lon0, this.lat0), view = this.mode === 'dome' ? this.fov : 360, self = this;
+    return this.images.cutouts.filter(function (k) {
+      return k.fov > view / 400 && A.sep(c[0], c[1], k.ra, k.dec) < view * 0.75 + k.fov;
+    }).map(function (k) {
+      var ra = k.ra * D2R, de = k.dec * D2R;
+      return { k: k, c: [Math.cos(de) * Math.cos(ra), Math.cos(de) * Math.sin(ra), Math.sin(de)], e: [-Math.sin(ra), Math.cos(ra), 0], n: [-Math.sin(de) * Math.cos(ra), -Math.sin(de) * Math.sin(ra), Math.cos(de)], s: k.fov * D2R / k.w, px: self._pixels(k.id, k.file) };
+    }).filter(function (q) { return q.px; });
+  };
+  P._photo = function (ctx, fine) {
+    var all = this._pixels('allsky', this.images.allsky.file);
+    var f = fine ? 1.25 : 4, w = Math.ceil(this.W / f), h = Math.ceil(this.H / f);
+    var cuts = this._visibleCutouts();
+    var key = ['ph', this.mode, this.frame, this.lon0.toFixed(4), this.lat0.toFixed(4), this.fov.toFixed(4), w, h, !!all, cuts.map(function (q) { return q.k.id; }).join('+')].join();
+    var mc = this._mwCanvas;
+    if (this._mwKey !== key) {
+      mc.width = w; mc.height = h;
+      var mctx = mc.getContext('2d'), im = mctx.createImageData(w, h), px = im.data;
+      var B = this._basis(), gal = this.frame === 'gal', dome = this.mode === 'dome';
+      // the panorama has 3.5' pixels: when zoomed far past that, dim it rather than show big blurry blocks
+      var fade = dome ? Math.max(0.35, Math.min(1, this.fov / 12)) : 1;
+      var AW = all ? all.w : 0, AH = all ? all.h : 0, AD = all ? all.data : null;
+      for (var j = 0; j < h; j++) {
+        for (var i = 0; i < w; i++) {
+          var X = (i + 0.5) * f, Y = (j + 0.5) * f, v0, v1, v2;
+          if (dome) {
+            var x = (this.cx - X) / this.scale, y = (this.cy - Y) / this.scale, r2 = x * x + y * y, q = 4 + r2;
+            var dc = (4 - r2) / q, de = 4 * x / q, dn = 4 * y / q;
+            v0 = dc * B.c[0] + de * B.e[0] + dn * B.n[0]; v1 = dc * B.c[1] + de * B.e[1] + dn * B.n[1]; v2 = dc * B.c[2] + de * B.e[2] + dn * B.n[2];
+          } else {
+            var p = this.unproject(X, Y); if (!p) continue;
+            var cl = Math.cos(p[1] * D2R); v0 = cl * Math.cos(p[0] * D2R); v1 = cl * Math.sin(p[0] * D2R); v2 = Math.sin(p[1] * D2R);
+          }
+          // both frames: e = equatorial vector, g = Galactic vector
+          var e0, e1, e2, g0, g1, g2;
+          if (gal) { g0 = v0; g1 = v1; g2 = v2; e0 = RG[0][0] * v0 + RG[1][0] * v1 + RG[2][0] * v2; e1 = RG[0][1] * v0 + RG[1][1] * v1 + RG[2][1] * v2; e2 = RG[0][2] * v0 + RG[1][2] * v1 + RG[2][2] * v2; }
+          else { e0 = v0; e1 = v1; e2 = v2; g0 = RG[0][0] * v0 + RG[0][1] * v1 + RG[0][2] * v2; g1 = RG[1][0] * v0 + RG[1][1] * v1 + RG[1][2] * v2; g2 = RG[2][0] * v0 + RG[2][1] * v1 + RG[2][2] * v2; }
+          var r = 0, gg = 0, bb = 0, wt = 0, k = 4 * (j * w + i);
+          for (var c = 0; c < cuts.length && wt < 1; c++) {
+            var Q = cuts[c], cosc = e0 * Q.c[0] + e1 * Q.c[1] + e2 * Q.c[2];
+            if (cosc < 0.5) continue;
+            var xi = (e0 * Q.e[0] + e1 * Q.e[1] + e2 * Q.e[2]) / cosc, et = (e0 * Q.n[0] + e1 * Q.n[1] + e2 * Q.n[2]) / cosc;
+            var cxp = Q.px.w / 2 - xi / Q.s, cyp = Q.px.h / 2 - et / Q.s;
+            if (cxp < 0 || cyp < 0 || cxp >= Q.px.w - 1 || cyp >= Q.px.h - 1) continue;
+            // feather the edges so a close-up fades into the panorama
+            var edge = Math.min(cxp, cyp, Q.px.w - 1 - cxp, Q.px.h - 1 - cyp) / (0.06 * Q.px.w), a = Math.min(1, edge) * (1 - wt);
+            var o = 4 * ((cyp | 0) * Q.px.w + (cxp | 0)), d = Q.px.data;
+            r += a * d[o]; gg += a * d[o + 1]; bb += a * d[o + 2]; wt += a;
+          }
+          if (wt < 1 && AD) {
+            var l = Math.atan2(g1, g0) * R2D, bgl = Math.asin(Math.max(-1, Math.min(1, g2))) * R2D;
+            var ax = (0.5 - l / 360) * AW - 0.5, ay = Math.max(0, Math.min(AH - 1.001, (90 - bgl) / 180 * AH - 0.5));
+            ax = ((ax % AW) + AW) % AW;
+            var ix = ax | 0, iy = ay | 0, fx = ax - ix, fy = ay - iy, ix2 = (ix + 1) % AW;
+            var o00 = 4 * (iy * AW + ix), o01 = 4 * (iy * AW + ix2), o10 = o00 + 4 * AW, o11 = o01 + 4 * AW, rest = (1 - wt) * fade;
+            for (var ch = 0; ch < 3; ch++) {
+              var vv = (AD[o00 + ch] * (1 - fx) + AD[o01 + ch] * fx) * (1 - fy) + (AD[o10 + ch] * (1 - fx) + AD[o11 + ch] * fx) * fy;
+              if (ch === 0) r += rest * vv; else if (ch === 1) gg += rest * vv; else bb += rest * vv;
+            }
+          }
+          px[k] = r; px[k + 1] = gg; px[k + 2] = bb; px[k + 3] = 255;
+        }
+      }
+      mctx.putImageData(im, 0, 0);
+      this._mwKey = key;
+    }
+    ctx.save();
+    if (this.mode === 'allsky') { ctx.beginPath(); ctx.ellipse(this.cx, this.cy, 2 * Math.SQRT2 * this.scale, Math.SQRT2 * this.scale, 0, 0, 7); ctx.clip(); }
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(mc, 0, 0, w * f, h * f);
+    ctx.restore();
+  };
+  /** Which photographs are on screen, for the credit line. */
+  P.credits = function () {
+    if (!this.layers.photo || !this.images) return '';
+    var cuts = this._visibleCutouts().map(function (q) { return q.k; });
+    var out = cuts.length ? cuts.map(function (k) { return k.label; }).join(', ') + ': ' + cuts[0].credit + '. ' : '';
+    return out + 'All-sky: ' + this.images.allsky.credit + '.';
+  };
+
+  // ------------------------------------------------------------------------------------- overlays
+  P._grid = function (ctx, C, photo) {
+    ctx.strokeStyle = photo ? 'rgba(170,190,255,0.22)' : C.grid; ctx.lineWidth = 1; ctx.globalAlpha = 0.8;
     var self = this;
     function poly(pts) {
       ctx.beginPath(); var on = false, last = null;
@@ -162,23 +282,23 @@
     for (var lon = 0; lon < 360; lon += 30) { var pts = []; for (var lat = -88; lat <= 88; lat += 2) pts.push([lon, lat]); poly(pts); }
     for (lat = -60; lat <= 60; lat += 30) { pts = []; for (lon = 0; lon <= 360; lon += 2) pts.push([lon, lat]); poly(pts); }
     ctx.globalAlpha = 1;
-    ctx.fillStyle = C['ink-3']; ctx.font = '10px ' + getComputedStyle(document.documentElement).getPropertyValue('--mono');
+    ctx.fillStyle = photo ? 'rgba(200,210,240,0.7)' : C['ink-3']; ctx.font = '10px ' + getComputedStyle(document.documentElement).getPropertyValue('--mono');
     for (lon = 0; lon < 360; lon += 30) {
       var q = this.project(lon, 0);
       if (q) ctx.fillText(this.frame === 'gal' ? 'l ' + lon + '°' : (lon / 15) + 'h', q[0] + 3, q[1] - 3);
     }
   };
-  P._constellations = function (ctx, C) {
-    var c = this.bg.table.cols, ra = c.ra, de = c.dec, self = this, pos = this._posOf(this.bg);
-    ctx.strokeStyle = C.grid; ctx.lineWidth = 1; ctx.globalAlpha = 0.9;
+  P._constellations = function (ctx, C, photo) {
+    var self = this, pos = this._posOf(this.bg);
+    ctx.strokeStyle = photo ? 'rgba(160,185,255,0.28)' : C.grid; ctx.lineWidth = 1; ctx.globalAlpha = 0.9;
     ctx.beginPath();
     this.con.lines.forEach(function (s) {
       var a = self.project(pos.lon[s[0]], pos.lat[s[0]]), b = self.project(pos.lon[s[1]], pos.lat[s[1]]);
       if (a && b && Math.hypot(a[0] - b[0], a[1] - b[1]) < self.W / 2) { ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); }
     });
     ctx.stroke(); ctx.globalAlpha = 1;
-    if (this.layers.labels && this.mode === 'dome' && this.fov > 25 && this.fov < 160) {
-      ctx.fillStyle = C['ink-3']; ctx.font = '11px ' + getComputedStyle(document.documentElement).getPropertyValue('--sans'); ctx.textAlign = 'center';
+    if (this.layers.labels && this.mode === 'dome' && this.fov > 25 && this.fov < 140) {
+      ctx.fillStyle = photo ? 'rgba(190,205,240,0.55)' : C['ink-3']; ctx.font = '10.5px ' + getComputedStyle(document.documentElement).getPropertyValue('--sans'); ctx.textAlign = 'center';
       this.con.labels.forEach(function (l) {
         var q = self.project(pos.lon[l[1]], pos.lat[l[1]]);
         if (q && q[0] > 0 && q[0] < self.W && q[1] > 0 && q[1] < self.H) ctx.fillText(l[0].toUpperCase(), q[0], q[1] + 16);
@@ -186,43 +306,100 @@
       ctx.textAlign = 'left';
     }
   };
+  // Soft star images: a white-hot core, a coloured halo, and spikes for the brightest (as a telescope draws them).
+  var SPRITES = {};
+  function sprite(rgb, dark, spikes) {
+    var key = rgb.join() + (dark ? 'd' : 'l') + (spikes ? 's' : '');
+    if (SPRITES[key]) return SPRITES[key];
+    var S = 64, c = document.createElement('canvas'); c.width = c.height = S;
+    var x = c.getContext('2d'), g = x.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2), col = 'rgba(' + rgb.join(',') + ',';
+    if (dark) {
+      g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.12, col + '1)'); g.addColorStop(0.3, col + '0.35)'); g.addColorStop(0.6, col + '0.08)'); g.addColorStop(1, col + '0)');
+    } else {
+      g.addColorStop(0, col + '1)'); g.addColorStop(0.18, col + '0.9)'); g.addColorStop(0.4, col + '0.18)'); g.addColorStop(1, col + '0)');
+    }
+    x.fillStyle = g; x.fillRect(0, 0, S, S);
+    if (spikes) {
+      x.globalCompositeOperation = 'lighter'; x.strokeStyle = col + (dark ? '0.55)' : '0.4)'); x.lineWidth = 1;
+      x.beginPath(); x.moveTo(S / 2, 2); x.lineTo(S / 2, S - 2); x.moveTo(2, S / 2); x.lineTo(S - 2, S / 2); x.stroke();
+    }
+    return (SPRITES[key] = c);
+  }
   /** Naked-eye stars: the backdrop, or the dataset itself when the sky is the dataset. */
   P._stars = function (ctx, C, faint) {
     var t = this.bg.table, c = t.cols, pos = this._posOf(this.bg), n = t.n;
     var zoom = this.mode === 'dome' ? Math.max(1, Math.pow(60 / this.fov, 0.35)) : 0.8;
     var isDs = this.ds && this.ds.id === 'sky' && this.chart, sel = isDs ? this.chart.sel : null, mask = isDs ? this.chart.mask : null;
     var anySel = false; if (sel) for (var k = 0; k < n; k++) if (sel[k]) { anySel = true; break; }
-    var named = [];
+    var named = [], dark = C.dark;
     for (var i = 0; i < n; i++) {
-      var q = this.project(pos.lon[i], pos.lat[i]); if (!q || q[0] < -5 || q[0] > this.W + 5 || q[1] < -5 || q[1] > this.H + 5) continue;
+      var q = this.project(pos.lon[i], pos.lat[i]); if (!q || q[0] < -9 || q[0] > this.W + 9 || q[1] < -9 || q[1] > this.H + 9) continue;
       var r = Math.max(0.45, (6.8 - c.mag[i]) * 0.42) * zoom;
       if (faint) r *= 0.6;
-      var rgb = OBS.starRGB(c.ci[i], 'bv', C.dark);
       ctx.globalAlpha = faint ? 0.45 : (anySel && !sel[i] ? 0.35 : 1);
-      if (!C.dark) { ctx.fillStyle = 'rgb(' + rgb.map(function (x) { return Math.round(x * 0.55); }) + ')'; }
-      else ctx.fillStyle = 'rgb(' + rgb + ')';
-      if (sel && sel[i] && mask[i]) ctx.fillStyle = C.sel;
-      ctx.beginPath(); ctx.arc(q[0], q[1], r, 0, 7); ctx.fill();
+      if (sel && sel[i] && mask[i]) { ctx.fillStyle = C.sel; ctx.beginPath(); ctx.arc(q[0], q[1], Math.max(2, r), 0, 7); ctx.fill(); }
+      else {
+        var rgb = OBS.starRGB(c.ci[i], 'bv', dark);
+        if (!dark) rgb = rgb.map(function (x) { return Math.round(x * 0.55); });
+        if (r < 1.1) { ctx.fillStyle = 'rgb(' + rgb + ')'; ctx.fillRect(q[0] - r, q[1] - r, 2 * r, 2 * r); }
+        else { var s = r * (dark ? 4.2 : 2.6); ctx.drawImage(sprite(rgb, dark, !faint && c.mag[i] < 1.2 && dark), q[0] - s, q[1] - s, 2 * s, 2 * s); }
+      }
       if (c.name[i] && !faint) named.push([c.mag[i], c.name[i], q, r]);
     }
     ctx.globalAlpha = 1;
-    if (!this.layers.labels || faint) return;
-    var lim = this.mode === 'dome' ? (this.fov > 90 ? 1.0 : this.fov > 40 ? 2.2 : this.fov > 15 ? 3.5 : 5.5) : 0.6;
-    ctx.fillStyle = C['ink-2']; ctx.font = '11px ' + getComputedStyle(document.documentElement).getPropertyValue('--sans');
-    named.forEach(function (s) { if (s[0] < lim) ctx.fillText(s[1], s[2][0] + s[3] + 3, s[2][1] + 3); });
+    if (this.layers.labels && !faint) this._labels(ctx, C, named, false);
   };
-  /** The open dataset's objects, coloured as the lens colours them; selected ones highlighted. */
-  P._dataset = function (ctx, C) {
+  P._labels = function (ctx, C, named, photo) {
+    var lim = this.mode === 'dome' ? (this.fov > 90 ? 1.0 : this.fov > 40 ? 2.2 : this.fov > 15 ? 3.5 : 5.5) : 0.6, self = this;
+    var mk = this.markers.map(function (m) { var f = self.toFrame(m.ra, m.dec); return self.project(f[0], f[1]); }).filter(Boolean);
+    named = named.filter(function (s) { return !mk.some(function (q) { return Math.hypot(q[0] - s[2][0], q[1] - s[2][1]) < 14; }); });
+    ctx.font = '11px ' + getComputedStyle(document.documentElement).getPropertyValue('--sans');
+    named.forEach(function (s) {
+      if (s[0] >= lim) return;
+      var x = s[2][0] + s[3] + 4, y = s[2][1] + 3;
+      if (photo) { ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillText(s[1], x + 1, y + 1); ctx.fillStyle = 'rgba(235,240,255,0.92)'; }
+      else ctx.fillStyle = C['ink-2'];
+      ctx.fillText(s[1], x, y);
+    });
+  };
+  P._starLabels = function (ctx, C) {
+    if (!this.layers.labels) return;
+    var c = this.bg.table.cols, pos = this._posOf(this.bg), named = [];
+    for (var i = 0; i < this.bg.table.n; i++) {
+      if (!c.name[i]) continue;
+      var q = this.project(pos.lon[i], pos.lat[i]); if (!q || q[0] < 0 || q[0] > this.W || q[1] < 0 || q[1] > this.H) continue;
+      named.push([c.mag[i], c.name[i], q, 3]);
+    }
+    this._labels(ctx, C, named, true);
+  };
+  P._skySelection = function (ctx, C) {
+    var t = this.bg.table, pos = this._posOf(this.bg), sel = this.chart.sel;
+    ctx.strokeStyle = C.sel; ctx.lineWidth = 1.5;
+    for (var i = 0; i < t.n; i++) {
+      if (!sel[i]) continue;
+      var q = this.project(pos.lon[i], pos.lat[i]); if (!q) continue;
+      ctx.beginPath(); ctx.arc(q[0], q[1], 7, 0, 7); ctx.stroke();
+    }
+  };
+  /** The open dataset's objects, coloured as the lens colours them; selected ones highlighted. On a photograph
+   *  only small datasets and selections are drawn, as rings, so the picture stays visible. */
+  P._dataset = function (ctx, C, photo) {
     var ds = this.ds, ch = this.chart, pos = this._posOf(ds), n = ds.table.n, m = ch.mask, sel = ch.sel;
     var anySel = false; for (var k = 0; k < n; k++) if (sel[k] && m[k]) { anySel = true; break; }
     var shown = 0; for (k = 0; k < n; k++) shown += m[k];
     var s = shown > 20000 ? 1.3 : shown > 3000 ? 1.8 : 2.6;
     if (this.mode === 'dome' && this.fov < 20) s *= 1.4;
     for (var pass = 0; pass < 2; pass++) {
+      if (photo && pass === 0 && shown > 1500) continue;
       for (var i = 0; i < n; i++) {
         if (!m[i] || (pass === 1) !== !!sel[i]) continue;
         var q = this.project(pos.lon[i], pos.lat[i]);
         if (!q || q[0] < -3 || q[0] > this.W + 3 || q[1] < -3 || q[1] > this.H + 3) continue;
+        if (photo) {
+          ctx.globalAlpha = pass ? 1 : 0.75; ctx.strokeStyle = pass ? C.sel : ch.colourOf(i, C); ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.arc(q[0], q[1], pass ? 4 : 3, 0, 7); ctx.stroke();
+          continue;
+        }
         ctx.globalAlpha = pass ? 1 : anySel ? 0.35 : 0.85;
         ctx.fillStyle = pass ? C.sel : anySel ? C['ink-3'] : ch.colourOf(i, C);
         ctx.fillRect(q[0] - s / 2, q[1] - s / 2, s * (pass ? 1.6 : 1), s * (pass ? 1.6 : 1));
@@ -230,43 +407,50 @@
     }
     ctx.globalAlpha = 1;
   };
-  P._markers = function (ctx, C) {
+  P._markers = function (ctx, C, photo) {
     var self = this;
     ctx.font = '12px ' + getComputedStyle(document.documentElement).getPropertyValue('--sans');
     this.markers.forEach(function (mk) {
       var f = self.toFrame(mk.ra, mk.dec), q = self.project(f[0], f[1]);
       if (!q) return;
-      var r = mk.r ? mk.r * self.scale * D2R * (self.mode === 'dome' ? 1 : 0.9) : 9;
-      ctx.strokeStyle = mk.colour || C.accent; ctx.fillStyle = mk.colour || C.accent; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(q[0], q[1], Math.max(6, r), 0, 7); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(q[0] - Math.max(6, r) - 6, q[1]); ctx.lineTo(q[0] - Math.max(6, r) + 2, q[1]); ctx.stroke();
-      if (mk.label) ctx.fillText(mk.label, q[0] + Math.max(6, r) + 5, q[1] - 5);
+      var r = Math.max(7, mk.r ? mk.r * self.scale * D2R : 9), col = mk.colour || (photo ? '#f1d08f' : C.accent);
+      ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(q[0], q[1], r, 0, 7); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(q[0] - r - 7, q[1]); ctx.lineTo(q[0] - r + 2, q[1]); ctx.moveTo(q[0] + r + 7, q[1]); ctx.lineTo(q[0] + r - 2, q[1]); ctx.stroke();
+      if (mk.label) {
+        if (photo) { ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillText(mk.label, q[0] + r + 6, q[1] - 4); ctx.fillStyle = col; }
+        ctx.fillText(mk.label, q[0] + r + 5, q[1] - 5);
+      }
     });
   };
   P._hoverRing = function (ctx, C) {
     var h = this.hoverItem, q = this.project(h.lon, h.lat); if (!q) return;
-    ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(q[0], q[1], 7, 0, 7); ctx.stroke();
+    ctx.strokeStyle = this.layers.photo ? '#fff' : C.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(q[0], q[1], 7, 0, 7); ctx.stroke();
   };
 
   // ------------------------------------------------------------------------------------- moving around
+  /** Swing to a direction. o: {mode, frame, instant, photo}. */
   P.goTo = function (ra, dec, fov, opts) {
     opts = opts || {};
-    if (opts.mode) this.mode = opts.mode;
-    if (opts.frame) { this.frame = opts.frame; this._mwKey = null; }
+    if (opts.mode && opts.mode !== this.mode) { this.mode = opts.mode; if (this.mode === 'allsky') this.lat0 = 0; }
+    if (opts.frame && opts.frame !== this.frame) { var e = this.fromFrame(this.lon0, this.lat0); this.frame = opts.frame; var nf = this.toFrame(e[0], e[1]); this.lon0 = nf[0]; this.lat0 = nf[1]; }
+    if (opts.photo !== undefined && this.images) this.layers.photo = opts.photo;
+    this._mwKey = null; OBS.emit('skymode');
     var f = this.toFrame(ra, dec), self = this;
-    var from = { lon: this.lon0, lat: this.lat0, fov: this.fov }, to = { lon: f[0], lat: f[1], fov: fov || this.fov };
+    var from = { lon: this.lon0, lat: this.lat0, fov: this.fov }, to = { lon: f[0], lat: this.mode === 'allsky' ? 0 : f[1], fov: fov || this.fov };
     var dl = ((to.lon - from.lon + 540) % 360) - 180;
+    if (this.anim) { G.cancelAnimationFrame(this.anim); this.anim = null; }
     if (OBS.reducedMotion() || opts.instant) { this.lon0 = to.lon; this.lat0 = to.lat; this.fov = to.fov; this.draw(true); return; }
-    var t0 = performance.now(), dur = 1400;
-    if (this.anim) G.cancelAnimationFrame(this.anim);
+    var t0 = performance.now(), dur = opts.duration || 1300;
     (function step(now) {
       var u = Math.min(1, (now - t0) / dur), e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
       // zoom out a little in the middle of long trips, like swinging a telescope
       var hop = Math.min(1, (Math.abs(dl) + Math.abs(to.lat - from.lat)) / 90), wide = Math.max(from.fov, to.fov) * (1 + 0.6 * hop);
       var lf = Math.log(from.fov) + (Math.log(to.fov) - Math.log(from.fov)) * e + Math.sin(Math.PI * e) * (Math.log(wide) - Math.max(Math.log(from.fov), Math.log(to.fov))) * hop;
       self.lon0 = (from.lon + dl * e + 360) % 360; self.lat0 = from.lat + (to.lat - from.lat) * e; self.fov = Math.exp(lf);
+      self.drag = u < 1 ? { kind: 'anim' } : null;    // coarse rendering while moving
       self._draw(u >= 1);
-      if (u < 1) self.anim = G.requestAnimationFrame(step); else self.anim = null;
+      if (u < 1) self.anim = G.requestAnimationFrame(step); else { self.anim = null; self.drag = null; self.draw(true); }
     })(t0);
   };
   P.setMode = function (m) { this.mode = m; if (m === 'allsky') this.lat0 = 0; this._mwKey = null; this.draw(true); };
@@ -314,7 +498,8 @@
     });
     cv.addEventListener('pointermove', function (e) {
       var p = pos(e), d = self.drag;
-      if (!d) {
+      if (!d || d.kind === 'anim') {
+        if (d) return;
         var h = self._nearest(p[0], p[1]);
         if ((h && h.i) !== (self.hoverItem && self.hoverItem.i) || (h && h.ds) !== (self.hoverItem && self.hoverItem.ds)) {
           self.hoverItem = h; self.draw(); self.listeners.forEach(function (fn) { fn('hover', h); });
@@ -331,7 +516,7 @@
       self.draw();
     });
     function end(e) {
-      var d = self.drag; self.drag = null; if (!d) return;
+      var d = self.drag; self.drag = null; if (!d || d.kind === 'anim') return;
       if (d.kind === 'circle') { if (d.r > 4) self._circleSelect(d); }
       else if (!d.moved) {
         var p = pos(e), h = self._nearest(p[0], p[1]);
@@ -344,14 +529,15 @@
     cv.addEventListener('pointerleave', function () { if (self.hoverItem) { self.hoverItem = null; self.draw(); self.listeners.forEach(function (fn) { fn('hover', null); }); } });
     cv.addEventListener('wheel', function (e) {
       e.preventDefault();
+      if (self.anim) { G.cancelAnimationFrame(self.anim); self.anim = null; self.drag = null; }
       if (self.mode === 'allsky') {
         if (e.deltaY < 0) { var p = pos(e), q = self.unproject(p[0], p[1]); if (q) { self.mode = 'dome'; self.lon0 = q[0]; self.lat0 = q[1]; self.fov = 140; self._mwKey = null; OBS.emit('skymode'); } }
       } else {
-        self.fov = Math.max(0.2, Math.min(200, self.fov * Math.exp(e.deltaY * 0.0015)));
+        self.fov = Math.max(0.05, Math.min(200, self.fov * Math.exp(e.deltaY * 0.0015)));
         if (self.fov >= 199 && e.deltaY > 0) { self.mode = 'allsky'; self.lat0 = 0; self._mwKey = null; OBS.emit('skymode'); }
       }
-      self.draw();
-      clearTimeout(self._wt); self._wt = setTimeout(function () { self.draw(true); }, 150);
+      self.drag = { kind: 'anim' }; self.draw();
+      clearTimeout(self._wt); self._wt = setTimeout(function () { self.drag = null; self.draw(true); }, 180);
     }, { passive: false });
     if (G.ResizeObserver) new G.ResizeObserver(function () { self.draw(true); }).observe(cv);
   };

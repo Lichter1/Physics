@@ -11,9 +11,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ctx = { console, Math, JSON, Promise, Float64Array, Uint8Array, Array, Object, Number, String, isFinite, parseFloat, setTimeout };
 ctx.globalThis = ctx; ctx.window = ctx;
 ctx.OBS_INLINE = {};
-for (const f of readdirSync(join(root, 'data'))) ctx.OBS_INLINE[f] = readFileSync(join(root, 'data', f), 'utf8');
+for (const f of readdirSync(join(root, 'data')).filter((x) => /\.(csv|json)$/.test(x))) ctx.OBS_INLINE[f] = readFileSync(join(root, 'data', f), 'utf8');
 vm.createContext(ctx);
-for (const s of ['core', 'astro', 'catalog', 'instruments', 'missions']) vm.runInContext(readFileSync(join(root, 'src/js', s + '.js'), 'utf8'), ctx, { filename: s + '.js' });
+for (const s of ['core', 'astro', 'catalog', 'instruments', 'explainers', 'missions', 'lectures']) vm.runInContext(readFileSync(join(root, 'src/js', s + '.js'), 'utf8'), ctx, { filename: s + '.js' });
 const OBS = ctx.OBS, A = OBS.astro;
 const close = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (±${tol})`);
 
@@ -98,4 +98,40 @@ test('the mission plan is consistent', () => {
   }
   for (const k of Object.keys(OBS.CONCEPTS)) assert.ok(have.has(k), 'some mission unlocks ' + k);
   for (const q of OBS.QUIZ) assert.ok(q.a >= 0 && q.a < q.c.length);
+});
+
+test('every mission has a lecture with valid sky cues, explainers and practice', () => {
+  for (const m of OBS.MISSIONS) {
+    assert.ok(m.lecture && m.lecture.length >= 3, m.id + ' has a lecture');
+    assert.ok(m.target && isFinite(m.target.ra) && isFinite(m.target.dec) && m.target.fov > 0, m.id + ' turns the sky somewhere when it opens');
+    for (const b of m.lecture) {
+      assert.ok(b.h && b.html, m.id + ': a step has a heading and text');
+      if (b.ex) assert.equal(typeof OBS.EXPLAINERS[b.ex.id], 'function', m.id + ' explainer ' + b.ex.id);
+      if (b.sky) assert.ok(isFinite(b.sky.ra) && isFinite(b.sky.dec) && b.sky.fov > 0, m.id + ' sky cue');
+      for (const s of [b.html, ...(Array.isArray(b.eq) ? b.eq : b.eq ? [b.eq] : [])]) assert.ok(!/\\\(([^)]*)$/.test(s), m.id + ': unclosed inline maths');
+    }
+    assert.ok(m.practice.length >= 1, m.id + ' has practice');
+    for (const p of m.practice) assert.ok(isFinite(p.a) && p.q && p.sol, m.id + ' practice entry');
+  }
+});
+
+test('practice answers agree with the physics module', () => {
+  const ans = (id, k) => OBS.MISSIONS.find((m) => m.id === id).practice[k].a;
+  const near = (a, b, msg) => assert.ok(Math.abs(a / b - 1) < 0.01, `${msg}: page ${a} vs computed ${b}`);
+  near(ans('sky', 0), Math.pow(10, 0.4 * 3), 'magnitudes');
+  near(ans('parallax', 1), 1 / 0.768 * 3.26156, 'Proxima in light-years');
+  near(ans('thermometer', 0), A.wienPeak(1) / 290e-9, 'Wien');
+  near(ans('radius', 1), A.radius(0.003, 10000), 'white dwarf radius');
+  near(ans('binary', 0), A.binaryMasses(10, 50, 100, 0, 90).total, 'binary total mass');
+  near(ans('binary', 1), A.binaryMasses(10, 50, 100, 0, 90).M1, 'heavier star');
+  near(ans('masslum', 0), 1e4 * Math.pow(5, -2.5), '5 Msun lifetime (Myr)');
+  near(ans('turnoff', 0), 1e4 * Math.pow(2, -2.5), '2 Msun lifetime (Myr)');
+  near(ans('leavitt', 0), A.distFromMu(15 - (-2.43 * (1 - 1) - 4.05)) / 1000, 'Cepheid distance');
+  near(ans('yardstick', 0), A.distFromMu(18.48) / 1000, 'LMC');
+  near(ans('pulsars', 0), A.pulsarAge(1, 1e-15) / 1e6, 'pulsar age');
+  near(ans('microlens', 0), A.magnification(0.1), 'A(0.1)');
+  near(ans('kirkwood', 0), 5.2026 * Math.pow(1 / 3, 2 / 3), '3:1 resonance');
+  near(ans('rotation', 0), A.massEnclosed(220, 8) / 1e10, 'enclosed mass');
+  near(ans('zwicky', 0), A.virialMass(1000, 1.5) / 1e15, 'virial mass');
+  near(ans('census', 1), 28.4 * Math.pow(4 / 365.25, -1 / 3), 'RV amplitude');
 });

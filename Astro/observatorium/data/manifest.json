@@ -457,5 +457,14 @@
  "_about": {
   "built": "2026-11-25",
   "note": "Every number in the Observatorium comes from these files. See pipeline/README.md to rebuild them."
+ },
+ "photographs": {
+  "title": "Photographs of the sky (photo layer)",
+  "rows": 22,
+  "fetched": "2026-11-25",
+  "source": "All-sky: ESO/S. Brunier, the Milky Way panorama (eso0932a), CC BY 4.0. Close-ups (The Pleiades (M45), Praesepe (M44), M67, NGC 6397, 61 Cygni, The Orion Nebula (M42), Betelgeuse, Rigel, Gaia DR3 3684484600212307712, The Small Magellanic Cloud, The Crab Nebula (M1), HAT-P-7, Toward the Galactic bulge: OGLE-2019-BLG-0148, 47 Tucanae, M13, The Andromeda galaxy (M31), NGC 3198, The Coma cluster, M87, a giant elliptical, M101, a spiral, M51, the Whirlpool): DESI Legacy Imaging Surveys DR9 (legacysurvey.org); Digitized Sky Survey 2 (STScI/NASA; POSS-II Caltech/Palomar, UK Schmidt AAO), via NASA SkyView; Sloan Digital Sky Survey (SDSS DR18 image cutout service).",
+  "cuts": "DSS2 red and blue plates stretched and combined into colour (green = their mean); first-epoch DSS plates fill fields with no DSS2 plate in one colour. Each close-up is a gnomonic projection, north up, east left.",
+  "license": "ESO panorama CC BY 4.0. DSS: free for research and education with acknowledgement. SDSS and Legacy Surveys images: public, with acknowledgement.",
+  "citation": "Brunier (ESO) 2009, eso0932a; Lasker et al. 1990 / Reid et al. 1991 (DSS); SDSS DR18; Dey et al. 2019 (Legacy Surveys)"
  }
 }

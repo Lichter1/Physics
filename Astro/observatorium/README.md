@@ -1,21 +1,23 @@
 # Observatorium
 
 Learn General Astronomy 1 (BGU 203-1-3461) by retracing its discoveries with real data. A panoramic sky and a
-"data lens" show the same catalogue objects; each mission puts you in the place of the astronomer who first
-made a measurement, and each finished mission unlocks a new derived quantity (distance, luminosity, temperature,
-radius, mass…) that then appears as an axis for every dataset.
+"data lens" show the same catalogue objects. Each mission opens with a short lecture in the observatory (theory,
+equations, a live explainer, and the dome turning to what is being discussed, in drawings or real photographs),
+then puts you in the place of the astronomer who first made the measurement. Each finished mission unlocks a new
+derived quantity (distance, luminosity, temperature, radius, mass…) that then appears as an axis for every dataset.
 
 Why it is built this way, how it maps onto lectures 1–5 and the homework, and what comes next: [DESIGN.md](DESIGN.md).
 
 ## Use it
 
 - **Published page:** the artifact link from the session (data load per chapter).
-- **Offline:** run `node build.mjs`, then open `observatorium.html` (one 9 MB file with every dataset inside).
+- **Offline:** run `node build.mjs`, then open `observatorium.html` (one 23 MB file with every dataset and photograph
+  inside; the equations need an internet connection for MathJax).
 
 | Part | What it does |
 |---|---|
-| **Logbook** (left) | Chapters 1–5 = lectures 1–5. A mission runs in four steps: *Brief* (who, when, the variables, the relation, what it lets you deduce) → *Predict* (locked in) → *Observe* (the page sets up the sky and lens and checks your measurement) → *Explain* (your numbers, what they mean, what really happened, where it is in the course and homework). Also: *Notebook* (what you can measure so far; teacher mode unlocks everything), *Check yourself* (12 questions before and after, with normalised gain), *Data* (every source, cut and citation). |
-| **The sky** (middle) | Drag to turn, scroll to zoom, *Whole sky* for a Hammer map, *Galactic* to put the Milky Way along the equator. The glow is Gaia's real star counts. Shift-drag (or *Select circle*) selects. The **scale ladder** zooms out: sky → solar system → stars → clusters → Milky Way → galaxies (→ Universe, later lectures). |
+| **Logbook** (left) | Chapters 1–5 = lectures 1–5. A mission runs in four steps: *Lecture* (4–5 steps of theory in the right-hand pane, with typeset equations, a live explainer, and sky cues; the last step lists the variables, the relation and what it lets you deduce) → *Predict* (locked in) → *Exercise* (the page sets up the sky and lens and checks your measurement) → *Explain* (your numbers, what they mean, what really happened, where it is in the course, and practice problems with worked solutions). Also: *Notebook* (what you can measure so far; teacher mode unlocks everything), *Check yourself* (12 questions before and after, with normalised gain), *Data* (every source, cut and citation). |
+| **The sky** (middle) | *Drawn* shows catalogue stars as glowing points over Gaia's star counts; *Photo* shows real photographs: ESO's all-sky Milky Way panorama with 22 Digitized Sky Survey, SDSS and Legacy Survey close-ups blended in at full resolution (the credits appear under the sky). Drag to turn, scroll to zoom, *Whole sky* for a Hammer map, *Galactic* to put the Milky Way along the equator. Shift-drag (or *Select circle*) selects. The **scale ladder** zooms out: sky → solar system → stars → clusters → Milky Way → galaxies (→ Universe, later lectures). |
 | **Data lens** (right) | Any two variables of the open dataset, log or linear, or a histogram. Drag a box to select (it lights up on the sky), click a point for its card, scroll to zoom, double-click to fit. Missions add instruments here: a spectrograph, a parallax telescope, a binary-velocity reader, period folding, sliding reference populations and hand-fitted model curves with χ². |
 
 *Night view* is the real sky; *Plate view* shows it as a photographic negative, as Leavitt saw it on glass plates.
@@ -62,6 +64,7 @@ cd pipeline
 python3 fetch_gaia.py     # Gaia archive queries (anonymous jobs are limited to 60 s; it retries in pieces)
 # other catalogues: the URLs are in data/manifest.json under "source"; save them in pipeline/cache/
 python3 make_data.py      # cache/ -> ../data/*.csv, milkyway.json, constellations.json, manifest.json
+python3 fetch_images.py   # ESO panorama + DSS/SDSS/Legacy close-ups -> ../data/img/, images.json (run after make_data)
 ```
 
 `data/manifest.json` records, for every file, the source, the query, the cuts, the citation and the licence.
@@ -76,9 +79,12 @@ Using it for private study is fine; ask OGLE before sharing a page with their li
 | `src/js/astro.js` | The physics: coordinates, magnitudes, Planck, Gaia colour calibrations, orbits, lensing, transits, rotation curves, pulsars |
 | `src/js/catalog.js` | Every dataset and variable; which concept unlocks each derived variable |
 | `src/js/chart.js` | The data lens |
-| `src/js/sky.js` | The sky: stereographic dome and Hammer all-sky, equatorial or Galactic |
+| `src/js/sky.js` | The sky: stereographic dome and Hammer all-sky, equatorial or Galactic; drawn or photographed |
 | `src/js/instruments.js` | Controls; spectrograph, parallax telescope, binary reader, folding, model fitting, sliding references |
 | `src/js/missions.js` | The 21 missions, the chapters and the concept check |
+| `src/js/lectures.js` | Each mission's lecture (theory, equations, sky cues) and practice problems |
+| `src/js/lecture.js` | Runs a lecture in the right-hand pane and turns the sky with it |
+| `src/js/explainers.js` | 21 live diagrams used in the lectures |
 | `src/js/logbook.js` | Mission runner, notebook, quiz, data sources |
 | `src/js/main.js` | Wiring, controls, object cards, theme |
 | `pipeline/` | Data download and preparation |

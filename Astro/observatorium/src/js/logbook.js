@@ -1,4 +1,4 @@
-/* Observatorium — the logbook: chapters, the mission card (brief → predict → observe → explain), the notebook
+/* Observatorium — the logbook: chapters, the mission card (lecture → predict → exercise → explain), the notebook
  * of what you can measure so far, a before/after concept check, and the data sources. */
 (function (G) {
   'use strict';
@@ -14,6 +14,7 @@
   LB.current = function () { return cur; };   // for tests and for a teacher's console
   function byId(id) { for (var i = 0; i < OBS.MISSIONS.length; i++) if (OBS.MISSIONS[i].id === id) return OBS.MISSIONS[i]; return null; }
   function number(m) { var list = OBS.MISSIONS.filter(function (x) { return x.ch === m.ch; }); return m.ch + '.' + (list.indexOf(m) + 1); }
+  LB.number = number;
   function needsMet(m) { return OBS.unlocked(m.needs); }
   function missingNames(m) {
     return (m.needs || []).filter(function (k) { return !OBS.state.concepts[k]; }).map(function (k) { var by = byId(OBS.CONCEPTS[k].by); return by ? number(by) + ' ' + by.title : k; });
@@ -44,14 +45,24 @@
   };
 
   // ------------------------------------------------------------------------------------------ the mission card
-  var STEPS = ['Brief', 'Predict', 'Observe', 'Explain'];
+  var STEPS = ['Lecture', 'Predict', 'Exercise', 'Explain'];
   LB.start = function (m) {
     stopTimer();
     cur.m = m; cur.step = 0; cur.pred = (P.done[m.id] && P.done[m.id].pred) || null; cur.st = {};
     if (m.ch !== cur.ch) { cur.ch = m.ch; LB.renderChapters(); }
-    LB.renderList(); LB.tab('missions'); renderCard();
+    LB.renderList(); LB.tab('missions');
+    OBS.lecture.open(m, 0);      // the dome turns to the mission's part of the sky straight away
+    renderCard();
     $('lb-card').scrollIntoView({ block: 'nearest' });
   };
+  /** From the lecture's last step to the prediction. */
+  LB.toPredict = function () { if (!cur.m || OBS.lecture.blocked(cur.m) && !OBS.state.sandbox) return; cur.step = 1; renderCard(); };
+  OBS.on('lecture', function () { if (cur.m && cur.step === 0) renderCard(); });
+  /** Leave the mission card; if the lens still shows a lecture, give it back its data. */
+  function leave() {
+    cur.m = null; stopTimer(); renderCard(); LB.renderList();
+    if (OBS.app.lensMode() === 'lecture') OBS.app.open(OBS.app.chart.ds && OBS.DATASETS[OBS.app.chart.ds.id] ? OBS.app.chart.ds.id : 'sky');
+  }
   function stepper() {
     return '<ol class="steps">' + STEPS.map(function (s, k) { return '<li class="' + (k === cur.step ? 'on' : k < cur.step ? 'past' : '') + '">' + s + '</li>'; }).join('') + '</ol>';
   }
@@ -62,15 +73,11 @@
     var head = '<header><p class="eyebrow">Mission ' + number(m) + ' · ' + esc(m.era) + '</p><h3>' + esc(m.title) + '</h3><p class="who">' + esc(m.who) + '</p></header>' + stepper();
     var body = '';
     if (cur.step === 0) {
-      var miss = missingNames(m);
-      body = '<div class="prose"><p>' + m.brief + '</p></div>' +
-        '<h4>Variables</h4><table class="vars"><thead><tr><th>Symbol</th><th>Quantity</th><th>Unit</th><th>How it is measured</th></tr></thead><tbody>' +
-        m.vars.map(function (v) { return '<tr><td class="sym">' + v[0] + '</td><td>' + v[1] + '</td><td class="unit">' + v[2] + '</td><td>' + v[3] + '</td></tr>'; }).join('') + '</tbody></table>' +
-        '<h4>The relation</h4><p class="relation">' + m.relation + '</p>' +
-        '<h4>What it lets you deduce</h4><p>' + m.deduce + '</p>' +
-        '<p class="course">In your course: ' + esc(m.course) + (m.hw ? ' · ' + esc(m.hw) : '') + '</p>' +
+      var miss = missingNames(m), beats = OBS.lecture.beats(m), k = OBS.lecture.m === m ? OBS.lecture.k : 0;
+      body = '<p class="muted small">The lecture is in the right-hand pane; the sky follows it. Steps:</p>' +
+        '<ol class="toc">' + beats.map(function (b, i) { return '<li><button type="button" class="toc-b' + (i === k ? ' on' : '') + '" data-k="' + i + '">' + esc(b.h) + '</button></li>'; }).join('') + '</ol>' +
         (miss.length && !OBS.state.sandbox ? '<p class="warn">This mission uses ideas from ' + miss.map(esc).join(' and ') + '. Do that first, or turn on teacher mode in the Notebook.</p>' : '') +
-        '<div class="actions"><button type="button" class="btn primary" id="m-next"' + (miss.length && !OBS.state.sandbox ? ' disabled' : '') + '>Make a prediction</button></div>';
+        '<div class="actions"><button type="button" class="btn ghost" id="m-skip"' + (miss.length && !OBS.state.sandbox ? ' disabled' : '') + '>Skip to the prediction</button></div>';
     } else if (cur.step === 1) {
       body = '<p class="question">' + esc(m.question) + '</p><div class="choices" role="radiogroup">' +
         m.choices.map(function (c) { return '<label class="choice"><input type="radio" name="pred" value="' + c[0] + '"' + (cur.pred === c[0] ? ' checked' : '') + '><span>' + esc(c[1]) + '</span></label>'; }).join('') +
@@ -89,27 +96,53 @@
         '<h4>What really happened</h4><div class="prose"><p>' + m.real + '</p></div>' +
         '<p class="course">In your course: ' + esc(m.course) + (m.hw ? ' · ' + esc(m.hw) : '') + '</p>' +
         (m.unlocks ? '<p class="unlock">Unlocked: ' + m.unlocks.map(function (k) { return '<span class="chip">' + esc(OBS.CONCEPTS[k].label) + '</span>'; }).join(' ') + (m.unlockText ? ' ' + esc(m.unlockText) : '') + '</p>' : '') +
+        practice(m) +
         '<div class="actions"><button type="button" class="btn ghost" id="m-free">Keep exploring</button><button type="button" class="btn primary" id="m-next">' + (nextMission(m) ? 'Next mission' : 'Back to the chapter') + '</button></div>';
     }
     el.innerHTML = head + '<div class="mbody">' + body + '</div>';
     bindCard();
+    if (cur.step === 1) OBS.lecture.showSummary(m);
     if (cur.step === 2) observe();
+    if (cur.step === 3) { bindPractice(m); OBS.typeset(el); }
   }
   function safe(fn) { try { return fn(); } catch (e) { if (G.console) console.error(e); return ''; } }
   function choiceText(m, k) { for (var i = 0; i < m.choices.length; i++) if (m.choices[i][0] === k) return m.choices[i][1]; return k; }
   function nextMission(m) { var i = OBS.MISSIONS.indexOf(m), n = OBS.MISSIONS[i + 1]; return n && !OBS.CHAPTERS[n.ch - 1].locked ? n : null; }
   function bindCard() {
-    var m = cur.m, next = $('m-next'), back = $('m-back'), reset = $('m-reset'), free = $('m-free');
+    var m = cur.m, next = $('m-next'), back = $('m-back'), reset = $('m-reset'), free = $('m-free'), skip = $('m-skip');
+    [].forEach.call(document.querySelectorAll('.toc-b'), function (b) { b.addEventListener('click', function () { OBS.lecture.go(+b.dataset.k); }); });
+    if (skip) skip.addEventListener('click', function () { LB.toPredict(); });
     [].forEach.call(document.querySelectorAll('input[name="pred"]'), function (r) { r.addEventListener('change', function () { cur.pred = r.value; next.disabled = false; }); });
-    if (back) back.addEventListener('click', function () { cur.step--; renderCard(); });
+    if (back) back.addEventListener('click', function () { cur.step--; if (cur.step === 0) OBS.lecture.open(m, OBS.lecture.beats(m).length - 1); renderCard(); });
     if (reset) reset.addEventListener('click', function () { stopTimer(); cur.st = {}; renderCard(); });
-    if (free) free.addEventListener('click', function () { cur.m = null; renderCard(); LB.renderList(); });
+    if (free) free.addEventListener('click', leave);
     if (next) next.addEventListener('click', function () {
-      if (cur.step === 3) { var n = nextMission(m); if (n) LB.start(n); else { cur.m = null; renderCard(); LB.renderList(); } return; }
+      if (cur.step === 3) { var n = nextMission(m); if (n) LB.start(n); else leave(); return; }
       if (cur.step === 2) finish();
       cur.step++; renderCard();
     });
   }
+  // ------------------------------------------------------------------------------------------ practice
+  function practice(m) {
+    if (!m.practice || !m.practice.length) return '';
+    return '<h4>Practice</h4><ol class="practice">' + m.practice.map(function (p, i) {
+      return '<li><p>' + p.q + '</p><div class="pr-row"><input type="number" step="any" inputmode="decimal" id="pr-' + i + '" aria-label="Your answer"><span class="unit">' + esc(p.unit || '') + '</span>' +
+        '<button type="button" class="btn small" data-pr="' + i + '">Check</button><span class="pr-msg" id="pr-msg-' + i + '" role="status"></span></div>' +
+        '<details class="pr-sol"><summary>Show the solution</summary><p>' + p.sol + '</p></details></li>';
+    }).join('') + '</ol>';
+  }
+  function bindPractice(m) {
+    [].forEach.call(document.querySelectorAll('[data-pr]'), function (b) {
+      b.addEventListener('click', function () {
+        var i = +b.dataset.pr, p = m.practice[i], x = parseFloat($('pr-' + i).value), msg = $('pr-msg-' + i);
+        if (!isFinite(x)) { msg.textContent = 'Type a number first.'; msg.className = 'pr-msg'; return; }
+        var ok = Math.abs(x - p.a) <= Math.abs(p.a) * (p.tol || 0.02);
+        msg.textContent = ok ? 'Right.' : (x > p.a ? 'Too high.' : 'Too low.') + ' Try again, or open the solution.';
+        msg.className = 'pr-msg ' + (ok ? 'ok' : 'miss');
+      });
+    });
+  }
+
   // ------------------------------------------------------------------------------------------ observing
   function stopTimer() { if (cur.timer) { clearInterval(cur.timer); cur.timer = null; } cur.busy = false; }
   function observe() {

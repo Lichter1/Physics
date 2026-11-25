@@ -35,6 +35,8 @@
         return { chart: chart, tools: app.tools };
       },
       reset: function () { app.tools.innerHTML = ''; app.note(''); sky.markers = []; chart.fold = null; chart.equal = false; sky.draw(); },
+      lectureMode: function () { lensMode('lecture'); },
+      lensMode: function () { return mode; },
       note: function (html) { var n = $('lens-note'); n.innerHTML = html || ''; n.hidden = !html; },
       markers: function (list) { sky.markers = list || []; sky.draw(); },
       refresh: function () { refreshLens(); }
@@ -47,7 +49,11 @@
   // ------------------------------------------------------------------------------------------ the lens
   var mode = 'data';
   function lensMode(m, title) {
+    if (mode === 'lecture' && m !== 'lecture' && OBS.lecture) OBS.lecture.stop();
     mode = m;
+    $('pane-lens').classList.toggle('lecturing', m === 'lecture');
+    $('lens-title').textContent = m === 'lecture' ? 'Lecture' : 'Data lens';
+    $('lecture').hidden = m !== 'lecture';
     $('lens-ctl').hidden = m !== 'data';
     $('lens-inst').hidden = m !== 'instrument';
     $('lens-inst').textContent = title || '';
@@ -163,13 +169,19 @@
     seg('data-smode', function (m) { sky.setMode(m); if (m === 'dome' && sky.fov > 150) sky.fov = 110; });
     seg('data-sframe', function (f) { sky.setFrame(f); });
     seg('data-stool', function (t) { sky.tool = t === 'circle' ? 'circle' : null; });
+    seg('data-slook', function (v) { sky.layers.photo = v === 'photo' && !!sky.images; sky._mwKey = null; sky.draw(true); });
+    OBS.on('skyimages', function () { [].forEach.call(document.querySelectorAll('[data-slook="photo"]'), function (b) { b.disabled = false; b.title = 'Real photographs of the sky'; }); });
     ['milkyway', 'constellations', 'grid', 'labels'].forEach(function (k) {
       var b = $('layer-' + k); b.setAttribute('aria-pressed', sky.layers[k]);
       b.addEventListener('click', function () { sky.layers[k] = !sky.layers[k]; b.setAttribute('aria-pressed', sky.layers[k]); sky.draw(true); });
     });
     OBS.on('skymode', syncSky);
     sky.listeners.push(function (ev, h) {
-      if (ev === 'draw') { var c = sky.centre(); $('sky-read').textContent = (sky.mode === 'dome' ? 'Looking at α ' + raStr(c[0]) + ', δ ' + decStr(c[1]) + ' · field ' + OBS.fmt(sky.fov, 2) + '°' : 'The whole sky · ' + (sky.frame === 'gal' ? 'Galactic coordinates, centre of the Galaxy in the middle' : 'equatorial coordinates')); syncSky(); }
+      if (ev === 'draw') {
+        var c = sky.centre(); $('sky-read').textContent = (sky.mode === 'dome' ? 'Looking at α ' + raStr(c[0]) + ', δ ' + decStr(c[1]) + ' · field ' + OBS.fmt(sky.fov, 2) + '°' : 'The whole sky · ' + (sky.frame === 'gal' ? 'Galactic coordinates, centre of the Galaxy in the middle' : 'equatorial coordinates'));
+        var cr = sky.credits(); $('sky-credit').textContent = cr ? 'Photographs: ' + cr : ''; $('sky-credit').hidden = !cr;
+        syncSky();
+      }
       if (ev === 'hover') {
         var el = $('sky-hover');
         if (!h) { el.textContent = ''; return; }
@@ -183,6 +195,8 @@
     [].forEach.call(document.querySelectorAll('[data-smode]'), function (b) { b.setAttribute('aria-pressed', b.dataset.smode === sky.mode); });
     [].forEach.call(document.querySelectorAll('[data-sframe]'), function (b) { b.setAttribute('aria-pressed', b.dataset.sframe === sky.frame); });
     [].forEach.call(document.querySelectorAll('[data-stool]'), function (b) { b.setAttribute('aria-pressed', (b.dataset.stool === 'circle') === (sky.tool === 'circle')); });
+    [].forEach.call(document.querySelectorAll('[data-slook]'), function (b) { b.setAttribute('aria-pressed', (b.dataset.slook === 'photo') === !!sky.layers.photo); });
+    var g = $('layer-grid'); if (g) g.setAttribute('aria-pressed', !!sky.layers.grid);
   }
   function raStr(ra) { var h = ra / 15, H = Math.floor(h), m = Math.round((h - H) * 60); if (m === 60) { H++; m = 0; } return H % 24 + 'h ' + (m < 10 ? '0' : '') + m + 'm'; }
   function decStr(d) { return (d < 0 ? '−' : '+') + Math.abs(d).toFixed(1) + '°'; }

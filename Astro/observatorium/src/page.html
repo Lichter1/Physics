@@ -40,6 +40,7 @@
         <h2>The sky</h2>
         <button type="button" class="fold" data-fold="sky" title="Hide the sky to give the data lens all the room">Hide</button>
         <div class="ctl-bar">
+          <div class="seg" role="group" aria-label="Look"><button type="button" class="seg-b" data-slook="drawn" aria-pressed="true">Drawn</button><button type="button" class="seg-b" data-slook="photo" aria-pressed="false" disabled title="Loading the photographs…">Photo</button></div>
           <div class="seg" role="group" aria-label="Projection"><button type="button" class="seg-b" data-smode="dome" aria-pressed="true">Dome</button><button type="button" class="seg-b" data-smode="allsky" aria-pressed="false">Whole sky</button></div>
           <div class="seg" role="group" aria-label="Coordinates"><button type="button" class="seg-b" data-sframe="equ" aria-pressed="true">Equatorial</button><button type="button" class="seg-b" data-sframe="gal" aria-pressed="false">Galactic</button></div>
           <div class="seg" role="group" aria-label="Layers">
@@ -55,7 +56,7 @@
           <p class="boot" id="boot" hidden>Loading the sky…</p>
         </div>
       </div>
-      <div class="readbar"><span id="sky-read"></span><span id="sky-hover" class="hover"></span></div>
+      <div class="readbar"><span id="sky-read"></span><span id="sky-hover" class="hover"></span><span id="sky-credit" class="credit" hidden></span></div>
     </section>
 
     <div class="split" id="split" role="separator" tabindex="0" aria-valuemin="15" aria-valuemax="85" aria-label="Resize the sky and the data lens (arrow keys; double-click to reset)"><span></span></div>
@@ -63,7 +64,7 @@
     <section class="pane lens" id="pane-lens" aria-label="Data lens">
       <button type="button" class="unfold" data-unfold="lens">Show the data lens</button>
       <div class="pane-head">
-        <h2>Data lens</h2>
+        <h2 id="lens-title">Data lens</h2>
         <button type="button" class="fold" data-fold="lens" title="Hide the data lens to give the sky all the room">Hide</button>
         <p class="lens-inst" id="lens-inst" hidden></p>
         <div class="ctl-bar" id="lens-ctl">
@@ -78,6 +79,7 @@
         </div>
         <p class="lens-sub muted small" id="lens-sub"></p>
       </div>
+      <article class="lecture" id="lecture" hidden aria-live="polite"></article>
       <p class="lens-note" id="lens-note" hidden></p>
       <div class="chartwrap"><canvas id="chart" aria-label="Data lens chart"></canvas><div class="legend" id="legend"></div><div class="pop" id="pop" hidden></div></div>
       <div class="readbar"><span id="lens-read"></span><span id="lens-hover" class="hover"></span></div>
