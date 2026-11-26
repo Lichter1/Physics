@@ -13,7 +13,8 @@
     slider: function (el, o) {
       var id = o.id || 'ctl-' + (++uid), wrap = document.createElement('div');
       wrap.className = 'ctl ctl-slider';
-      var N = 1000, lo = o.log ? Math.log10(o.min) : o.min, hi = o.log ? Math.log10(o.max) : o.max;
+      // one position per step when the slider has a step, so an arrow key moves it by exactly one step
+      var N = o.step && !o.log ? Math.max(1, Math.min(5000, Math.round((o.max - o.min) / o.step))) : 1000, lo = o.log ? Math.log10(o.min) : o.min, hi = o.log ? Math.log10(o.max) : o.max;
       wrap.innerHTML = '<label for="' + id + '">' + o.label + '</label><input type="range" id="' + id + '" min="0" max="' + N + '" step="1"><output for="' + id + '"></output>';
       el.appendChild(wrap);
       var input = wrap.querySelector('input'), out = wrap.querySelector('output');
@@ -191,7 +192,7 @@
     var ds = OBS.pseudo({ id: 'rvcurve', title: 'Radial velocities', x: 'ph', y: 'v', colourBy: 'who', catOrder: { who: ['star 1 (brighter)', 'star 2 (fainter)'] },
       vars: [v('ph', 'Orbital phase', 'cycles', 'ph'), v('v', 'Velocity toward (−) or away (+)', 'km/s', 'v'), { id: 'who', label: 'Star', cat: true, f: function (c, i) { return c.who[i]; } }] },
       { ph: ph, v: vv, who: who });
-    chart.setDataset(ds);
+    chart.setDataset(ds); if (OBS.app && OBS.app.legend) OBS.app.legend();     // which curve is which star
     var top = Math.max.apply(null, vv), bot = Math.min.apply(null, vv), span = top - bot;
     chart.setView({ x0: 0, x1: 1, y0: bot - 0.15 * span, y1: top + 0.15 * span });
     var C = OBS.colours(), st = {};
@@ -220,7 +221,7 @@
     var row = UI.row(tools);
     var on = document.createElement('label'); on.className = 'check'; on.innerHTML = '<input type="checkbox" id="fold-on"' + (o.start ? ' checked' : '') + '> Fold the light curve on a trial period';
     row.appendChild(on);
-    var sP = UI.slider(tools, { label: 'Trial period', min: o.min, max: o.max, log: true, value: st.P, unit: 'd', fmt: function (x) { return x.toFixed(x < 10 ? 4 : 3); }, oninput: function (P) { st.P = P; if (chart.fold) apply(); } });
+    var sP = UI.slider(tools, { label: 'Trial period', min: o.min, max: o.max, log: true, value: st.P, unit: 'd', fmt: function (x) { return x.toFixed(x < 10 ? 4 : 3); }, oninput: function (P) { st.P = P + (fine ? fine.get() * o.fine : 0); if (chart.fold) apply(); } });     // keep the fine offset
     var fine = UI.slider(tools, { label: 'Fine tune', min: -1, max: 1, value: 0, fmt: function (x) { return (x >= 0 ? '+' : '−') + Math.abs(x * o.fine).toFixed(5) + ' d'; }, oninput: function (x) { st.P = sP.get() + x * o.fine; if (chart.fold) apply(); } });
     if (o.shift) UI.slider(tools, { label: 'Shift phase', min: 0, max: 1, value: 0, fmt: function (x) { return x.toFixed(2); }, oninput: function (x) { st.t0 = (o.t0 || 0) + x * st.P; if (chart.fold) apply(); } });
     on.querySelector('input').addEventListener('change', function (e) {
@@ -308,8 +309,7 @@
   /** A reference population drawn under the data that slides vertically (distance modulus fitting). */
   INS.slideRef = function (chart, tools, o) {
     var C = OBS.colours();
-    var ref = chart.add({ type: 'ref', id: 'ref', xs: o.xs, ys: o.ys, dx: 0, dy: o.value, colour: o.colour || C['ink-3'], alpha: 0.55, size: 1.8, label: o.label });
-    ref.colour = C.c3;
+    var ref = chart.add({ type: 'ref', id: 'ref', xs: o.xs, ys: o.ys, dx: 0, dy: o.value, colour: o.colour || C.c3, alpha: o.alpha || 0.55, size: o.size || 1.8, label: o.label, under: o.under });
     var out = UI.readout(tools);
     var s = UI.slider(tools, {
       label: o.label, min: o.min, max: o.max, value: o.value, step: 0.01, fmt: function (x) { return x.toFixed(2); }, unit: 'mag',

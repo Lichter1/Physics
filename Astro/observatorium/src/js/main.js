@@ -20,7 +20,11 @@
           chart.setDataset(ds, o.sub);
           if (o.filter) chart.setFilter(o.filter);
           if (o.colourBy) chart.colourBy = o.colourBy;
-          if (o.x || o.y) chart.setAxes(o.x || ds.x, o.y || ds.y);
+          // a dataset's default axis may still be locked: fall back to the first quantity the student has
+          function open1(id) { var v = OBS.varOf(ds, id); return !v || OBS.unlocked(v.needs); }
+          function firstOpen(not) { var v = ds.vars.filter(function (w) { return !w.cat && w.id !== not && OBS.unlocked(w.needs); })[0]; return v ? v.id : null; }
+          var dx = o.x || (open1(ds.x) ? ds.x : firstOpen(ds.y)), dy = o.y || (ds.y === '#' || open1(ds.y) ? ds.y : firstOpen(dx));
+          if (o.x || o.y || dx !== ds.x || dy !== ds.y) chart.setAxes(dx || ds.x, dy || ds.y);
           sky.setDataset(ds.pos ? ds : null, chart);
           setLevel(ds.level);
           refreshLens(); OBS.emit('dataset', ds);
@@ -41,7 +45,8 @@
       lensMode: function () { return mode; },
       note: function (html) { var n = $('lens-note'); n.innerHTML = html || ''; n.hidden = !html; },
       markers: function (list) { sky.markers = list || []; sky.draw(); },
-      refresh: function () { refreshLens(); }
+      refresh: function () { refreshLens(); applyLock(); },
+      legend: function () { legend(); }
     };
     // a mission may call setAxes directly; keep the menus in step
     var setAxes = chart.setAxes;
@@ -92,12 +97,24 @@
     } else subw.hidden = true;
     $('x-sel').innerHTML = varOptions(ds, chart.xid, false);
     $('y-sel').innerHTML = varOptions(ds, chart.yid, true);
-    var cats = ds.vars.filter(function (v) { return v.cat && OBS.unlocked(v.needs); });
+    applyLock();
+    var lb = OBS.logbook && OBS.logbook.current(), playing = lb && lb.m && lb.step === 2 ? lb.m.id : null;
+    var cats = ds.vars.filter(function (v) { return v.cat && OBS.unlocked(v.needs) && v.spoils !== playing; });
     $('c-sel').innerHTML = '<option value="auto">Automatic</option><option value="none">One colour</option>' + cats.map(function (v) { return '<option value="' + v.id + '">' + esc(v.label) + '</option>'; }).join('');
     $('c-sel').value = chart.colourBy === 'auto' || chart.colourBy === 'none' ? chart.colourBy : chart.colourBy;
     $('bins-wrap').hidden = !chart.hist();
     $('bins').value = chart.bins;
     legend(); readSel();
+  }
+  function applyLock() {
+    var lk = OBS.state.lockLens, why = 'Fixed during this exercise; after it, choose freely (Keep exploring).';
+    if (chart.ds && chart.logOv) ['x', 'y'].forEach(function (a) {
+      var b = $('log' + a), on = a === 'x' ? chart.logX() : chart.logY(), ok = !(lk && lk.axes) && !(a === 'y' && chart.hist()) && (on || chart.canLog(a));
+      b.setAttribute('aria-pressed', on); b.disabled = !ok;
+      b.title = lk && lk.axes ? why : !ok ? 'This quantity has zero or negative values: a log scale would hide them' : on ? 'Switch to a linear scale' : 'Switch to a logarithmic scale';
+    });
+    [['ds-sel', lk && lk.ds], ['sub-sel', lk && lk.ds], ['x-sel', lk && lk.axes], ['y-sel', lk && lk.axes]].forEach(function (p) { var e = $(p[0]); e.disabled = !!p[1]; e.title = p[1] ? why : ''; });
+    [].forEach.call(document.querySelectorAll('.lv'), function (b) { var L = OBS.LEVELS.filter(function (x) { return x.id === b.dataset.lv; })[0]; b.disabled = !!(L && L.locked) || !!(lk && lk.ds); b.title = lk && lk.ds ? why : (L ? L.note : ''); });
   }
   function legend() {
     var cats = chart.categories(), el = $('legend'), C = OBS.colours(), pal = [C.c1, C.c2, C.c3, C.c4, C.c5, C.c6, C.c7, C.c8];
@@ -127,6 +144,9 @@
     $('sub-sel').addEventListener('change', function (e) { chart.setSubset(e.target.value); sky.draw(); refreshLens(); });
     $('x-sel').addEventListener('change', function (e) { chart.fold = null; chart.setAxes(e.target.value, null); });
     $('y-sel').addEventListener('change', function (e) { chart.setAxes(null, e.target.value); });
+    ['x', 'y'].forEach(function (a) {
+      $('log' + a).addEventListener('click', function () { chart.logOv[a] = !(a === 'x' ? chart.logX() : chart.logY()); chart.autoscale(); refreshLens(); });
+    });
     $('c-sel').addEventListener('change', function (e) { chart.colourBy = e.target.value; chart._cats = null; chart.draw(); sky.draw(); legend(); });
     $('bins').addEventListener('input', function (e) { chart.bins = +e.target.value; chart._histMax(); chart.draw(); });
     [].forEach.call(document.querySelectorAll('[data-ltool]'), function (b) {
@@ -152,7 +172,7 @@
   }
   var LEVEL_GO = {
     sky: function () { return app.open('sky').then(function () { sky.goTo(88, 0, 110, { mode: 'dome', frame: 'equ' }); }); },
-    solar: function () { return app.open('smallbodies').then(function () { sky.setMode('allsky'); }); },
+    solar: function () { return app.open('smallbodies').then(function () { chart.setView({ x0: 0.5, x1: 6, y0: 0, y1: 0.5 }); sky.setMode('allsky'); }); },     // the asteroid belt and Jupiter's Trojans; Fit view shows the Kuiper belt
     stars: function () { return app.open('nearby').then(function () { sky.goTo(0, 0, 200, { mode: 'allsky', frame: 'equ' }); }); },
     clusters: function () { return app.open('clusters', { sub: 'pleiades' }).then(function () { sky.goTo(56.75, 24.12, 9, { mode: 'dome', frame: 'equ' }); }); },
     galaxy: function () { return app.open('globulars').then(function () { sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal' }); }); },
@@ -186,9 +206,10 @@
     app.timeUI = timeUI;
     $('sky-time').addEventListener('change', function (e) {
       var m = /^(\d+)-(\d+)-(\d+)T(\d+):(\d+)/.exec(e.target.value); if (!m) return;
-      sky.setTime(Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5]) - 2 * 3600000);
+      var ms = Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5]) - 2 * 3600000;
+      sky.setTime(ms); OBS.emit('skytime', ms);       // an instrument that plans the night follows the sky's clock
     });
-    $('sky-now').addEventListener('click', function () { sky.setTime(Date.now()); timeUI(); });
+    $('sky-now').addEventListener('click', function () { var ms = Date.now(); sky.setTime(ms); timeUI(); OBS.emit('skytime', ms); });
     $('sky-band').addEventListener('change', function (e) { sky.setBand(e.target.value); syncSky(); });
     seg('data-stool', function (t) { sky.tool = t === 'circle' ? 'circle' : null; });
     seg('data-slook', function (v) { sky.layers.photo = v === 'photo' && !!sky.images; if (v === 'drawn') sky.band = 'visible'; sky._mwKey = null; sky.draw(true); });
@@ -334,7 +355,7 @@
     sky.init().then(function () { return app.open('sky'); }).then(function () {
       $('boot').hidden = true;
       sky.goTo(88, 0, 110, { mode: 'dome', frame: 'equ', instant: true });
-      OBS.tour.maybe();
+      if (OBS.store.get('toured', false)) OBS.logbook.resume(); else OBS.tour.maybe();
     }).catch(function (e) { $('boot').textContent = 'Could not load the star data: ' + e.message; });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();

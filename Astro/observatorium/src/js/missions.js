@@ -39,7 +39,8 @@
       choices: [['yes', 'Yes: similar brightness means similar power'], ['unknown', 'Not necessarily: we do not know how far away each one is'], ['rigel', 'No: Rigel is bluer, so it must be weaker']],
       answer: 'unknown',
       setup: function (app) {
-        return app.open('sky', { x: 'ci', y: 'mag' }).then(function () { app.sky.goTo(88, 0, 100, { mode: 'dome', frame: 'equ' }); });
+        // the whole sky, and a chart that shows the very brightest stars (Sirius is V = −1.46)
+        return app.open('sky', { x: 'ci', y: 'mag' }).then(function () { app.chart.setView({ x0: -0.4, x1: 2.2, y0: -1.8, y1: 6.7 }); app.sky.goTo(88, 0, 200, { mode: 'allsky', frame: 'equ' }); });
       },
       task: 'Each dot in the lens is one naked-eye star. Drag a box around the brightest stars, the ones above V = 1.0 at the top of the chart. Watch where they are on the sky.',
       progress: function (app) {
@@ -94,15 +95,26 @@
       vars: [['m', 'Apparent magnitude', 'mag', 'Measured'], ['d', 'Distance', 'pc', 'From parallax (unlocked)'], ['M', 'Absolute magnitude', 'mag', 'm − 5 log₁₀(d/10 pc)']],
       relation: 'M = m − 5 log₁₀(d / 10 pc), and L ∝ 10^(−0.4 M). A difference of 5 magnitudes is a factor 100 in power.',
       deduce: 'The luminosity of each star, and whether stars come in all combinations of colour and power.',
-      question: 'These are 36,000 stars within 100 pc, measured by Gaia. In colour against apparent brightness they form a smear. If you replace apparent brightness by absolute magnitude, what happens?',
+      question: 'These are the 8,900 stars you can see with the naked eye. In colour against apparent brightness they form a smear. If you replace apparent brightness by absolute magnitude, what happens?',
       choices: [['smear', 'Still a smear: stars come in every mix of colour and power'], ['bands', 'They collapse into a few narrow bands'], ['line', 'They fall on one straight line']],
       answer: 'bands',
-      setup: function (app) {
-        return app.open('nearby', { x: 'bp_rp', y: 'G' }).then(function () { app.sky.setMode('allsky'); });
+      axes: true,     // the task asks the student to change the vertical axis
+      setup: function (app, st) {
+        st.stage = 0;
+        return app.open('sky', { x: 'ci', y: 'mag' }).then(function () { app.sky.setMode('allsky'); app.chart.setView({ x0: -0.4, x1: 2.2 }); });
       },
-      task: 'Switch the vertical axis to “Absolute magnitude M_G”. Then box the thin sequence of faint, white stars in the lower left, about 10 magnitudes below the Sun.',
-      progress: function (app) {
-        if (app.chart.yid !== 'MG') return { done: false, text: 'Change the vertical axis to Absolute magnitude M_G' };
+      task: 'Stage 1: the naked-eye stars, colour against apparent brightness, a smear. Switch the vertical axis (Up) to “Absolute magnitude M_V”: every star is moved to 10 pc. Watch what happens.',
+      progress: function (app, st) {
+        if (st.stage === 0) {
+          if (app.chart.yid !== 'MV') return { done: false, text: 'Switch Up to Absolute magnitude M_V' };
+          if (!st.t0) st.t0 = Date.now();
+          if (Date.now() - st.t0 < 2500) return { done: false, text: 'Bands: the main sequence running from bright blue to faint red, and the giants above it on the right.' };
+          st.stage = 1;
+          return app.open('nearby', { x: 'bp_rp', y: 'MG' }).then(function () {
+            app.note('Stage 2: Gaia’s 36,000 stars within 100 pc, already in absolute magnitude. A volume like this holds the faint stars the naked eye misses.');
+            return { done: false, text: 'Stage 2: box the faint sequence below the main one', task: 'Stage 2: Gaia’s stars within 100 pc, in absolute magnitude. Box the thin sequence of faint, white stars in the lower left, about 10 magnitudes below the Sun.' };
+          });
+        }
         var wd = pick(app, 'wd'), mg = pick(app, 'MG'), f = share(wd, function (x) { return x === 'white dwarf'; });
         return { done: wd.length >= 80 && f > 0.7, text: wd.length ? wd.length + ' selected, ' + Math.round(100 * f) + '% of them in the faint white sequence' + (f <= 0.7 ? ': tighten the box' : wd.length < 80 ? ': box more of it' : '') : 'Box the faint sequence below the main one' };
       },
@@ -277,15 +289,15 @@
           var sel = ch.selected(), c = ch.ds.table.cols, mem = sel.filter(function (i) { return OBS.isMember(c, i); }).length;
           var ok = sel.length >= 300 && mem / sel.length > 0.8;
           if (ok) {
-            st.stage = 1; st.members = sel.slice();
+            st.stage = 1; st.members = sel.slice(); st.cols = c;     // the cluster table, kept for the result
             var keep = new Uint8Array(ch.ds.table.n); sel.forEach(function (i) { keep[i] = 1; });
             return OBS.open('nearby').then(function (nb) {
               var xs = OBS.column(nb, 'bp_rp'), ys = OBS.column(nb, 'MG');
               ch.setFilter(function (cc, i) { return keep[i] === 1; });
               ch.setAxes('bp_rp', 'G'); ch.clearSel();
-              app.note('Stage 2: your ' + sel.length + ' stars, colour against apparent brightness. The grey points are the 100 pc stars at their absolute magnitudes.');
+              app.note('Stage 2: your ' + sel.length + ' stars, colour against apparent brightness. The green points are the 100 pc stars at their absolute magnitudes.');
               st.slide = OBS.instruments.slideRef(ch, app.tools, { xs: xs, ys: ys, value: 2, min: 0, max: 10, label: 'Shift the nearby stars down by (distance modulus)', onchange: function (mu, out) { st.mu = mu; out.innerHTML = 'Shift ' + fix(mu, 2) + ' mag → distance ' + fmt(A.distFromMu(mu - 2.74 * 0.045), 3) + ' pc (after 0.12 mag of dust)'; } });
-            }).then(function () { return { done: false, text: 'Stage 2: slide the nearby main sequence down onto the cluster' }; });
+            }).then(function () { return { done: false, text: 'Stage 2: slide the nearby main sequence down onto the cluster', task: 'Stage 2: your cluster stars, colour against apparent brightness, with the 100 pc stars in green at their absolute magnitudes. Slide the green main sequence down until it lies on the cluster’s: the shift is the cluster’s distance modulus.' }; });
           }
           return { done: false, text: sel.length ? sel.length + ' selected, ' + Math.round(100 * mem / Math.max(1, sel.length)) + '% moving with the cluster' : 'Box the clump' };
         }
@@ -293,9 +305,9 @@
         return { done: good, text: 'Stage 2: shift ' + mu.toFixed(2) + ' mag' + (good ? ': matched' : '') };
       },
       result: function (app, st) {
-        var d = A.distFromMu(st.mu - 2.74 * 0.045), c = app.chart.ds.table.cols;
-        var p = median(st.members.map(function (i) { return c.parallax[i] + A.GAIA_ZP; }));
-        return 'Main-sequence fitting: ' + fmt(d, 3) + ' pc. Gaia’s parallaxes of the same ' + st.members.length + ' stars: median ' + fix(p, 2) + ' mas, so ' + fmt(1000 / p, 3) + ' pc. Two independent methods agree.';
+        var d = A.distFromMu(st.mu - 2.74 * 0.045), c = st.cols || app.chart.ds.table.cols;
+        var p = median(st.members.map(function (i) { return c.parallax[i] + A.GAIA_ZP; })), dp = 1000 / p, agree = Math.abs(d - dp) / dp < 0.1;
+        return 'Main-sequence fitting: ' + fmt(d, 3) + ' pc. Gaia’s parallaxes of the same ' + st.members.length + ' stars: median ' + fix(p, 2) + ' mas, so ' + fmt(dp, 3) + ' pc. ' + (agree ? 'Two independent methods agree.' : 'The two differ by ' + pct(Math.abs(d - dp) / dp) + ': look again at where the shifted sequence sits.');
       },
       explain: 'Members share a motion, so they stand out in proper motion even though on the sky they are mixed with thousands of field stars. Members share a distance, so in colour against apparent magnitude they draw a clean main sequence, shifted from the nearby one by the distance modulus. This is how distances to farther clusters, too far for parallax, were found: clusters are the second rung of the distance ladder (HW1 Q4 uses the same idea).',
       real: 'In 1997 Hipparcos put the Pleiades at 118 pc, while main-sequence fitting said 133. The “Pleiades problem” lasted 17 years, until radio interferometry (Melis et al. 2014, 136 pc) and then Gaia (135 pc) sided with the stellar physics.'
@@ -404,11 +416,11 @@
           return app.open('cep_gaia', { sub: 'lmc', x: 'P', y: 'W' }).then(function () {
             app.chart.setView({ x0: 0.8, x1: 60, y0: 9, y1: 19 });
             app.note('Coloured: Gaia Cepheids in the LMC (apparent W). Grey: ' + xs.length + ' Milky Way Cepheids at their absolute W (parallax better than 10%).');
-            st.slide = OBS.instruments.slideRef(app.chart, app.tools, { xs: xs, ys: ys, value: 12, min: 5, max: 25, label: 'Shift the Milky Way Cepheids by μ', onchange: function (mu, out) { st.mu = mu; out.innerHTML = 'μ = ' + fix(mu, 2) + ' → LMC at ' + fmt(A.distFromMu(mu) / 1000, 3) + ' kpc'; } });
+            st.slide = OBS.instruments.slideRef(app.chart, app.tools, { xs: xs, ys: ys, value: 15.5, min: 5, max: 25, under: false, size: 2.6, alpha: 0.85, label: 'Shift the Milky Way Cepheids by μ', onchange: function (mu, out) { st.mu = mu; out.innerHTML = 'μ = ' + fix(mu, 2) + ' → LMC at ' + fmt(A.distFromMu(mu) / 1000, 3) + ' kpc'; } });
           });
         });
       },
-      task: 'Slide the grey Milky Way Cepheids down until they lie on the LMC’s.',
+      task: 'The green points are Milky Way Cepheids, placed by their Gaia parallaxes; the gold ones are in the LMC. Slide the green ones down until they lie on the LMC’s: the shift is the LMC’s distance modulus.',
       progress: function (app, st) { var ok = st.mu > 18.25 && st.mu < 18.95; return { done: ok, text: 'μ = ' + st.mu.toFixed(2) + (ok ? ': on top' : '') }; },
       result: function (app, st) {
         var d = A.distFromMu(st.mu) / 1000;
@@ -1184,23 +1196,23 @@
 
   // ---------------------------------------------------------------- check yourself (before and after)
   OBS.QUIZ = [
-    { q: 'A star shifts by 0.2″ against the background between January and July. Its distance is', c: ['5 pc', '10 pc', '20 pc'], a: 1 },
-    { q: 'Two stars have the same colour; one looks 100 times fainter than the other. From these numbers alone you can say', c: ['it is 10 times farther away', 'it gives out 100 times less light', 'nothing about its distance or power'], a: 2 },
-    { q: 'You measure the ratio of a 30,000 K star’s brightness at two radio wavelengths. You can find its temperature from it', c: ['yes, Wien’s law works at any wavelength', 'no, in the Rayleigh–Jeans tail the ratio is the same for every hot body', 'only if you know its distance'], a: 1 },
-    { q: 'A star is twice as hot as the Sun and has the same luminosity. Its radius is', c: ['¼ of the Sun’s', '½ of the Sun’s', 'the same as the Sun’s'], a: 0 },
-    { q: 'In a binary, star A’s spectral lines swing by ±40 km/s and star B’s by ±80 km/s. The heavier star is', c: ['A', 'B', 'they have equal mass'], a: 0 },
-    { q: 'Cluster X’s main sequence ends at M_G = 3; cluster Y’s at M_G = 0. The older one is', c: ['X', 'Y', 'you cannot tell without spectra'], a: 0 },
-    { q: 'A Cepheid in a distant galaxy has a 30-day period and looks 25 magnitudes fainter than its absolute magnitude. Its distance is', c: ['1 Mpc', '1 kpc', '1 Gpc'], a: 0 },
-    { q: 'A planet blocks 1% of its star’s light. Its radius is', c: ['1% of the star’s', '10% of the star’s', '0.01% of the star’s'], a: 1 },
-    { q: 'Far out in a disk galaxy the rotation speed stays constant with radius. The mass inside radius R grows like', c: ['R', '1/R', 'it stays constant'], a: 0 },
-    { q: 'A microlensing light curve differs from a variable star because it is', c: ['periodic', 'the same in every colour and symmetric in time', 'redder at the peak'], a: 1 },
-    { q: 'An asteroid at 2.5 AU goes round the Sun this many times per orbit of Jupiter (5.2 AU)', c: ['2', '3', '5'], a: 1 },
-    { q: 'Most red galaxies in the local Universe are', c: ['spirals full of dust', 'ellipticals that no longer form stars', 'very distant galaxies'], a: 1 },
-    { q: 'Distant type Ia supernovae look fainter than a universe of matter alone predicts. This means the expansion', c: ['is slowing down', 'is speeding up', 'has stopped'], a: 1 },
-    { q: 'The CMB is a 2.725 K blackbody today. When it was emitted, at z ≈ 1100, its temperature was about', c: ['3 K', '300 K', '3,000 K'], a: 2 },
-    { q: 'A star stands 30° above the horizon. The air its light crosses, compared with straight up, is about', c: ['the same', 'twice as much', 'ten times as much'], a: 1 },
-    { q: 'Two radio dishes 10 km apart observe at 21 cm. They resolve details of about', c: ['4 arcseconds', '4 arcminutes', '4 degrees'], a: 0 },
-    { q: 'Gamma-ray bursts come equally from every direction, while pulsars crowd to the Milky Way’s plane. So the bursts are most likely', c: ['inside the Galactic disk', 'far beyond the Milky Way', 'in the Solar System'], a: 1 },
-    { q: 'A galaxy has strong [O III]/Hβ and [N II]/Hα line ratios. Its gas is most likely lit by', c: ['young massive stars', 'an accreting black hole', 'old red giants'], a: 1 }
+    { q: 'A star shifts by 0.2″ against the background between January and July. Its distance is', c: ['5 pc', '10 pc', '20 pc'], a: 1, m: 'parallax', why: 'The shift between January and July is twice the parallax, so p = 0.1″ and d = 1/p = 10 pc.' },
+    { q: 'Two stars have the same colour; one looks 100 times fainter than the other. From these numbers alone you can say', c: ['it is 10 times farther away', 'it gives out 100 times less light', 'nothing about its distance or power'], a: 2, m: 'hrd', why: 'Flux falls as L/d², so 100 times fainter could be 10 times farther, 100 times weaker, or any mix: you need the distance.' },
+    { q: 'You measure the ratio of a 30,000 K star’s brightness at two radio wavelengths. You can find its temperature from it', c: ['yes, Wien’s law works at any wavelength', 'no, in the Rayleigh–Jeans tail the ratio is the same for every hot body', 'only if you know its distance'], a: 1, m: 'thermometer', why: 'At radio wavelengths every hot body is on the Rayleigh–Jeans tail, B ∝ T/λ², so the ratio of two radio fluxes does not depend on T.' },
+    { q: 'A star is twice as hot as the Sun and has the same luminosity. Its radius is', c: ['¼ of the Sun’s', '½ of the Sun’s', 'the same as the Sun’s'], a: 0, m: 'radius', why: 'L = 4πR²σT⁴: with T doubled, T⁴ grows 16 times, so R² must shrink 16 times and R is ¼ of the Sun’s.' },
+    { q: 'In a binary, star A’s spectral lines swing by ±40 km/s and star B’s by ±80 km/s. The heavier star is', c: ['A', 'B', 'they have equal mass'], a: 0, m: 'binary', why: 'Both stars circle the common centre of mass, M_A v_A = M_B v_B: the star that moves less is the heavier, twice as heavy here.' },
+    { q: 'Cluster X’s main sequence ends at M_G = 3; cluster Y’s at M_G = 0. The older one is', c: ['X', 'Y', 'you cannot tell without spectra'], a: 0, m: 'turnoff', why: 'Bright, massive stars leave the main sequence first; a turn-off at a fainter M_G means only less massive stars remain, so the cluster is older.' },
+    { q: 'A Cepheid in a distant galaxy has a 30-day period and looks 25 magnitudes fainter than its absolute magnitude. Its distance is', c: ['1 Mpc', '1 kpc', '1 Gpc'], a: 0, m: 'yardstick', why: 'm − M = 25 gives d = 10^(25/5 + 1) pc = 10⁶ pc = 1 Mpc.' },
+    { q: 'A planet blocks 1% of its star’s light. Its radius is', c: ['1% of the star’s', '10% of the star’s', '0.01% of the star’s'], a: 1, m: 'transit', why: 'The depth is the ratio of areas, (R_p/R★)² = 0.01, so R_p/R★ = 0.1.' },
+    { q: 'Far out in a disk galaxy the rotation speed stays constant with radius. The mass inside radius R grows like', c: ['R', '1/R', 'it stays constant'], a: 0, m: 'rotation', why: 'V² = GM(<R)/R with V constant gives M(<R) ∝ R: mass keeps growing where the light has run out.' },
+    { q: 'A microlensing light curve differs from a variable star because it is', c: ['periodic', 'the same in every colour and symmetric in time', 'redder at the peak'], a: 1, m: 'microlens', why: 'Gravity bends light of every colour equally, and a lens passing by gives a symmetric rise and fall that happens once.' },
+    { q: 'An asteroid at 2.5 AU goes round the Sun this many times per orbit of Jupiter (5.2 AU)', c: ['2', '3', '5'], a: 1, m: 'kirkwood', why: 'Kepler’s third law: P ∝ a^1.5, so P_Jupiter/P = (5.2/2.5)^1.5 ≈ 3: the 3:1 resonance, a Kirkwood gap.' },
+    { q: 'Most red galaxies in the local Universe are', c: ['spirals full of dust', 'ellipticals that no longer form stars', 'very distant galaxies'], a: 1, m: 'redblue', why: 'Red means old stars and no new ones; in the local Universe these are mostly ellipticals (dusty edge-on spirals are a minority).' },
+    { q: 'Distant type Ia supernovae look fainter than a universe of matter alone predicts. This means the expansion', c: ['is slowing down', 'is speeding up', 'has stopped'], a: 1, m: 'accel', why: 'Fainter at a given redshift means farther away than a decelerating universe allows: the expansion has been speeding up.' },
+    { q: 'The CMB is a 2.725 K blackbody today. When it was emitted, at z ≈ 1100, its temperature was about', c: ['3 K', '300 K', '3,000 K'], a: 2, m: 'cmb', why: 'Expansion stretches every wavelength by 1 + z, so T = 2.725 × 1101 ≈ 3,000 K, when hydrogen became neutral.' },
+    { q: 'A star stands 30° above the horizon. The air its light crosses, compared with straight up, is about', c: ['the same', 'twice as much', 'ten times as much'], a: 1, m: 'night', why: 'Airmass ≈ sec z = 1/sin(altitude) = 1/sin 30° = 2.' },
+    { q: 'Two radio dishes 10 km apart observe at 21 cm. They resolve details of about', c: ['4 arcseconds', '4 arcminutes', '4 degrees'], a: 0, m: 'frb', why: 'θ ≈ λ/B = 0.21 m / 10⁴ m = 2.1×10⁻⁵ rad ≈ 4 arcseconds.' },
+    { q: 'Gamma-ray bursts come equally from every direction, while pulsars crowd to the Milky Way’s plane. So the bursts are most likely', c: ['inside the Galactic disk', 'far beyond the Milky Way', 'in the Solar System'], a: 1, m: 'bursts', why: 'A disk population would crowd to the plane and a halo one toward the centre; an even sky means beyond all Galactic structure.' },
+    { q: 'A galaxy has strong [O III]/Hβ and [N II]/Hα line ratios. Its gas is most likely lit by', c: ['young massive stars', 'an accreting black hole', 'old red giants'], a: 1, m: 'bpt', why: 'Hard ultraviolet and X-rays from an accretion disc boost the forbidden lines far more than young stars can.' }
   ];
 })(typeof window !== 'undefined' ? window : globalThis);

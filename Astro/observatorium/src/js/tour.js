@@ -51,14 +51,14 @@
         done: function (s) { return s.hit && OBS.app.chart.selected().length > 0; } } },
     { at: '#lens-ctl', pane: 'lens', lens: true, h: 'Choose what to plot',
       html: function () { return '<p><b>Dataset</b> picks one of ' + Object.keys(OBS.DATASETS).length + ' real catalogues.'; }() + ' <b>Across</b> and <b>Up</b> pick the two axes; <i>Number of objects</i> turns the plot into a histogram. <b>Colour by</b> paints the dots by another quantity.</p>' +
-        '<p>Quantities you have not learned to measure yet are not in the menus. They appear when a mission teaches the method, the way they did in history: no distances before parallax, no luminosities before distances.</p>' },
+        '<p>Quantities you have not learned to measure yet are greyed out in the menus, marked (locked). They open when a mission teaches the method, the way they did in history: no distances before parallax, no luminosities before distances.</p>' },
     { at: '#pane-lens', pane: 'lens', h: 'The lecture hall',
       enter: function () { var m = first(), k = OBS.lecture.beats(m).map(function (b) { return b.h; }).indexOf('Magnitudes'); OBS.lecture.open(m, Math.max(0, k)); },
       exit: function () { if (OBS.app.lensMode() === 'lecture') OBS.app.open('sky'); },
       html: '<p>When you start a mission, this pane becomes the lecture. Here is a real step from mission 1.1: the idea, its equation, a live chart of real data, a diagram to play with and a worked example (scroll the pane). Other steps have photographs (click one to enlarge it). The sky turns to whatever is being discussed: it has just turned to Sirius.</p><p>Move with <b>Next</b>, <b>Back</b> or the dots. The last step lists exactly what you will measure, and hands over to your prediction.</p>' },
     { at: '#pane-logbook .tabs', pane: 'logbook', h: 'More in the logbook',
       html: '<dl class="tour-dl"><dt>Notebook</dt><dd>What you can measure so far, and how each quantity of the open dataset is measured. Teacher mode unlocks everything.</dd>' +
-        '<dt>Check yourself</dt><dd>Twelve concept questions. Answer them before you start and again at the end, and the page shows how much you gained.</dd>' +
+        '<dt>Check yourself</dt><dd>' + OBS.QUIZ.length + ' concept questions. Answer them before you start and again at the end, and the page shows how much you gained.</dd>' +
         '<dt>Data</dt><dd>Every source, query, cut, citation and licence behind the numbers.</dd></dl>' },
     { at: function () { return visible($('split')) ? $('split') : document.querySelector('#pane-sky [data-fold]'); }, h: 'Make room',
       html: '<p><b>Hide</b> folds any pane into a slim tab; click the tab to bring it back. Drag the divider between the sky and the lens to share the space differently (double-click resets it).</p><p>Your layout, view and progress are saved in this browser only.</p>' },
@@ -68,7 +68,7 @@
       html: function () {
         var m = first();
         return '<p>Begin with mission ' + OBS.logbook.number(m) + ', <b>' + esc(m.title) + '</b>: what can be learned from where stars are, how bright they look and what colour they are, before anyone knew their distances?</p>' +
-          '<p>A tip: answer the twelve questions in <b>Check yourself</b> first. Doing them again at the end shows how far you have come.</p>';
+          '<p>A tip: answer the ' + OBS.QUIZ.length + ' questions in <b>Check yourself</b> first. Doing them again at the end shows how far you have come.</p>';
       }, last: true }
   ];
   T.steps = STEPS;
@@ -160,7 +160,8 @@
   // ------------------------------------------------------------------------------------------ control
   T.start = function () {
     if (T.on) return;
-    // start from a clean slate: no mission open, the lens showing data
+    // start from a clean slate: no mission open, the lens showing data; the open mission comes back afterwards
+    T.resume = OBS.store.get('open', null);
     if (OBS.logbook.current().m) OBS.logbook.leave();
     if (!root) build();
     T.on = true; root.hidden = false; document.body.classList.add('touring');
@@ -175,6 +176,7 @@
     root.hidden = true; document.body.classList.remove('touring');
     document.removeEventListener('keydown', key);
     OBS.store.set('toured', true);
+    if (T.resume && !OBS.logbook.current().m) OBS.logbook.resume(T.resume); T.resume = null;
     var b = $('tour-btn'); if (b) b.focus({ preventScroll: true });
   };
   /** First visit: start by itself, once. */

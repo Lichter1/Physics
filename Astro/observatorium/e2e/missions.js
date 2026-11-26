@@ -12,7 +12,12 @@ const SOLVE = {
     s.state.marks = [{ x: a[0], y: a[1], label: 'A' }, { x: b[0], y: b[1], label: 'B' }]; s.state.sep = best;
     st.input.set(0.286);
   },
-  hrd: (OBS) => { const ch = OBS.app.chart; ch.setAxes(null, 'MG'); const wd = OBS.column(ch.ds, 'wd'), mg = OBS.column(ch.ds, 'MG'), idx = []; for (let i = 0; i < wd.length; i++) if (wd[i] === 'white dwarf' && mg[i] > 10) idx.push(i); ch.setSel(idx.slice(0, 300)); },
+  hrd: async (OBS, st) => {
+    OBS.app.chart.setAxes(null, 'MV'); st.t0 = Date.now() - 3000;
+    await OBS.MISSIONS.find((m) => m.id === 'hrd').progress(OBS.app, st);        // stage 2 opens the 100 pc stars in M_G
+    const ch = OBS.app.chart, wd = OBS.column(ch.ds, 'wd'), mg = OBS.column(ch.ds, 'MG'), idx = [];
+    for (let i = 0; i < wd.length; i++) if (wd[i] === 'white dwarf' && mg[i] > 10) idx.push(i); ch.setSel(idx.slice(0, 300));
+  },
   thermometer: (OBS, st) => { st.stars.forEach((s, k) => { st.spec.state.star = k; st.spec.slider.set(OBS.astro.bbTeffFromBpRp(s.bprp)); }); },
   radius: (OBS) => { const ch = OBS.app.chart, wd = OBS.column(ch.ds, 'wd'), idx = []; for (let i = 0; i < wd.length; i++) if (wd[i] === 'white dwarf') idx.push(i); ch.setSel(idx.slice(0, 300)); },
   binary: (OBS, st) => { const ch = OBS.app.chart, b = st.b; ch.get('t1').value = b.gamma + b.K1; ch.get('b1').value = b.gamma - b.K1; ch.get('t2').value = b.gamma + b.K2; ch.get('b2').value = b.gamma - b.K2; st.bin.read(); },

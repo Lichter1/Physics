@@ -258,7 +258,7 @@
   "source": "exoplanetarchive.ipac.caltech.edu TAP, table pscomppars (one row per planet)",
   "citation": "NASA Exoplanet Archive, operated by Caltech under contract with NASA (DOI 10.26133/NEA13)",
   "license": "Public (NASA)",
-  "columns_note": "orbital period days; semi-major axis AU; mass and radius in Jupiter units; eqt K; star teff K, mass and radius solar; distance pc",
+  "columns_note": "orbital period days; semi-major axis AU; mass and radius in Jupiter units; eqt K; star teff K, mass and radius solar; distance pc; massprov: measured, minimum (M sin i) or estimated from radius (Chen & Kipping 2017)",
   "rows": 6473,
   "columns": [
    "pl_name",
@@ -472,7 +472,7 @@
  },
  "lecture_images": {
   "title": "Pictures in the lectures",
-  "rows": 19,
+  "rows": 28,
   "fetched": "2026-11-25",
   "source": "abell370: NASA, ESA, the Hubble SM4 ERO Team and ST-ECF (ESA/Hubble heic0910b), CC BY 4.0; webb_deep_field: NASA, ESA, CSA, STScI (ESA/Webb weic2209a), CC BY 4.0; horseshoe: ESA/Hubble & NASA (potw1151a), CC BY 4.0; cluster_dm_maps: NASA, ESA, D. Harvey (EPFL), R. Massey (Durham) (ESA/Hubble heic1506a), CC BY 4.0; antennae: NASA, ESA, and the Hubble Heritage Team (ESA/Hubble heic0615a), CC BY 4.0; df2: NASA, ESA, and P. van Dokkum (Yale) (ESA/Hubble heic1806a), CC BY 4.0; m87_jet: NASA and the Hubble Heritage Team (STScI/AURA) (ESA/Hubble opo0020a), CC BY 4.0; sn1987a: NASA, ESA, P. Challis and R. Kirshner (Harvard-Smithsonian CfA) (ESA/Hubble heic0704a), CC BY 4.0; cats_eye: NASA, ESA, HEIC and the Hubble Heritage Team (ESA/Hubble heic0414a), CC BY 4.0; hr8799: NASA, ESA, and R. Soummer (STScI) (ESA/Hubble opo1129a), CC BY 4.0; pillars: NASA, ESA, CSA, STScI; J. DePasquale, A. Koekemoer, A. Pagan (ESA/Webb weic2216a), CC BY 4.0; m87_bh: EHT Collaboration (ESO eso1907a), CC BY 4.0; sgra_bh: EHT Collaboration (ESO eso2208-eht-mwa), CC BY 4.0; hltau: ALMA (ESO/NAOJ/NRAO) (ESO eso1436a), CC BY 4.0; s2_motion: ESO/GRAVITY Collaboration (eso1825e), CC BY 4.0; eclipse1919: F. W. Dyson, A. S. Eddington and C. Davidson 1920, Phil. Trans. R. Soc. A 220 (Wikimedia Commons), public domain; einstein_cross: NASA, ESA and STScI (Wikimedia Commons), public domain; pioneer_plaque: NASA; designed by C. Sagan and F. Drake, artwork by L. Salzman Sagan (Wikimedia Commons), public domain; sun_hmi: NASA/SDO and the HMI science team, 25 November 2026, public domain",
   "license": "ESA/Hubble, ESA/Webb and ESO images CC BY 4.0; NASA and Wikimedia Commons items public domain."
@@ -501,7 +501,7 @@
   "fetched": "2026-11-25",
   "source": "SDSS DR17 spec-lite files (data.sdss.org), brightest-S/N star of each subclass B6, A0, F5, G2, K3, M2",
   "cuts": "Flux binned to 2 nm (median), divided by its 99th percentile.",
-  "citation": "SDSS DR17 (Abdurro\u2019uf et al. 2022, ApJS 259, 35)",
+  "citation": "SDSS DR17 (Abdurro’uf et al. 2022, ApJS 259, 35)",
   "license": "SDSS data are public"
  },
  "supernovae": {

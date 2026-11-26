@@ -209,7 +209,7 @@
     function date() { return new Date(base + st.day * 86400000); }
     function dayLabel(d) { var x = new Date(base + d * 86400000); return x.toUTCString().slice(5, 16); }
     var sd = UI.slider(tools, { label: 'Date', min: 0, max: 364, value: st.day, step: 1, fmt: function (d) { return dayLabel(d); }, oninput: function (x) { st.day = x; update(); } });
-    var sh = UI.slider(tools, { label: 'Local time (UTC+2)', min: 16, max: 32, value: st.hour, step: 0.25, fmt: function (h) { var H = Math.floor(h) % 24, m = Math.round((h % 1) * 60); return (H < 10 ? '0' : '') + H + ':' + (m < 10 ? '0' : '') + m + (h >= 24 ? ' (next day)' : ''); }, oninput: function (x) { st.hour = x; update(); } });
+    var sh = UI.slider(tools, { label: 'Local time (UTC+2, standard time; summer clocks read 1 h more)', min: 16, max: 32, value: st.hour, step: 0.25, fmt: function (h) { var H = Math.floor(h) % 24, m = Math.round((h % 1) * 60); return (H < 10 ? '0' : '') + H + ':' + (m < 10 ? '0' : '') + m + (h >= 24 ? ' (next day)' : ''); }, oninput: function (x) { st.hour = x; update(); } });
     tools.appendChild(out);
     function update() {
       var t = o.targets[+pick.value], d = date(), ms = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) + (st.hour - 2) * 3600000;
@@ -232,6 +232,13 @@
       if (o.onchange) o.onchange(st);
     }
     pick.addEventListener('change', update);
+    // the sky's own date box and Now button move the planner too: evenings and the small hours belong to one night
+    OBS.onMission('skytime', function (ms) {
+      var loc = new Date(ms + 2 * 3600000), hr = loc.getUTCHours() + loc.getUTCMinutes() / 60, d0 = Date.UTC(loc.getUTCFullYear(), loc.getUTCMonth(), loc.getUTCDate());
+      if (hr < 12) { hr += 24; d0 -= 86400000; }
+      var day = Math.round((d0 - base) / 86400000); day = ((day % 365) + 365) % 365;
+      st.day = day; st.hour = Math.max(16, Math.min(32, Math.round(hr * 4) / 4)); sd.set(st.day, true); sh.set(st.hour, true); update();
+    });
     var ro = G.ResizeObserver ? new G.ResizeObserver(function () { if (!cv.hidden && st.target) update(); }) : null; if (ro) ro.observe(cv);
     st.update = update; st.sd = sd; st.sh = sh; st.pick = pick; st.stop = function () { if (ro) ro.disconnect(); }; OBS.cleanup(st.stop);
     update();

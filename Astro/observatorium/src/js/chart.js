@@ -32,7 +32,7 @@
     this.filter = null; this.fold = null; this.overlays = [];
     this.sel = new Uint8Array(ds.table.n);
     this.colourBy = 'auto';
-    this.xid = ds.x; this.yid = ds.y;
+    this.xid = ds.x; this.yid = ds.y; this.logOv = { x: null, y: null };
     this._mask(); this.autoscale();
   };
   P.setSubset = function (sub) { this.sub = sub; this.sel = new Uint8Array(this.ds.table.n); this._mask(); this.autoscale(); };
@@ -44,8 +44,8 @@
     this.mask = m;
   };
   P.setAxes = function (xid, yid) {
-    if (xid) this.xid = xid;
-    if (yid) this.yid = yid;
+    if (xid && xid !== this.xid) { this.xid = xid; if (this.logOv) this.logOv.x = null; }
+    if (yid && yid !== this.yid) { this.yid = yid; if (this.logOv) this.logOv.y = null; }
     this.autoscale();
   };
   P.hist = function () { return this.yid === '#'; };
@@ -62,8 +62,15 @@
   P.ys = function () { return this.hist() ? null : OBS.column(this.ds, this.yid); };
   function ax(v, log) { return log ? (v > 0 ? Math.log10(v) : NaN) : v; }
   function unax(a, log) { return log ? Math.pow(10, a) : a; }
-  P.logX = function () { return !this.fold && this.xvar().scale === 'log'; };
-  P.logY = function () { return !this.hist() && this.yvar().scale === 'log'; };
+  // each variable has a natural scale; the student may override it with the lens's log toggles
+  P.logX = function () { var o = this.logOv && this.logOv.x; return !this.fold && (o === true || o === false ? o : this.xvar().scale === 'log'); };
+  P.logY = function () { var o = this.logOv && this.logOv.y; return !this.hist() && (o === true || o === false ? o : this.yvar().scale === 'log'); };
+  /** Whether a log scale makes sense: (almost) every value positive. */
+  P.canLog = function (axis) {
+    var v = axis === 'x' ? this.xs() : this.ys(); if (!v || (axis === 'x' && this.fold)) return false;
+    var n = 0, bad = 0; for (var i = 0; i < v.length; i++) if (this.mask[i] && isFinite(v[i])) { n++; if (v[i] <= 0) bad++; }
+    return n > 0 && bad <= 0.02 * n;
+  };
 
   P.autoscale = function () {
     var xs = this.xs(), ys = this.ys(), lx = this.logX(), ly = this.logY(), m = this.mask, a = [], b = [];
@@ -80,8 +87,12 @@
       var pad = 0.04 * (x1 - x0);
       return [x0 - pad, x1 + pad];
     }
-    var big = a.length > 3000, q = big ? 0.002 : 0;
-    var rx = this.fold ? [0, 2] : rng(a, q, 1 - q), ry = ys ? rng(b, q, 1 - q) : [0, 1];
+    function robust(v) {
+      var full = rng(v.slice(), 0, 1); if (v.length < 200) return full;
+      var trim = rng(v.slice(), 0.005, 0.995);
+      return (trim[1] - trim[0]) < 0.5 * (full[1] - full[0]) ? trim : full;     // a few far outliers: show the bulk
+    }
+    var rx = this.fold ? [0, 2] : robust(a), ry = ys ? robust(b) : [0, 1];
     this.view = { x0: rx[0], x1: rx[1], y0: ry[0], y1: ry[1] };
     if (this.hist()) this._histMax();
     this.draw();

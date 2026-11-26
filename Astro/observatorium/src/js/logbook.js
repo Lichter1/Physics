@@ -39,7 +39,7 @@
         var d = P.done[m.id], ok = needsMet(m);
         return '<li><button type="button" class="mitem' + (cur.m === m ? ' on' : '') + '" data-id="' + m.id + '">' +
           '<span class="mnum">' + number(m) + '</span><span class="mtitle">' + esc(m.title) + '<span class="mera">' + esc(m.era) + ' · ' + esc(m.who) + '</span></span>' +
-          '<span class="mstate ' + (d ? 'done' : ok ? '' : 'needs') + '">' + (d ? 'done' : ok ? '' : 'needs ' + esc(missingNames(m)[0].split(' ')[0])) + '</span></button></li>';
+          '<span class="mstate ' + (d ? 'done' : ok ? '' : 'needs') + '">' + (d ? 'done' : ok ? '' : 'needs ' + esc(missingNames(m).map(function (n) { return n.split(' ')[0]; }).join(', '))) + '</span></button></li>';
       }).join('') + '</ol>';
     [].forEach.call($('lb-list').querySelectorAll('.mitem'), function (b) { b.addEventListener('click', function () { LB.start(byId(b.dataset.id)); }); });
   };
@@ -53,13 +53,20 @@
     OBS.emit('unlock');
   }
   LB.start = function (m) {
-    stopTimer(); OBS.runCleanups();
-    cur.m = m; lend(m); cur.step = 0; cur.pred = (P.done[m.id] && P.done[m.id].pred) || null; cur.st = {};
-    if (m.ch !== cur.ch) { cur.ch = m.ch; LB.renderChapters(); }
+    stopTimer(); OBS.runCleanups(); lockLens(null);
+    cur.m = m; cur.task = null; lend(m); cur.step = 0; cur.pred = (P.done[m.id] && P.done[m.id].pred) || null; cur.st = {};
+    if (m.ch !== cur.ch) { cur.ch = m.ch; OBS.store.set('chapter', cur.ch); LB.renderChapters(); }
     LB.renderList(); LB.tab('missions');
     OBS.lecture.open(m, 0);      // the dome turns to the mission's part of the sky straight away
     renderCard();
     $('lb-card').scrollIntoView({ block: 'nearest' });
+  };
+  /** Reopen a mission where the student was (after a reload or the tour): o = {id, step, pred}. */
+  LB.resume = function (o) {
+    o = o || OBS.store.get('open', null); var m = o && byId(o.id); if (!m) return false;
+    LB.start(m);
+    if (o.step >= 1 && OBS.learned(m.needs)) { cur.pred = o.pred || cur.pred; cur.step = cur.pred ? o.step : 1; renderCard(); }
+    return true;
   };
   /** From the lecture's last step to the prediction. */
   LB.toPredict = function () { if (!cur.m || OBS.lecture.blocked(cur.m) && !OBS.state.sandbox) return; cur.step = 1; renderCard(); };
@@ -67,7 +74,7 @@
   /** Leave the mission card; if the lens still shows a lecture, give it back its data. */
   LB.leave = leave;
   function leave() {
-    cur.m = null; stopTimer(); OBS.runCleanups(); lend(null); renderCard(); LB.renderList();
+    cur.m = null; stopTimer(); OBS.runCleanups(); lend(null); lockLens(null); renderCard(); LB.renderList();
     if (OBS.app.lensMode() === 'lecture') OBS.app.open(OBS.app.chart.ds && OBS.DATASETS[OBS.app.chart.ds.id] ? OBS.app.chart.ds.id : 'sky');
   }
   function stepper() {
@@ -75,6 +82,8 @@
   }
   function renderCard() {
     var m = cur.m, el = $('lb-card');
+    // remember the open mission and step, so a reload comes back to it
+    OBS.store.set('open', m ? { id: m.id, step: cur.step === 3 ? 0 : cur.step, pred: cur.pred } : null);
     if (!m) { el.hidden = true; return; }
     el.hidden = false;
     var head = '<header><p class="eyebrow">Mission ' + number(m) + ' · ' + esc(m.era) + '</p><h3>' + esc(m.title) + '</h3><p class="who">' + esc(m.who) + '</p></header>' + stepper();
@@ -92,7 +101,7 @@
         '<div class="actions"><button type="button" class="btn ghost" id="m-back">Back</button><button type="button" class="btn primary" id="m-next"' + (cur.pred ? '' : ' disabled') + '>Lock in and observe</button></div>';
     } else if (cur.step === 2) {
       body = '<p class="your-pred">Your prediction: <b>' + esc(choiceText(m, cur.pred)) + '</b></p>' +
-        '<div class="task"><h4>Your task</h4><p>' + m.task + '</p></div>' +
+        '<div class="task"><h4>Your task</h4><p>' + (cur.task || m.task) + '</p></div>' +
         '<p class="status" id="m-status" role="status">Setting up the instruments…</p>' +
         '<div class="actions"><button type="button" class="btn ghost" id="m-reset">Reset the view</button><button type="button" class="btn primary" id="m-next" disabled>What does it mean?</button></div>';
     } else {
@@ -121,11 +130,12 @@
     if (skip) skip.addEventListener('click', function () { LB.toPredict(); });
     [].forEach.call(document.querySelectorAll('input[name="pred"]'), function (r) { r.addEventListener('change', function () { cur.pred = r.value; next.disabled = false; }); });
     if (back) back.addEventListener('click', function () { cur.step--; if (cur.step === 0) OBS.lecture.open(m, OBS.lecture.beats(m).length - 1); renderCard(); });
-    if (reset) reset.addEventListener('click', function () { stopTimer(); cur.st = {}; renderCard(); });
+    if (reset) reset.addEventListener('click', function () { stopTimer(); cur.st = {}; cur.task = null; renderCard(); });
     if (free) free.addEventListener('click', leave);
     if (next) next.addEventListener('click', function () {
       if (cur.step === 3) { var n = nextMission(m); if (n) LB.start(n); else leave(); return; }
       if (cur.step === 2) {
+        cur.task = null;
         // check once more: the measurement may have been undone since the button lit up
         next.disabled = true;
         Promise.resolve(safe(function () { return m.progress(OBS.app, cur.st); })).then(function (r) {
@@ -161,9 +171,12 @@
 
   // ------------------------------------------------------------------------------------------ observing
   function stopTimer() { if (cur.timer) { clearInterval(cur.timer); cur.timer = null; } cur.busy = false; }
+  /** Fix the lens's dataset (and, unless the task asks for them, its axes) while an exercise runs. */
+  function lockLens(m) { OBS.state.lockLens = m ? { ds: true, axes: !m.axes } : null; if (OBS.app) OBS.app.refresh(); }
+  LB.lockLens = lockLens;
   function observe() {
     var m = cur.m, st = cur.st, app = OBS.app;
-    app.reset();
+    app.reset(); lockLens(m);
     Promise.resolve().then(function () { return m.setup(app, st); }).then(function () {
       if (cur.m !== m) return;
       check();
@@ -185,9 +198,10 @@
     s.innerHTML = (r.done ? '<span class="pill ok">done</span> ' : '<span class="pill">' + (after ? 'not yet' : 'in progress') + '</span> ') + esc(r.text || '');
     if (r.done && b.disabled) { b.disabled = false; b.classList.add('pulse'); }
     else if (!r.done && !b.disabled) { b.disabled = true; b.classList.remove('pulse'); }
+    if (r.task) { var tp = document.querySelector('#lb-card .task p'); if (tp && tp.innerHTML !== r.task) tp.innerHTML = r.task; cur.task = r.task; }
   }
   function finish() {
-    var m = cur.m; stopTimer();
+    var m = cur.m; stopTimer(); lockLens(null);
     P.done[m.id] = { pred: cur.pred, right: cur.pred === m.answer, at: Date.now() };
     (m.unlocks || []).forEach(function (k) { OBS.state.concepts[k] = true; });
     save(); OBS.emit('unlock'); LB.renderChapters(); LB.renderList(); LB.renderNotebook();
@@ -224,7 +238,12 @@
     $('reset-progress').addEventListener('click', function () {
       var c = $('reset-confirm');
       c.innerHTML = 'This clears your missions, predictions and quiz answers in this browser. <button type="button" class="btn small" id="reset-yes">Clear everything</button>';
-      $('reset-yes').addEventListener('click', function () { P = { done: {}, concepts: {}, quiz: {} }; OBS.state.concepts = {}; OBS.store.set('mlslope', null); OBS.astro.ML_SLOPE = 3.86; save(); OBS.emit('unlock'); LB.renderChapters(); LB.renderList(); LB.renderNotebook(); });
+      $('reset-yes').addEventListener('click', function () {
+        if (cur.m) leave();
+        P = { done: {}, concepts: {}, quiz: {} }; OBS.state.concepts = {}; OBS.store.set('mlslope', null); OBS.store.set('plslope', null); OBS.astro.ML_SLOPE = 3.86; save();
+        if (OBS.forget) Object.keys(OBS.DATASETS).forEach(function (k) { OBS.forget(OBS.DATASETS[k]); });     // columns computed with the old slopes
+        OBS.emit('unlock'); LB.renderChapters(); LB.renderList(); LB.renderNotebook(); var c2 = $('reset-confirm'); if (c2) c2.textContent = 'Cleared. Your progress starts again from mission 1.1.';
+      });
     });
   };
   OBS.on('unlock', function () { LB.renderNotebook(); });
@@ -241,11 +260,22 @@
     el.innerHTML = '<h2 class="chap-title">Check yourself</h2><p class="muted small">' + Q.length + ' questions, one per big idea. Take them once before the missions and once after; the page works out your normalised gain, the share of the questions you missed before that you now get right.</p>' +
       '<p>' + (b === null ? 'No “before” attempt yet.' : 'Before: <span class="num">' + b + '/' + Q.length + '</span>') + (a === null ? '' : ' · After: <span class="num">' + a + '/' + Q.length + '</span>') + (gain !== null ? ' · Gain <span class="num">' + gain.toFixed(2) + '</span>' : '') + '</p>' +
       '<form id="quiz-form"><p class="eyebrow">Now taking: the “' + which + '” attempt</p><ol class="quiz">' + Q.map(function (x, i) {
-        return '<li><p>' + esc(x.q) + '</p>' + x.c.map(function (c, j) { return '<label class="choice"><input type="radio" name="q' + i + '" value="' + j + '"' + (ans[i] === j ? ' checked' : '') + '><span>' + esc(c) + '</span></label>'; }).join('') + '</li>';
-      }).join('') + '</ol><div class="actions"><button type="submit" class="btn primary">Save the “' + which + '” answers</button><button type="button" class="btn ghost" id="quiz-copy">Copy results</button></div><p class="small muted" id="quiz-msg"></p></form>';
+        // the options are shown in a rotated order, so the right one is not always in the same place
+        var order = x.c.map(function (c, j) { return j; }), rot = i % x.c.length; order = order.slice(rot).concat(order.slice(0, rot));
+        var fb = a !== null && q.after && q.after.ans ? q.after.ans[i] : null, mm = x.m && byId(x.m);
+        return '<li><p>' + esc(x.q) + '</p>' + order.map(function (j) { return '<label class="choice' + (fb !== null && j === x.a ? ' right' : fb === j && j !== x.a ? ' wrong' : '') + '"><input type="radio" name="q' + i + '" value="' + j + '"' + (ans[i] === j ? ' checked' : '') + '><span>' + esc(x.c[j]) + '</span></label>'; }).join('') +
+          (fb !== null ? '<p class="small ' + (fb === x.a ? 'ok' : 'miss') + '">' + (fb === x.a ? 'Right. ' : 'The answer: ' + esc(x.c[x.a]) + '. ') + esc(x.why || '') + (mm ? ' <button type="button" class="linkish" data-qm="' + mm.id + '">Mission ' + number(mm) + '</button>' : '') + '</p>' : '') + '</li>';
+      }).join('') + '</ol><div class="actions"><button type="submit" class="btn primary">Save the “' + which + '” answers</button><button type="button" class="btn ghost" id="quiz-copy">Copy results</button>' + (b !== null ? '<button type="button" class="btn ghost" id="quiz-clear">Start over</button>' : '') + '</div><p class="small muted" id="quiz-msg"></p></form>';
+    [].forEach.call(el.querySelectorAll('[data-qm]'), function (bt) { bt.addEventListener('click', function () { LB.start(byId(bt.dataset.qm)); }); });
+    if ($('quiz-clear')) $('quiz-clear').addEventListener('click', function () {
+      var msg = $('quiz-msg'); msg.innerHTML = 'Clear both attempts and start again? <button type="button" class="btn small" id="quiz-clear-yes">Clear them</button>';
+      $('quiz-clear-yes').addEventListener('click', function () { P.quiz = {}; save(); LB.renderQuiz(); });
+    });
     $('quiz-form').addEventListener('submit', function (e) {
       e.preventDefault();
       var got = Q.map(function (x, i) { var r = el.querySelector('input[name="q' + i + '"]:checked'); return r ? +r.value : null; });
+      var blank = got.filter(function (g) { return g === null; }).length;
+      if (blank) { $('quiz-msg').textContent = 'Answer every question first: ' + blank + ' still blank. A guess is fine; it is part of the “before”.'; return; }
       P.quiz = P.quiz || {}; P.quiz[which] = { ans: got, done: true, at: Date.now() }; save(); LB.renderQuiz();
       $('quiz-msg').textContent = 'Saved.';
     });

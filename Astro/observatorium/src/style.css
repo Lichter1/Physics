@@ -116,7 +116,10 @@ h1, h2, h3, h4 { margin: 0; text-wrap: balance; }
 .ins-table th:first-child, .ins-table td:first-child { text-align: left; }
 .ins-table td.good { color: var(--ok); }
 .readbar { display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: space-between; padding: 6px 14px; min-height: 30px; font-size: 12.5px; color: var(--ink-2); background: var(--panel); border-top: 1px solid var(--rule); }
-.readbar .hover { color: var(--ink); }
+.readbar { position: relative; }
+.readbar .hover { position: absolute; right: 10px; bottom: calc(100% + 6px); max-width: min(70%, 460px); padding: 3px 9px; border: 1px solid var(--rule); border-radius: var(--r); background: var(--panel); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; z-index: 3; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+.readbar .hover:empty { display: none; }
+select:disabled, .lv:disabled, .seg-b:disabled { opacity: 0.55; cursor: not-allowed; }
 .boot { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--ink-2); font-family: var(--serif); font-size: 18px; }
 .lens-inst { margin: 0; font-family: var(--serif); font-style: italic; color: var(--ink-2); flex: 1 1 100%; }
 .lens-sub { margin: 0; flex: 1 1 100%; }
@@ -402,3 +405,8 @@ table.kv tr.locked td { color: var(--ink-3); font-style: italic; }
   .tour-pop h3 { font-size: 19px; }
 }
 @media (prefers-reduced-motion: reduce) { .tour-spot, .tour-pop { transition: none; } }
+/* quiz feedback after the second attempt */
+.quiz .choice.right span { color: var(--ok); font-weight: 600; }
+.quiz .choice.wrong span { color: var(--warn); text-decoration: line-through; }
+.quiz p.miss { color: var(--warn); }
+.quiz p.ok, .quiz p.miss { margin: 4px 0 10px; }

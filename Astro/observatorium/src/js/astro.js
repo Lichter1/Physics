@@ -59,6 +59,14 @@
   var BCPOLY = [0.17382214, -0.98016866, 0.97813796, -0.21358207];              // BC_G(BP-RP), rms 0.12 mag
   function poly(c, x) { var y = 0; for (var i = 0; i < c.length; i++) y = y * x + c[i]; return y; }
   A.teffFromBpRp = function (c) { return isFinite(c) ? Math.pow(10, poly(TPOLY, Math.max(-0.1, Math.min(3.6, c)))) : NaN; };
+  // Hydrogen-atmosphere white dwarfs: Gaia BP − RP against temperature (approximate, from DA model colours).
+  var WDT = [[-0.56, 40000], [-0.42, 25000], [-0.30, 19000], [-0.18, 15000], [-0.07, 12000], [0.05, 10000], [0.25, 8000], [0.60, 6000], [0.85, 5000], [1.20, 4000]];
+  A.teffWD = function (c) {
+    if (!isFinite(c)) return NaN;
+    if (c <= WDT[0][0]) return WDT[0][1];
+    for (var k = 1; k < WDT.length; k++) if (c <= WDT[k][0]) { var u = (c - WDT[k - 1][0]) / (WDT[k][0] - WDT[k - 1][0]); return Math.pow(10, Math.log10(WDT[k - 1][1]) + u * (Math.log10(WDT[k][1]) - Math.log10(WDT[k - 1][1]))); }
+    return WDT[WDT.length - 1][1];
+  };
   A.bcG = function (c) { return isFinite(c) ? poly(BCPOLY, Math.max(-0.1, Math.min(3.6, c))) : NaN; };
   /** Bolometric luminosity in L_sun from Gaia absolute G magnitude and colour. */
   A.lumFromMG = function (MG, c) { return Math.pow(10, -0.4 * (MG + A.bcG(c) - C.Mbol_sun)); };

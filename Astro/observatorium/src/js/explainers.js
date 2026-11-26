@@ -257,12 +257,15 @@
       s.fit(); var c = s.ctx, C = s.C, a = A.ML_SLOPE, t = Math.pow(10, st.logt);
       var Mto = Math.pow(t / 1e10, 1 / (1 - a)), Lto = Math.pow(Mto, a), MGto = 4.74 - 2.5 * Math.log10(Lto);
       var pb = plotBox(s, 46, 10, s.W - 70, s.H - 44, [-0.4, 3], [13, -6], { xl: 'colour (blue → red)', yl: 'brightness' });
-      var ms = [], dead = [];
-      for (var x = -0.35; x <= 3; x += 0.02) { var M = 1.0 + 4.4 * (x + 0.35) - (x > 1.5 ? 0 : 0); (M >= MGto ? ms : dead).push([pb.x(x), pb.y(M)]); }
+      // a zero-age main sequence from O stars (M_G ≈ −5.5) to red dwarfs, roughly as Gaia sees it
+      var ZAMS = [[-0.35, -5.5], [-0.2, -1.5], [0, 1.0], [0.4, 2.8], [0.8, 4.6], [1.2, 6.3], [1.8, 8.8], [2.5, 11.5], [3.0, 12.8]];
+      function zM(x) { for (var k = 1; k < ZAMS.length; k++) if (x <= ZAMS[k][0]) { var u = (x - ZAMS[k - 1][0]) / (ZAMS[k][0] - ZAMS[k - 1][0]); return ZAMS[k - 1][1] + u * (ZAMS[k][1] - ZAMS[k - 1][1]); } return ZAMS[ZAMS.length - 1][1]; }
+      var ms = [], dead = [], xt = -0.35;
+      for (var x = -0.35; x <= 3; x += 0.01) { var M = zM(x); (M >= MGto ? ms : dead).push([pb.x(x), pb.y(M)]); if (M < MGto) xt = x; }
       line(c, dead, C['ink-3'], 3, [2, 4]); line(c, ms, C.accent, 5);
-      var xt = (MGto - 1.0) / 4.4 - 0.35, gb = [];
+      var gb = [];
       for (var k = 0; k <= 20; k++) { var u = k / 20; gb.push([pb.x(xt + 0.15 * u + 1.1 * u * u), pb.y(MGto - 0.5 * u - 3.5 * u * u)]); }
-      if (xt > -0.35) line(c, gb, C.c4, 3);
+      if (MGto > -5.5) line(c, gb, C.c4, 3);
       text(c, 'turn-off', pb.x(xt) + 8, pb.y(MGto) + 4, C.accent);
       s.out.innerHTML = 'At <b>' + (t >= 1e9 ? f(t / 1e9, 2) + ' Gyr' : f(t / 1e6, 2) + ' Myr') + '</b>, stars heavier than <b>' + f(Mto, 2) + ' M☉</b> have left the main sequence (t_MS ≈ 10 Gyr · M^{1−a}, a = ' + a.toFixed(2) + '). The turn-off sits at M_G ≈ ' + OBS.fix(MGto, 1) + '; red: the giants it feeds. Grey: the part of the main sequence that is gone.';
     }

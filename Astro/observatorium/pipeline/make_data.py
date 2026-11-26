@@ -328,11 +328,16 @@ save('pulsars', ps, {'name': None, 'P': 9, 'Pdot': None, 'binary': 0, 'type': No
 # ----------------------------------------------------------------------------------------------------- exoplanets
 ex = pd.read_csv(c('exoplanets.csv'))
 ex['method'] = ex.discoverymethod
+# where each mass comes from (TAP: select pl_name, pl_bmassprov from pscomppars): most transit masses are estimates
+MP = {'Mass': 'measured', 'Msini': 'minimum (M sin i)', 'Msin(i)/sin(i)': 'measured', 'M-R relationship': 'estimated from radius'}
+if os.path.exists(c('exoplanets_massprov.csv')):
+    mp = pd.read_csv(c('exoplanets_massprov.csv'))
+    ex = ex.merge(mp.assign(massprov=mp.pl_bmassprov.map(MP))[['pl_name', 'massprov']], on='pl_name', how='left')
 save('exoplanets', ex, {'pl_name': None, 'hostname': None, 'method': None, 'disc_year': 0, 'pl_orbper': 5, 'pl_orbsmax': 5, 'pl_bmassj': 5,
-                        'pl_radj': 4, 'pl_eqt': 0, 'pl_orbeccen': 3, 'st_teff': 0, 'st_mass': 3, 'st_rad': 3, 'sy_dist': 3, 'ra': 4, 'dec': 4},
+                        'pl_radj': 4, 'pl_eqt': 0, 'pl_orbeccen': 3, 'st_teff': 0, 'st_mass': 3, 'st_rad': 3, 'sy_dist': 3, 'ra': 4, 'dec': 4, 'massprov': None},
      title='Confirmed exoplanets (NASA Exoplanet Archive)', source='exoplanetarchive.ipac.caltech.edu TAP, table pscomppars (one row per planet)',
      citation='NASA Exoplanet Archive, operated by Caltech under contract with NASA (DOI 10.26133/NEA13)', license='Public (NASA)',
-     columns_note='orbital period days; semi-major axis AU; mass and radius in Jupiter units; eqt K; star teff K, mass and radius solar; distance pc')
+     columns_note='orbital period days; semi-major axis AU; mass and radius in Jupiter units; eqt K; star teff K, mass and radius solar; distance pc; massprov: measured, minimum (M sin i) or estimated from radius (Chen & Kipping 2017)')
 
 from astropy.io import fits
 kp = []

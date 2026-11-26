@@ -45,7 +45,8 @@
     var g = col(gcol), cc = col(ccol);
     function MG(c, i) { return A.absMag(c[gcol][i], plx(c, i)); }
     function L(c, i) { return A.lumFromMG(MG(c, i), c[ccol][i]); }
-    function T(c, i) { return A.teffFromBpRp(c[ccol][i]); }
+    // white dwarfs follow their own colour–temperature relation; the general one was fitted to ordinary stars
+    function T(c, i) { return c.wd && c.wd[i] ? A.teffWD(c[ccol][i]) : A.teffFromBpRp(c[ccol][i]); }
     return POS.concat([
       v('G', 'Apparent brightness G', 'mag', g, { rev: true, how: 'Gaia G-band magnitude: m = −2.5 log₁₀(flux) + const. Bigger is fainter.' }),
       v('bp_rp', 'Colour BP − RP', 'mag', cc, { how: 'Blue magnitude minus red magnitude. Bigger is redder.' }),
@@ -76,13 +77,21 @@
   /** Lookback time in a flat universe with Ωm = 0.31, H0 = 70 (needs the 'cosmo' concept). */
   function tlb(zcol) { return v('tlb', 'Lookback time', 'Gyr', function (c, i) { return c[zcol][i] > 0 ? A.lookback(c[zcol][i], 70, 0.31, 0.69) : NaN; }, { needs: ['cosmo'], how: 'How long ago the light left: ∫ dz / ((1+z) H(z)) in the ΛCDM model you tested.' }); }
   var DS = OBS.DATASETS = {};
+  // HYG gives Bayer names as 'Tau Phe' or 'Kap-1 Scl', and only the constellation ('Phe') for most stars
+  var GREEK = { Alp: 'α', Bet: 'β', Gam: 'γ', Del: 'δ', Eps: 'ε', Zet: 'ζ', Eta: 'η', The: 'θ', Iot: 'ι', Kap: 'κ', Lam: 'λ', Mu: 'μ', Nu: 'ν', Xi: 'ξ', Omi: 'ο', Pi: 'π', Rho: 'ρ', Sig: 'σ', Tau: 'τ', Ups: 'υ', Phi: 'φ', Chi: 'χ', Psi: 'ψ', Ome: 'ω' };
+  var SUP = { 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
+  function bayerName(b, hip) {
+    var p = (b || '').split(' ');
+    if (p.length === 2) { var g = p[0].split('-'); if (GREEK[g[0]]) return GREEK[g[0]] + (g[1] ? SUP[g[1]] || g[1] : '') + ' ' + p[1]; return b; }
+    return (hip ? 'HIP ' + hip : 'a star') + (p[0] ? ' in ' + p[0] : '');
+  }
   function def(d) { DS[d.id] = d; return d; }
 
   // ---------------------------------------------------------------------------------------------- the sky
   def({
     id: 'sky', file: 'sky', level: 'sky', title: 'The naked-eye sky', sub: 'Every star you can see without a telescope (V < 6.5): Hipparcos, via HYG',
     pos: true, mag: 'mag', bv: 'ci', x: 'ci', y: 'mag',
-    name: function (c, i) { return c.name[i] || c.bayer[i] || (c.hip[i] ? 'HIP ' + c.hip[i] : 'star'); },
+    name: function (c, i) { return c.name[i] || bayerName(c.bayer[i], c.hip[i]); },
     vars: POS.concat([
       v('mag', 'Apparent brightness V', 'mag', col('mag'), { rev: true, how: 'Visual magnitude (Hipparchus’ scale, made exact by Pogson in 1856): 5 magnitudes = ×100 in flux.' }),
       v('ci', 'Colour B − V', 'mag', col('ci'), { how: 'Blue magnitude minus visual magnitude. Bigger is redder.' }),
@@ -96,7 +105,7 @@
   // ---------------------------------------------------------------------------------------------- stars
   def({
     id: 'nearby', file: 'nearby', level: 'stars', title: 'Stars within 100 pc', sub: '36,683 stars from Gaia DR3 (a sample of the 207,176 that pass the HR-diagram quality cuts)',
-    pos: true, mag: 'G', gaiaColour: 'bp_rp', x: 'bp_rp', y: 'G', name: function (c, i) { return c.id[i] ? 'Gaia DR3 ' + c.id[i] : 'Gaia star'; },
+    pos: true, mag: 'G', gaiaColour: 'bp_rp', x: 'bp_rp', y: 'G', name: function (c, i) { return c.id[i] ? 'Gaia DR3 ' + c.id[i] : 'Gaia star at ' + OBS.fix(1000 / (c.parallax[i] + A.GAIA_ZP), 1) + ' pc'; },
     vars: gaiaStars('phot_g_mean_mag', 'bp_rp').concat(gaiaChecks, [
       v('wd', 'White dwarf (Gaia catalogue flag)', '', function (c, i) { return c.wd[i] ? 'white dwarf' : 'other'; }, { cat: true, needs: ['invsq'], how: 'GCNS white-dwarf probability > 0.5.' })
     ])
@@ -147,7 +156,8 @@
     vars: POS.concat([
       v('P', 'Orbital period P', 'd', col('pl_orbper'), { scale: 'log' }),
       v('a', 'Orbit size a', 'AU', col('pl_orbsmax'), { scale: 'log' }),
-      v('Mp', 'Planet mass', 'M_Jup', col('pl_bmassj'), { scale: 'log', how: 'For radial-velocity planets this is usually M sin i, a lower limit.' }),
+      v('Mp', 'Planet mass', 'M_Jup', col('pl_bmassj'), { scale: 'log', how: 'Measured for some planets; for radial-velocity planets often M sin i, a lower limit; for most transiting planets an estimate from the radius (colour by “Where the mass comes from”).' }),
+      v('massprov', 'Where the mass comes from', '', function (c, i) { return c.massprov ? c.massprov[i] || 'unknown' : 'unknown'; }, { cat: true, how: 'The archive’s pl_bmassprov: a measured mass, a minimum mass (M sin i), or an estimate from the radius with the Chen & Kipping (2017) relation.' }),
       v('Rp', 'Planet radius', 'R_Jup', col('pl_radj'), { scale: 'log', how: 'Only for planets that transit.' }),
       v('Teq', 'Equilibrium temperature', 'K', col('pl_eqt'), { scale: 'log' }),
       v('year', 'Year found', '', col('disc_year')),
@@ -185,7 +195,7 @@
     pos: true, mag: 'G', gaiaColour: 'bp_rp', x: 'bp_rp', y: 'G', name: function (c, i) { return OBS.CLUSTERS[c.cl[i]].label + ' star'; },
     subset: { col: 'cl', label: 'Cluster', def: 'pleiades', names: { pleiades: 'Pleiades field (3°)', hyades: 'Hyades', praesepe: 'Praesepe', m67: 'M67', ngc6397: 'NGC 6397', '*': 'All five' } },
     vars: clStars.concat([
-      v('member', 'Moves with the cluster?', '', function (c, i) { return OBS.isMember(c, i) ? 'member' : 'field'; }, { cat: true }),
+      v('member', 'Moves with the cluster?', '', function (c, i) { return OBS.isMember(c, i) ? 'member' : 'field'; }, { cat: true, spoils: 'pleiades' }),     // would give mission 1.8's answer away
       v('cluster', 'Cluster', '', function (c, i) { return OBS.CLUSTERS[c.cl[i]].label; }, { cat: true }),
       v('bp_rp0', 'Colour, corrected for dust', 'mag', function (c, i) { return c.bp_rp[i] - 1.339 * OBS.CLUSTERS[c.cl[i]].ebv; }, { needs: ['parallax', 'invsq'], how: '(BP − RP)₀ = BP − RP − 1.339 E(B−V)' }),
       v('MGc', 'Absolute magnitude (cluster distance)', 'mag', function (c, i) {
@@ -225,14 +235,14 @@
     ])
   });
   def({
-    id: 'cep_lc', file: 'cepheid_lc', level: 'galaxies', title: 'Cepheid light curves', sub: 'OGLE-IV, I band, 2010–2015',
+    id: 'cep_lc', file: 'cepheid_lc', level: 'galaxies', title: 'Cepheid light curves', sub: 'OGLE-IV, I band, 2010–2015. Photometry © OGLE (Udalski et al. 2015; Soszyński et al.), shown for study.',
     pos: false, series: true, x: 't', y: 'mag', subset: { col: 'id', label: 'Star', def: 'OGLE-LMC-CEP-1109' },
     vars: [v('t', 'Time', 'HJD − 2450000', col('t')), v('mag', 'Brightness I', 'mag', col('mag'), { rev: true })]
   });
 
   // ---------------------------------------------------------------------------------------------- the Milky Way
   def({
-    id: 'microlensing', file: 'microlensing', level: 'galaxy', title: 'Microlensing events', sub: 'OGLE-IV Early Warning System, 2019 (toward the Galactic bulge)',
+    id: 'microlensing', file: 'microlensing', level: 'galaxy', title: 'Microlensing events', sub: 'OGLE-IV Early Warning System, 2019 (toward the Galactic bulge). Photometry © OGLE (Udalski et al. 2015), shown for study; OGLE asks to be contacted before it is used in publications.',
     pos: false, series: true, x: 't', y: 'mag', subset: { col: 'event', label: 'Event', def: '2019-BLG-0148' },
     vars: [v('t', 'Time', 'HJD − 2450000', col('t')), v('mag', 'Brightness I', 'mag', col('mag'), { rev: true })]
   });
@@ -249,7 +259,7 @@
 
   // ---------------------------------------------------------------------------------------------- solar system
   def({
-    id: 'smallbodies', file: 'smallbodies', level: 'solar', title: 'Asteroids and Kuiper-belt objects', sub: 'JPL Small-Body Database: 50,405 orbits',
+    id: 'smallbodies', file: 'smallbodies', level: 'solar', title: 'Asteroids and Kuiper-belt objects', sub: 'JPL Small-Body Database: 52,613 orbits',
     pos: false, x: 'a', y: 'e', colourBy: 'class',
     name: function (c, i) { return c.pdes[i] ? '(' + c.pdes[i] + ')' : 'main-belt asteroid'; },
     vars: [
