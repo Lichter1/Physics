@@ -505,9 +505,15 @@
   P._bind = function () {
     var self = this, cv = this.cv;
     function pos(e) { var r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+    var touches = {};
+    function spread() { var k = Object.keys(touches); return k.length < 2 ? null : { d: Math.hypot(touches[k[0]][0] - touches[k[1]][0], touches[k[0]][1] - touches[k[1]][1]), x: (touches[k[0]][0] + touches[k[1]][0]) / 2, y: (touches[k[0]][1] + touches[k[1]][1]) / 2 }; }
     cv.addEventListener('pointerdown', function (e) {
       if (!self.ds) return;
-      var p = pos(e), h = self._handleAt(p[0], p[1]);
+      var p = pos(e);
+      if (self.guard && self.guard.active()) { self.drag = { kind: 'tap', x: p[0], y: p[1] }; return; }      // let the page scroll
+      touches[e.pointerId] = p;
+      if (Object.keys(touches).length === 2) { var s0 = spread(); self.drag = { kind: 'pinch', s: s0, v: Object.assign({}, self.view), X: self.ix(s0.x), Y: self.iy(s0.y) }; e.preventDefault(); return; }
+      var h = self._handleAt(p[0], p[1]);
       cv.setPointerCapture(e.pointerId);
       if (h) self.drag = { kind: 'handle', h: h };
       else if (self.tool === 'pan' || e.button === 1) self.drag = { kind: 'pan', x: p[0], y: p[1], v: Object.assign({}, self.view) };
@@ -517,6 +523,15 @@
     cv.addEventListener('pointermove', function (e) {
       if (!self.ds) return;
       var p = pos(e), d = self.drag;
+      if (touches[e.pointerId]) touches[e.pointerId] = p;
+      if (d && d.kind === 'tap') { if (Math.hypot(p[0] - d.x, p[1] - d.y) > 8) self.drag = null; return; }
+      if (d && d.kind === 'pinch') {
+        var s1 = spread(); if (!s1 || !d.s.d) return;
+        var k = d.s.d / s1.d, v = d.v, X = d.X, Y = d.Y, zy = !self.hist();
+        self.view = { x0: X + (v.x0 - X) * k, x1: X + (v.x1 - X) * k, y0: zy ? Y + (v.y0 - Y) * k : v.y0, y1: zy ? Y + (v.y1 - Y) * k : v.y1 };
+        if (self.hist()) self._histMax();
+        self.draw(); return;
+      }
       if (!d) {
         var h = self._handleAt(p[0], p[1]);
         cv.style.cursor = h ? (h.o.type === 'hline' ? 'ns-resize' : h.o.type === 'vline' ? 'ew-resize' : 'grab') : self.tool === 'pan' ? 'move' : 'crosshair';
@@ -542,7 +557,12 @@
       }
     });
     function end(e) {
-      var d = self.drag; self.drag = null;
+      delete touches[e.pointerId];
+      var d = self.drag;
+      if (d && d.kind === 'tap') { self.drag = null; if (e.type === 'pointerup') self.guard.arm(); return; }
+      if (d && d.kind === 'pinch') { if (!Object.keys(touches).length) self.drag = null; else self.drag = { kind: 'done' }; return; }
+      if (d && d.kind === 'done') { if (!Object.keys(touches).length) self.drag = null; return; }
+      self.drag = null;
       if (!d) return;
       if (d.kind === 'brush') {
         if (Math.abs(d.x1 - d.x0) < 4 && Math.abs(d.y1 - d.y0) < 4) {

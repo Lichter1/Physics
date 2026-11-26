@@ -47,6 +47,20 @@
   var cleanups = [];
   OBS.cleanup = function (fn) { if (typeof fn === 'function') cleanups.push(fn); return fn; };
   OBS.runCleanups = function () { var c = cleanups; cleanups = []; c.forEach(function (f) { try { f(); } catch (e) { /* already gone */ } }); };
+  /** On a phone, a canvas that swallows every swipe traps the page. Guarded canvases let vertical swipes scroll
+   *  the page until they are tapped ("Tap to use"); then they take every gesture until "Done". */
+  OBS.guard = function (wrap) {
+    var mq = G.matchMedia ? G.matchMedia('(pointer: coarse) and (max-width: 860px)') : null;
+    var hint = document.createElement('div'); hint.className = 'touch-hint'; hint.textContent = 'Tap to use';
+    var done = document.createElement('button'); done.type = 'button'; done.className = 'btn small touch-done'; done.textContent = 'Done';
+    wrap.appendChild(hint); wrap.appendChild(done);
+    function phone() { return !!(mq && mq.matches); }
+    function show() { var a = wrap.classList.contains('armed'); hint.hidden = !phone() || a; done.hidden = !phone() || !a; wrap.classList.toggle('guarded', phone()); }
+    done.addEventListener('click', function () { wrap.classList.remove('armed'); show(); });
+    if (mq && mq.addEventListener) mq.addEventListener('change', function () { wrap.classList.remove('armed'); show(); });
+    show();
+    return { active: function () { return phone() && !wrap.classList.contains('armed'); }, arm: function () { wrap.classList.add('armed'); show(); } };
+  };
   /** An event listener that lives only as long as the current exercise. */
   OBS.onMission = function (ev, fn) { return OBS.cleanup(OBS.on(ev, fn)); };
 

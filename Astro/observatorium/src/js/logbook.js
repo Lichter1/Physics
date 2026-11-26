@@ -84,13 +84,13 @@
     var m = cur.m, el = $('lb-card');
     // remember the open mission and step, so a reload comes back to it
     OBS.store.set('open', m ? { id: m.id, step: cur.step === 3 ? 0 : cur.step, pred: cur.pred } : null);
-    if (!m) { el.hidden = true; return; }
+    if (!m) { el.hidden = true; var lsx = $('lens-status'); if (lsx) { lsx.hidden = true; lsx.innerHTML = ''; } return; }
     el.hidden = false;
     var head = '<header><p class="eyebrow">Mission ' + number(m) + ' · ' + esc(m.era) + '</p><h3>' + esc(m.title) + '</h3><p class="who">' + esc(m.who) + '</p></header>' + stepper();
     var body = '';
     if (cur.step === 0) {
       var miss = missingNames(m), beats = OBS.lecture.beats(m), k = OBS.lecture.m === m ? OBS.lecture.k : 0;
-      body = '<p class="muted small">The lecture is in the right-hand pane; the sky follows it. Steps:</p>' +
+      body = '<p class="muted small">The lecture is in the data lens pane (on the right, or further down on a narrow screen); the sky follows it. <button type="button" class="btn small ghost go-lecture" id="go-lecture">Go to the lecture ↓</button> Steps:</p>' +
         '<ol class="toc">' + beats.map(function (b, i) { return '<li><button type="button" class="toc-b' + (i === k ? ' on' : '') + '" data-k="' + i + '">' + esc(b.h) + '</button></li>'; }).join('') + '</ol>' +
         (miss.length && !OBS.state.sandbox ? '<p class="warn">This mission uses ideas from ' + miss.map(esc).join(' and ') + '. Do that first, or turn on teacher mode in the Notebook.</p>' : '') +
         '<div class="actions"><button type="button" class="btn ghost" id="m-skip"' + (miss.length && !OBS.state.sandbox ? ' disabled' : '') + '>Skip to the prediction</button></div>';
@@ -117,6 +117,8 @@
     }
     el.innerHTML = head + '<div class="mbody">' + body + '</div>';
     bindCard();
+    var lsb = $('lens-status'); if (lsb && cur.step !== 2) { lsb.hidden = true; lsb.innerHTML = ''; }
+    var gl = $('go-lecture'); if (gl) gl.addEventListener('click', function () { var le = $('pane-lens'); if (le) le.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
     if (cur.step === 1) OBS.lecture.showSummary(m);
     if (cur.step === 2) observe();
     if (cur.step === 3) { bindPractice(m); OBS.typeset(el); }
@@ -196,6 +198,13 @@
   /** Show the exercise's progress; the button follows it both ways (done → enabled, undone → disabled again). */
   function showStatus(r, after) {
     var s = $('m-status'), b = $('m-next'); if (!s || !b || !r) return;
+    // on narrow layouts the card is far from the instrument: repeat the status (and the button) under the lens
+    var ls = $('lens-status');
+    if (ls) {
+      ls.hidden = false;
+      ls.innerHTML = (r.done ? '<span class="pill ok">done</span> ' : '<span class="pill">' + (after ? 'not yet' : 'in progress') + '</span> ') + esc(r.text || '') + (r.done ? ' <button type="button" class="btn small primary" id="ls-next">What does it mean?</button>' : '');
+      var ln = $('ls-next'); if (ln) ln.addEventListener('click', function () { var mb = $('m-next'); if (mb && !mb.disabled) { mb.click(); mb.scrollIntoView({ block: 'center', behavior: 'smooth' }); } });
+    }
     s.innerHTML = (r.done ? '<span class="pill ok">done</span> ' : '<span class="pill">' + (after ? 'not yet' : 'in progress') + '</span> ') + esc(r.text || '');
     if (r.done && b.disabled) { b.disabled = false; b.classList.add('pulse'); }
     else if (!r.done && !b.disabled) { b.disabled = true; b.classList.remove('pulse'); }

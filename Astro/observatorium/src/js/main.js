@@ -9,6 +9,7 @@
   function buildApp() {
     chart = new OBS.Chart($('chart'));
     sky = new OBS.Sky($('sky'));
+    chart.guard = OBS.guard($('chart').parentNode); sky.guard = OBS.guard($('sky').parentNode);
     app = OBS.app = {
       chart: chart, sky: sky, tools: $('tools'),
       /** Open a dataset in the lens (and on the sky if it has positions). */

@@ -566,8 +566,14 @@
   P._bind = function () {
     var self = this, cv = this.cv;
     function pos(e) { var r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+    var touches = {};
+    function spread() { var k = Object.keys(touches); return k.length < 2 ? 0 : Math.hypot(touches[k[0]][0] - touches[k[1]][0], touches[k[0]][1] - touches[k[1]][1]); }
     cv.addEventListener('pointerdown', function (e) {
-      var p = pos(e); cv.setPointerCapture(e.pointerId);
+      var p = pos(e);
+      if (self.guard && self.guard.active()) { self.drag = { kind: 'tap', x: p[0], y: p[1] }; return; }     // let the page scroll
+      touches[e.pointerId] = p;
+      if (Object.keys(touches).length === 2) { self.drag = { kind: 'pinch', d0: spread(), fov: self.fov }; e.preventDefault(); return; }
+      cv.setPointerCapture(e.pointerId);
       if (self.anim) { G.cancelAnimationFrame(self.anim); self.anim = null; }
       self.drag = (e.shiftKey || self.tool === 'circle') ? { kind: 'circle', x0: p[0], y0: p[1], r: 0, add: e.shiftKey && self.tool === 'circle' }
         : { kind: 'turn', x: p[0], y: p[1], lon: self.lon0, lat: self.lat0, moved: false };
@@ -575,6 +581,14 @@
     });
     cv.addEventListener('pointermove', function (e) {
       var p = pos(e), d = self.drag;
+      if (touches[e.pointerId]) touches[e.pointerId] = p;
+      if (d && d.kind === 'tap') { if (Math.hypot(p[0] - d.x, p[1] - d.y) > 8) self.drag = null; return; }
+      if (d && d.kind === 'pinch') {
+        var r = spread() / (d.d0 || 1); if (!r) return;
+        if (self.mode === 'allsky') { if (r > 1.25) { var k = Object.keys(touches), mx = (touches[k[0]][0] + touches[k[1]][0]) / 2, my = (touches[k[0]][1] + touches[k[1]][1]) / 2, q = self.unproject(mx, my); if (q) { self.mode = 'dome'; self.lon0 = q[0]; self.lat0 = q[1]; self.fov = 140; d.fov = 140 * r; self._mwKey = null; OBS.emit('skymode'); } } }
+        else { self.fov = Math.max(0.05, Math.min(200, d.fov / r)); if (self.fov >= 199 && r < 1) { self.mode = 'allsky'; self.lat0 = 0; self._mwKey = null; OBS.emit('skymode'); } }
+        self.draw(); return;
+      }
       if (!d || d.kind === 'anim') {
         if (d) return;
         var h = self._nearest(p[0], p[1]);
@@ -593,7 +607,12 @@
       self.draw();
     });
     function end(e) {
-      var d = self.drag; self.drag = null; if (!d || d.kind === 'anim') return;
+      delete touches[e.pointerId];
+      var d = self.drag;
+      if (d && d.kind === 'tap') { self.drag = null; if (e.type === 'pointerup') self.guard.arm(); return; }
+      if (d && d.kind === 'pinch') { if (!Object.keys(touches).length) { self.drag = null; self.draw(true); } else self.drag = { kind: 'anim' }; return; }
+      if (d && d.kind === 'anim' && Object.keys(touches).length) return;
+      self.drag = null; if (!d || d.kind === 'anim') return;
       if (d.kind === 'circle') { if (d.r > 4) self._circleSelect(d); }
       else if (!d.moved) {
         var p = pos(e), h = self._nearest(p[0], p[1]);
