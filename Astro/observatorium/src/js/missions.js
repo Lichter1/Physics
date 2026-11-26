@@ -873,7 +873,7 @@
       progress: function (app, st) { var p = st.model.p, q = p._fit; return { done: q.red < 3, text: 'Ω_total = ' + OBS.fix(p.Ot + p.dO, 3) + ', χ²/N = ' + OBS.fmt(q.red, 3) }; },
       result: function (app, st) {
         var O = st.model.p.Ot + st.model.p.dO, l1 = 220 * st.ratio(O);
-        return 'Ω_total = ' + fix(O, 3) + ' (χ²/N = ' + fmt(st.model.p._fit.red, 3) + '). The first peak is at ℓ ≈ ' + fix(l1, 0) + ': the biggest hot and cold spots are about ' + fix(180 / l1, 2) + '° across, about twice the size of the full Moon. A 2% change in Ω would already move the peaks by a whole bin.';
+        return 'Ω_total = ' + fix(O, 3) + ' (χ²/N = ' + fmt(st.model.p._fit.red, 3) + '). The first peak is at ℓ ≈ ' + fix(l1, 0) + ': the biggest hot and cold spots are about ' + fix(180 / l1, 2) + '° across, ' + fix(180 / l1 / 0.52, 1) + ' times the width of the full Moon. A 2% change in Ω would already move the peaks by a whole bin.';
       },
       explain: 'The peaks are sound waves caught at maximum compression or rarefaction at recombination. Their physical size is known, so their angle measures the geometry: in a closed universe the ruler would look bigger (peaks to the left), in an open one smaller. Planck’s peaks sit where a flat universe puts them, to within half a percent. Flat space needs Ω_total = 1, yet matter is only 0.3: the rest is the dark energy the supernovae found. The height of the second peak relative to the first also weighs the ordinary matter: Ω_b ≈ 0.049.',
       real: 'BOOMERanG and MAXIMA located the first peak in 2000; WMAP (2003–2012) and Planck (2013–2018) measured the spectrum to ℓ ≈ 2500. Planck 2018: Ω_k = 0.001 ± 0.002 (with BAO), Ωm = 0.315, H₀ = 67.4 km/s/Mpc, age 13.80 Gyr.'
