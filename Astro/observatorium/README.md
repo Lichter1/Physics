@@ -7,6 +7,7 @@ then puts you in the place of the astronomer who first made the measurement. Eac
 derived quantity (distance, luminosity, temperature, radius, mass…) that then appears as an axis for every dataset.
 
 Why it is built this way, how it maps onto lectures 1–13 and the homework, and what comes next: [DESIGN.md](DESIGN.md).
+The November 2026 review of every chapter (bugs, gaps against the slides, ideas): [audit/AUDIT.md](audit/AUDIT.md).
 
 ## Use it
 
