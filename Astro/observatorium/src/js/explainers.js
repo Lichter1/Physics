@@ -422,7 +422,7 @@
       marks.forEach(function (m) { disc(c, cx + st.a * sc * Math.cos(m), cy + st.a * sc * Math.sin(m), 3, C.accent); });
       var ratio = Math.pow(st.a / 5.2026, 1.5);
       text(c, 'Jupiter', jx + 9, jy, C.c2);
-      s.out.innerHTML = 'Gold: where the asteroid is each time Jupiter overtakes it. At <b>' + st.a.toFixed(3) + ' AU</b> its year is <b>' + ratio.toFixed(3) + '</b> of Jupiter’s. At a simple fraction (2.502 AU = 1/3, 2.825 AU = 2/5) the kicks land at the same few places and add up; otherwise they spread round the orbit and cancel.';
+      s.out.innerHTML = 'Gold: where the asteroid is each time it overtakes Jupiter (it is closer to the Sun, so faster). At <b>' + st.a.toFixed(3) + ' AU</b> its year is <b>' + ratio.toFixed(3) + '</b> of Jupiter’s. At a simple fraction (2.502 AU = 1/3, 2.825 AU = 2/5) the kicks land at the same few places and add up; otherwise they spread round the orbit and cancel.';
     });
     UI.slider(s.ctl, { label: 'Asteroid orbit size a', min: 2.0, max: 3.4, value: st.a, step: 0.001, unit: 'AU', fmt: function (x) { return x.toFixed(3); }, oninput: function (x) { st.a = x; marks.length = 0; } });
     return { stop: stop };
@@ -441,7 +441,8 @@
       var sx = cx - st.R0 * sc; disc(c, sx, cy, 5, '#f2c55c'); text(c, 'Sun', sx - 4, cy + 18, C['ink-2'], 'center');
       var bins = new Array(12).fill(0);
       pts.forEach(function (p) { var l = Math.atan2(p[1], p[0] + st.R0); bins[Math.floor(((l / Math.PI / 2) + 0.5) * 12) % 12]++; });
-      var pb = plotBox(s, s.W * 0.56, 12, s.W * 0.4, s.H - 46, [-180, 180], [0, 50], { xl: 'direction seen from the Sun [°]', yl: 'clusters' });
+      var top = Math.max(20, Math.ceil(Math.max.apply(null, bins) / 10) * 10 + 10);     // room for the tallest bar
+      var pb = plotBox(s, s.W * 0.56, 12, s.W * 0.4, s.H - 46, [-180, 180], [0, top], { xl: 'direction seen from the Sun [°]', yl: 'clusters (0 to ' + top + ')' });
       bins.forEach(function (n, i) { var x0 = pb.x(-180 + 30 * i), x1 = pb.x(-150 + 30 * i); c.fillStyle = C.c1; c.fillRect(x0 + 1, pb.y(n), x1 - x0 - 2, pb.y(0) - pb.y(n)); });
       s.out.innerHTML = 'Seen from <b>' + st.R0.toFixed(1) + ' kpc</b> out, the clusters crowd toward the centre (0°). From the centre they would look the same in every direction. How lopsided they look tells you how far out you are.';
     }
@@ -514,10 +515,11 @@
     var s = stage(host, 0.4), st = { v: 200 };
     function draw() {
       s.fit(); var c = s.ctx, C = s.C, ratio = st.v / 100, L = Math.pow(ratio, 4);
-      var base = s.H * 0.8, w = s.W * 0.12;
-      [['V', ratio], ['M ∝ V²R', ratio * ratio * ratio], ['L ∝ M', L]].forEach(function (b, k) {
-        var h = Math.min(base - 20, 18 * Math.pow(b[1], 0.6)), x = s.W * (0.15 + 0.28 * k);
-        c.fillStyle = [C.c1, C.c3, C.accent][k]; c.fillRect(x, base - h, w, h);
+      var base = s.H * 0.8, w = s.W * 0.11;
+      // R grows like V² for disks of similar surface brightness, so M = V²R/G grows like V⁴, and the light with it
+      [['V', ratio], ['R ∝ V²', ratio * ratio], ['M ∝ V²R', L], ['L ∝ M', L]].forEach(function (b, k) {
+        var h = Math.min(base - 20, 18 * Math.pow(b[1], 0.6)), x = s.W * (0.08 + 0.23 * k);
+        c.fillStyle = [C.c1, C.c2, C.c3, C.accent][k]; c.fillRect(x, base - h, w, h);
         text(c, b[0], x + w / 2, base + 16, C['ink-2'], 'center'); text(c, '×' + f(b[1], 3), x + w / 2, base - h - 6, C.ink, 'center');
       });
       s.out.innerHTML = 'Compared with a galaxy spinning at 100 km/s, one at <b>' + Math.round(st.v) + ' km/s</b>: mass M = V²R/G, and if disks have similar surface brightness then R ∝ √L ∝ √M, so M ∝ V⁴ and L ∝ V⁴ = <b>' + f(L, 3) + '×</b>.';

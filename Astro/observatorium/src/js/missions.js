@@ -18,7 +18,7 @@
     { n: 1, title: 'Reading starlight', lecture: 'Lecture 1 · light, blackbodies, basic observations of stars, the HR diagram, clusters', hw: 'HW1, HW2 Q4' },
     { n: 2, title: 'Lives of stars', lecture: 'Lecture 2 · stellar evolution, remnants, pulsars, variable stars', hw: 'HW2, HW3 Q1, HW5' },
     { n: 3, title: 'Planets and lenses', lecture: 'Lecture 3 · exoplanets and how they are found, gravitational microlensing', hw: 'HW3 Q2, HW4 Q1–2' },
-    { n: 4, title: 'The Sun’s family and the Galaxy', lecture: 'Lecture 4 · the solar system, the Milky Way, dark matter, MOND', hw: 'HW4 Q1, HW5 MOND' },
+    { n: 4, title: 'The Sun’s family and the Galaxy', lecture: 'Lecture 4 · the solar system, the Milky Way, dark matter, MOND', hw: 'HW4 Q1, Q3 (MOND)' },
     { n: 5, title: 'Island universes', lecture: 'Lecture 5 · galaxies, their types, clusters and scaling relations', hw: 'HW5' },
     { n: 6, title: 'The expanding Universe', lecture: 'Lecture 7 · observational cosmology: redshift and supernovae, the CMB and its acoustic peaks, nucleosynthesis, quasars', hw: '' },
     { n: 7, title: 'The observer’s toolkit', lecture: 'Lectures 8–9 · telescopes, coordinates and time, the atmosphere, detectors, magnitude systems, data reduction', hw: '' },
@@ -476,14 +476,14 @@
       },
       task: 'Find the dips, tick “Fold” and tune the trial period until all the dips stack on top of each other. Then drag the rule to the bottom of the dip.',
       progress: function (app, st) {
-        var P = st.fold.P, okP = app.chart.fold && Math.abs(P / 2.204737 - 1) < 0.002, d = 1 - app.chart.get('depth').value, okD = Math.abs(d / 0.0067 - 1) < 0.15;
+        var P = st.fold.P, okP = app.chart.fold && app.chart.sub === 'HAT-P-7' && Math.abs(P / 2.204737 - 1) < 0.002, d = 1 - app.chart.get('depth').value, okD = Math.abs(d / 0.0067 - 1) < 0.15;
         return { done: okP && okD, text: (app.chart.fold ? 'Period ' + P.toFixed(4) + ' d' + (okP ? ' (dips stacked)' : '') : 'Tick “Fold”') + ' · depth ' + (d * 100).toFixed(2) + '%' + (okD ? '' : '') };
       },
       result: function (app, st) {
         var d = 1 - app.chart.get('depth').value, k = Math.sqrt(d), Rs = 2.0, Rp = k * Rs * A.C.Rsun / A.C.Rjup, a = Math.pow(1.47 * Math.pow(st.fold.P / 365.25, 2), 1 / 3);
-        return 'Depth ' + fix(d * 100, 2) + '% → R_p / R★ = ' + fix(k, 3) + '. HAT-P-7 has R★ = 2.0 R☉, so the planet is ' + fix(Rp, 2) + ' Jupiter radii across. Its year is ' + fix(st.fold.P, 4) + ' days; with the star’s 1.47 M☉, Kepler’s third law puts it ' + fix(a, 3) + ' AU from the star, 13 times closer than Mercury is to the Sun.';
+        return 'Depth ' + fix(d * 100, 2) + '% → R_p / R★ = ' + fix(k, 3) + '. HAT-P-7 has R★ = 2.0 R☉, so the planet’s radius is ' + fix(Rp, 2) + ' times Jupiter’s. Its year is ' + fix(st.fold.P, 4) + ' days; with the star’s 1.47 M☉, Kepler’s third law puts it ' + fix(a, 3) + ' AU from the star, ' + fix(0.387 / a, 0) + ' times closer than Mercury is to the Sun.';
       },
-      explain: 'Area blocked over area of the star: double the planet’s width and you block four times the light. HAT-P-7 b is a hot Jupiter, slightly larger than Jupiter and heated above 2,000 K. Look at the bottom of the folded dip: it is rounded, because the star’s edge is darker than its centre (limb darkening). For a harder case, switch the star to HAT-P-11: a Neptune-sized planet with a dip of 0.4%, and starspots that the planet crosses.',
+      explain: 'Area blocked over area of the star: double the planet’s width and you block four times the light. HAT-P-7 b is a hot Jupiter, about one and a half times Jupiter’s radius and heated above 2,000 K. Look at the bottom of the folded dip: it is rounded, because the star’s edge is darker than its centre (limb darkening). For a harder case, switch the star to HAT-P-11: a Neptune-sized planet with a dip of 0.4%, and starspots that the planet crosses.',
       real: 'Charbonneau et al. and Henry et al. (1999–2000) saw the first transit, of HD 209458 b, with a 10 cm telescope. Kepler (2009–2018) found more than 2,600 planets this way; TESS continues across the whole sky.',
       unlockText: 'Transit depth now gives planet sizes.'
     },
@@ -513,7 +513,7 @@
       relation: 'A(u) = (u² + 2) / (u √(u² + 4)),  u(t) = √(u₀² + ((t − t₀)/t_E)²).',
       deduce: 'How long the lens took to pass, and so a combination of its mass, distance and speed.',
       question: 'A foreground star drifts in front of a background star. The background star…',
-      choices: [['dim', 'dims, because the foreground star blocks it'], ['bright', 'brightens and fades again, the same in every colour'], ['colour', 'changes colour']],
+      choices: [['dim', 'dims, because the foreground star blocks it'], ['bright', 'brightens and fades again, symmetrically in time'], ['colour', 'changes colour']],
       answer: 'bright',
       setup: function (app, st) {
         app.sky.goTo(266.4, -29.0, 30, { mode: 'dome', frame: 'gal' });
@@ -547,7 +547,7 @@
         var p = st.model.p, e = st.ews;
         return 'Your fit: t_E = ' + fix(p.tE, 1) + ' d, u₀ = ' + fix(p.u0, 3) + ', peak magnification ' + fix(A.magnification(p.u0), 2) + ', source fraction ' + fix(p.fbl, 2) + '. OGLE’s automatic fit: t_E = ' + fix(e.tE, 1) + ' d, u₀ = ' + fix(e.u0, 3) + '.';
       },
-      explain: 'The curve is symmetric because the lens moves in a straight line, and it has the same shape in every colour because gravity bends all wavelengths equally: two signatures that tell lensing from a variable star. t_E is the only physical number in a single light curve, and it mixes the lens mass, the distances and the speed (the trap in HW3 Q2): a 0.3 M☉ star halfway to the bulge, moving at 150 km/s, gives about 30–40 days. A planet round the lens adds a short spike when one of the images passes near it (HW3 Q2b).',
+      explain: 'The curve is symmetric because the lens moves in a straight line, and it has the same shape in every colour because gravity bends all wavelengths equally: two signatures that tell lensing from a variable star. t_E is the only physical number in a single light curve, and it mixes the lens mass, the distances and the speed (the trap in HW3 Q2): a 0.3 M☉ star halfway to the bulge, moving at 150 km/s, gives about 25 days; this event’s 58 days means a heavier or slower lens. A planet round the lens adds a short spike when one of the images passes near it (HW3 Q2b).',
       real: 'Einstein worked out stellar microlensing in 1936 and thought it would never be seen. Paczyński’s 1986 proposal led to the OGLE, MACHO and EROS surveys; the first events were seen in 1993. Microlensing showed that compact objects (MACHOs) cannot be most of the Milky Way’s dark matter (Lecture 4).'
     },
     // =================================================================================== chapter 4
@@ -611,7 +611,7 @@
       real: 'Shapley got about 15 kpc in 1918, too large because nobody yet knew that dust dims distant objects (Trumpler showed it in 1930). In the 1920 Great Debate he argued, wrongly, that the spiral nebulae were inside the Milky Way; Curtis argued they were other galaxies.'
     },
     {
-      id: 'rotation', ch: 4, title: 'Too fast at the edge', era: '1970–1985', who: 'Vera Rubin and Kent Ford; Albert Bosma', course: 'Lecture 4 (dark matter, MOND)', hw: 'HW5 (MOND questions)',
+      id: 'rotation', ch: 4, title: 'Too fast at the edge', era: '1970–1985', who: 'Vera Rubin and Kent Ford; Albert Bosma', course: 'Lecture 4 (dark matter, MOND)', hw: 'HW4 Q3 (MOND)',
       brief: 'Gas far out in a spiral galaxy orbits its centre. Its speed tells how much mass lies inside its orbit. NGC 3198’s hydrogen extends to 44 kpc, far beyond its stars. SPARC gives the measured speeds, and the speeds the stars and gas alone would produce.',
       vars: [['V(R)', 'Orbital speed', 'km/s', '21-cm and Hα Doppler shifts'], ['V_bar', 'Speed from visible matter', 'km/s', 'Stars (times a mass-to-light ratio) and gas'], ['Υ', 'Mass-to-light ratio', 'M☉ / L☉', 'Mass of stars per unit light']],
       relation: 'V² = G M(&lt;R) / R. Visible matter alone: V_bar² = V_gas² + Υ V_disk². A dark halo adds V_h²; MOND changes the force law instead.',
@@ -629,7 +629,11 @@
           st.mond = false;
           var box = document.createElement('label'); box.className = 'check'; box.innerHTML = '<input type="checkbox" id="rc-mond"> Use modified gravity (MOND, a₀ = 1.2×10⁻¹⁰ m/s²) instead of a dark halo';
           app.tools.appendChild(box);
-          box.querySelector('input').addEventListener('change', function (e) { st.mond = e.target.checked; st.model.update(); });
+          box.querySelector('input').addEventListener('change', function (e) {
+            st.mond = e.target.checked;
+            ['vh', 'rc'].forEach(function (k) { var inp = st.model.sliders[k].el.querySelector('input'); inp.disabled = st.mond; inp.title = st.mond ? 'MOND has no dark halo: untick the box to use these' : ''; });
+            st.model.update();
+          });
           function model(r, p) {
             var vb = bar(r, p);
             if (!isFinite(vb)) return NaN;
@@ -648,21 +652,22 @@
               { id: 'vh', label: 'Dark halo: speed far out', min: 0, max: 250, value: 0, fmt: function (x) { return Math.round(x); }, unit: 'km/s' },
               { id: 'rc', label: 'Dark halo: core radius', min: 0.3, max: 30, value: 5, log: true, unit: 'kpc' }
             ],
-            onchange: function (p, q) { if (p.vh < 3 && !st.mond) st.bestNoDM = Math.min(st.bestNoDM || Infinity, q.red); if (st.mond) st.bestMond = Math.min(st.bestMond || Infinity, q.red); }
+            // a fit 'without dark matter' counts once the student has actually tried Υ (not the starting value)
+            onchange: function (p, q) { if (p.vh < 3 && !st.mond && Math.abs(p.Y - 0.5) > 0.01) st.bestNoDM = Math.min(st.bestNoDM || Infinity, q.red); if (st.mond) st.bestMond = Math.min(st.bestMond || Infinity, q.red); }
           });
         });
       },
       task: 'First keep the halo speed at 0 and try to fit the data with stars and gas alone by changing Υ. Then add a dark halo until χ²/N is below 2. Try the MOND box too.',
       progress: function (app, st) {
         var q = st.model.p._fit, tried = isFinite(st.bestNoDM);
-        return { done: tried && !st.mond && st.model.p.vh > 20 && q.red < 2, text: (tried ? 'Best without dark matter: χ²/N = ' + OBS.fmt(st.bestNoDM, 3) + '. ' : 'Try without a halo first. ') + 'Now: χ²/N = ' + OBS.fmt(q.red, 3) };
+        return { done: tried && !st.mond && st.model.p.vh > 20 && q.red < 2, text: (tried ? 'Best without dark matter: χ²/N = ' + OBS.fmt(st.bestNoDM, 3) + '. ' : 'Try without a halo first: change Υ with the halo speed at 0. ') + 'Now: χ²/N = ' + OBS.fmt(q.red, 3) + (st.mond ? ' (MOND is on: untick it to finish with a dark halo)' : '') };
       },
       result: function (app, st) {
         var c = app.chart.ds.table.cols, sel = app.chart.shown(), last = sel[sel.length - 1], R = c.R[last], V = c.Vobs[last], p = st.model.p;
         var Mdyn = A.massEnclosed(V, R), vb = A.vBaryon(c.Vgas[last], c.Vdisk[last], c.Vbul[last], p.Y, 0.7), Mbar = A.massEnclosed(vb, R);
         return 'Within ' + fix(R, 1) + ' kpc the measured speed of ' + fix(V, 0) + ' km/s needs ' + fmt(Mdyn, 2) + ' M☉. Your stars and gas (Υ = ' + fix(p.Y, 2) + ') supply ' + fmt(Mbar, 2) + ' M☉: ' + fix(Mdyn / Mbar, 1) + ' times less. Best fit with no dark matter: χ²/N = ' + fmt(st.bestNoDM, 2) + '; with a halo: ' + fmt(p._fit.red, 2) + (isFinite(st.bestMond) ? '; with MOND: ' + fmt(st.bestMond, 2) : '') + '.';
       },
-      explain: 'If the mass were where the light is, speeds would fall as 1/√R beyond the stars, like the planets round the Sun. They stay flat, so the enclosed mass keeps growing in proportion to R: there is a halo of matter that does not shine. MOND, with one universal constant and no halo (HW5), brings χ²/N from about 200 down to about 10 for this galaxy: far closer than Newton with the visible matter alone, though not as close as a halo with two free parameters (a slightly larger distance to NGC 3198 helps it). That MOND does this well across hundreds of galaxies, and badly for galaxy clusters, is why both ideas are still argued about.',
+      explain: 'If the mass were where the light is, speeds would fall as 1/√R beyond the stars, like the planets round the Sun. They stay flat, so the enclosed mass keeps growing in proportion to R: there is a halo of matter that does not shine. MOND, with one universal constant and no halo (HW4 Q3), brings χ²/N from about 200 down to about 10 for this galaxy: far closer than Newton with the visible matter alone, though not as close as a halo with two free parameters (a slightly larger distance to NGC 3198 helps it). That MOND does this well across hundreds of galaxies, and badly for galaxy clusters, is why both ideas are still argued about.',
       real: 'Rubin and Ford measured flat rotation in Andromeda from 1970; Bosma (1978) extended curves with 21-cm radio data; van Albada et al. (1985) made NGC 3198 the textbook case for a dark halo. Milgrom proposed MOND in 1983.'
     },
     // =================================================================================== chapter 5
@@ -675,9 +680,12 @@
       question: 'Compared with spiral galaxies, elliptical galaxies are…',
       choices: [['redder', 'redder'], ['bluer', 'bluer'], ['same', 'the same colour']],
       answer: 'redder',
-      setup: function (app) { return app.open('galaxies', { x: 'Mr', y: 'ur', colourBy: 'none' }).then(function () { app.chart.setView({ x0: -23.5, x1: -16, y0: 0.6, y1: 3.4 }); app.sky.setMode('allsky'); }); },
+      setup: function (app) { return app.open('galaxies', { x: 'Mr', y: 'ur', colourBy: 'none' }).then(function () { app.chart.setView({ x0: -23.5, x1: -16, y0: 0.6, y1: 3.4 }); app.sky.goTo(180, 30, 200, { mode: 'allsky', frame: 'equ', photo: false }); }); },
       task: 'Box the red sequence: the tight band of red galaxies across the top of the chart.',
-      progress: function (app) { var u = pick(app, 'ur'); return { done: u.length >= 800 && median(u) > 2.35, text: u.length + ' selected, median u − r = ' + OBS.fix(median(u), 2) }; },
+      progress: function (app) {
+        var u = pick(app, 'ur'), red = u.filter(function (x) { return x > 2.2; }).length / Math.max(1, u.length), ok = u.length >= 800 && median(u) > 2.35 && red > 0.85;
+        return { done: ok, text: u.length + ' selected, median u − r = ' + OBS.fix(median(u), 2) + (u.length && !ok && red <= 0.85 ? ': ' + Math.round(100 * (1 - red)) + '% of your box is blue cloud, tighten it' : '') };
+      },
       result: function (app) {
         var m = pick(app, 'morph'), all = OBS.column(app.chart.ds, 'morph'), sel = app.chart.sel, rest = [];
         for (var i = 0; i < all.length; i++) if (!sel[i] && app.chart.mask[i]) rest.push(all[i]);
@@ -696,7 +704,7 @@
       choices: [['100', '100 km/s'], ['1000', '1,000 km/s'], ['10000', '10,000 km/s']],
       answer: '1000',
       setup: function (app) {
-        app.sky.goTo(194.95, 27.98, 9, { mode: 'dome', frame: 'equ' });
+        app.sky.goTo(194.95, 27.98, 9, { mode: 'dome', frame: 'equ', photo: false });
         app.markers([{ ra: 194.953, dec: 27.981, label: 'Coma cluster' }]);
         return app.open('coma', { x: 'cz', y: '#' }).then(function () { app.chart.bins = 70; app.chart.setView({ x0: 0, x1: 24000 }); });
       },
@@ -795,7 +803,7 @@
         var p = st.model.p, d = p._fit.chi2 - st.chiMin;
         return 'Your universe: Ωm = ' + fix(p.Om, 2) + ', ΩΛ = ' + fix(p.OL, 2) + ', H₀ = ' + fix(p.H0, 1) + ' km/s/Mpc; q₀ = ' + fix(A.q0(p.Om, p.OL), 2) + ', age ' + fix(A.age(0, p.H0, p.Om, p.OL), 1) + ' Gyr. Its χ² is within ' + fix(d, 0) + ' of the best fit; a universe of matter only is worse by ' + fmt(st.chiMatter - st.chiMin, 3) + '. At z = 0.5 your supernovae are ' + fix(A.distModZ(0.5, p.H0, p.Om, p.OL) - A.distModZ(0.5, p.H0, 1, 0), 2) + ' mag fainter than in a matter-only universe.';
       },
-      explain: 'Distant supernovae are about 0.2–0.3 magnitudes, some 25%, fainter than in a universe that is only slowing down: they are farther away, so the expansion has been speeding up for the last 5 billion years or so. Something with negative pressure, called dark energy, makes up about 70% of the Universe’s energy; Einstein’s cosmological constant Λ is the simplest form. Combined with the CMB (mission 6.3), which says space is flat, the supernovae give Ωm ≈ 0.3 and ΩΛ ≈ 0.7. From now on, a redshift gives a distance and an age: lookback time is unlocked in every dataset with redshifts.',
+      explain: 'Distant supernovae are about 0.2–0.3 magnitudes, some 25%, fainter than in a universe that is only slowing down: they are farther away, so the expansion has been speeding up for the last 5 billion years or so. Something with negative pressure, called dark energy, makes up about 70% of the Universe’s energy; Einstein’s cosmological constant Λ is the simplest form. Combined with the CMB (mission 6.3), which says space is flat, the supernovae give Ωm ≈ 0.3 and ΩΛ ≈ 0.7. From now on, a redshift gives a distance and an age: lookback time is unlocked for the supernovae, the fast radio bursts and the SDSS galaxies’ emission lines.',
       real: 'The Supernova Cosmology Project (Perlmutter) and the High-z Supernova Search Team (Schmidt, Riess) announced the acceleration in 1998; they shared the 2011 Nobel Prize. Pantheon+ (2022) combines 1,550 supernovae: Ωm = 0.334 ± 0.018 for a flat universe. Its Cepheid calibration gives H₀ = 73, the “Hubble tension” with the CMB’s 67.4.'
     },
     {
@@ -809,7 +817,7 @@
       answer: 'bb',
       setup: function (app, st) {
         return app.open('cmbspec', { x: 'f', y: 'I' }).then(function () {
-          app.chart.setView({ x0: 0, x1: 700, y0: 0, y1: 420 });
+          app.chart.setView({ x0: 0, x1: 700, y0: 0, y1: 900 });      // room for the 3.5 K starting curve's peak
           app.sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal', band: 'cmb' });
           var c = app.chart.ds.table.cols;
           st.model = OBS.instruments.model(app.chart, app.tools, {
@@ -861,7 +869,7 @@
           });
         });
       },
-      task: 'The black curve is the spectrum the physics of the early plasma predicts, drawn for the universe on the slider. It starts open (Ω = 0.8), where the same ruler looks smaller and every peak moves right. Slide Ω_total until the peaks line up with Planck’s points.',
+      task: 'The blue curve (“your universe”) is the spectrum the physics of the early plasma predicts, drawn for the universe on the slider. It starts open (Ω = 0.8), where the same ruler looks smaller and every peak moves right. Slide Ω_total until the peaks line up with Planck’s points.',
       progress: function (app, st) { var p = st.model.p, q = p._fit; return { done: q.red < 3, text: 'Ω_total = ' + OBS.fix(p.Ot + p.dO, 3) + ', χ²/N = ' + OBS.fmt(q.red, 3) }; },
       result: function (app, st) {
         var O = st.model.p.Ot + st.model.p.dO, l1 = 220 * st.ratio(O);
@@ -891,7 +899,7 @@
         });
       },
       task: 'The dashed lines are a quasar’s emission lines (Lyα, C IV, C III], …) at the trial redshift. Slide z until they sit on the broad bumps; the shaded band then marks where intervening hydrogen would absorb.',
-      progress: function (app, st) { var d = Math.abs(st.fit.z - st.meta.z); return { done: d < 0.01, text: 'z = ' + st.fit.z.toFixed(3) + (d < 0.05 ? ': close, use the fine tune' : '') }; },
+      progress: function (app, st) { var d = Math.abs(st.fit.z - st.meta.z); return { done: d < 0.01, text: 'z = ' + st.fit.z.toFixed(3) + (d < 0.01 ? '' : d < 0.05 ? ': close, use the fine tune' : '') }; },
       result: function (app, st) {
         var z = st.fit.z, lya = 121.6 * (1 + z), zlo = 380 / 121.6 - 1;
         return 'Your redshift: z = ' + fix(z, 3) + ' (SDSS: ' + fix(st.meta.z, 3) + '). Its Lyman-α line is at ' + fix(lya, 0) + ' nm, in blue-green light. Every dip between 380 and ' + fix(lya, 0) + ' nm is Lyα absorbed by a hydrogen cloud at a redshift between ' + fix(zlo, 2) + ' and ' + fix(z, 2) + '. The light left the quasar when the Universe was ' + fix(A.age(z, 67.4, 0.315, 0.685), 1) + ' billion years old.';
@@ -925,7 +933,7 @@
       },
       result: function (app, st) {
         var p = st.planner, d = new Date(p.t + 2 * 3600000);
-        return 'On ' + d.toUTCString().slice(5, 16) + ' at ' + d.toUTCString().slice(17, 22) + ' (UTC+2) the Orion Nebula stands ' + fix(p.alt, 1) + '° high, due south, at airmass ' + fix(p.X, 2) + ': the atmosphere dims it by only ' + fix(0.21 * p.X, 2) + ' mag. The Sun is ' + fix(-p.sunAlt, 0) + '° below the horizon.';
+        return 'On ' + d.toUTCString().slice(5, 16) + ' at ' + d.toUTCString().slice(17, 22) + ' (UTC+2) the Orion Nebula stands ' + fix(p.alt, 1) + '° high at azimuth ' + fix(p.az, 0) + '° (' + (Math.abs(p.az - 180) < 10 ? 'due south' : p.az < 180 ? 'south-east' : 'south-west') + '), at airmass ' + fix(p.X, 2) + ': the atmosphere dims it by only ' + fix(0.21 * p.X, 2) + ' mag. The Sun is ' + fix(-p.sunAlt, 0) + '° below the horizon.';
       },
       explain: 'A target is best seen at night when it is opposite the Sun: Orion (α = 5.6 h) is opposite the Sun (α ≈ 17.6 h) in mid-December, so it crosses the meridian at midnight then; in June it is up only in daylight. Because the sidereal day is 4 minutes shorter than the solar day, the same star transits 2 hours earlier every month. Its highest altitude never changes: 90° − |φ − δ| = 90 − (30.6 + 5.4) = 54°. Low targets pay twice: more air dims them (extinction) and blurs them (seeing).',
       real: 'The Wise Observatory, run by Tel Aviv University since 1971, sits at 875 m on the rim of the Ramon crater. Professional observatories rank sites by clear nights, seeing and darkness: Mauna Kea, the Atacama desert and La Palma lead.'
@@ -952,7 +960,7 @@
       },
       result: function (app, st) {
         var d = st.phot.done, ks = Object.keys(d), dm = ks.map(function (k) { return d[k].m - st.field.stars[k].r; }), m = dm.reduce(function (a, x) { return a + x; }, 0) / dm.length;
-        return 'You measured ' + ks.length + ' stars; on average your magnitudes differ from SDSS’s by ' + fix(m, 2) + ' mag. Stars here are ' + fix(st.phot.fwhm, 2) + '″ wide (the seeing at the time).' + (function () {
+        return 'You measured ' + ks.length + ' stars; on average your magnitudes differ from SDSS’s by ' + fix(m, 2) + ' mag. Stars here are ' + fix(median(ks.map(function (k) { return d[k].fwhm; }).filter(isFinite)), 2) + '″ wide (the seeing at the time).' + (function () {
           var f = ks.slice().sort(function (a, b) { return st.field.stars[b].r - st.field.stars[a].r; })[0];
           return f === undefined ? '' : ' The faintest you measured, at r = ' + fix(st.field.stars[f].r, 1) + ', gave S/N = ' + fix(d[f].snr, 0) + ' with your aperture of ' + fix(d[f].r, 1) + ' px: ' + (d[f].snr < 10 ? 'the sky behind it is as bright as the star, so its noise sets the error.' : d[f].snr < 60 ? 'the sky’s noise inside that big aperture is already much of the error; a radius near the seeing would give a better S/N.' : 'bright enough that the sky’s noise matters little.');
         })();
@@ -993,7 +1001,7 @@
         var g = OBS.isotropy(app.chart.ds, app.chart.mask), n = app.chart.selected().length;
         return 'You selected ' + n + ' of ' + g.n + ' bursts, ' + pct(n / g.n) + ', near the plane; an even sky puts 17% there. Their mean ⟨cos θ⟩ toward the Galactic centre is ' + fix(g.cosgc, 3) + ' and ⟨sin² b − ⅓⟩ = ' + fix(g.sinb2, 3) + ': zero within ±' + fix(g.err, 3) + '. Pulsars, by contrast, have most of their number within 10° of the plane.';
       },
-      explain: 'An even sky has two explanations: the bursts are very close (closer than the thickness of the Milky Way’s disk, which is ruled out because they are not sources nearby), or very far, beyond all structure: cosmological. BATSE’s 2,700 bursts were already isotropic in 1991–2000, and their faint ones were too few for an even, nearby population. In 1997 BeppoSAX found X-ray afterglows, and GRB 970508’s spectrum gave z = 0.835: billions of light-years. To be seen so far, a burst must release as much energy in seconds as the Sun in its whole life, almost certainly beamed into jets.',
+      explain: 'An even sky leaves three possibilities. The bursts could be very near, within a few hundred parsecs, closer than the thickness of the Milky Way’s disk; but then the faint ones would be as evenly spread and as numerous as an even, nearby population predicts, and they are too few. They could fill a huge halo around the Milky Way, far bigger than its disk, so that our off-centre position barely shows; that was the Galactic side of the 1995 debate. Or they are cosmological, far beyond all Galactic structure. BATSE’s 2,700 bursts were already isotropic in 1991–2000, and their faint ones were too few for an even, nearby population. In 1997 BeppoSAX found X-ray afterglows, and GRB 970508’s spectrum gave z = 0.835: billions of light-years. To be seen so far, a burst must release as much energy in seconds as the Sun in its whole life, almost certainly beamed into jets.',
       real: 'Meegan et al. (1992) showed BATSE’s isotropy; the Great Debate of 1995 (Lamb vs Paczyński) argued Galactic halo vs cosmological. Swift (2004) and Fermi (2008) followed; GRB 170817A, 1.7 s after GW170817, tied short bursts to neutron-star mergers.'
     },
     {
@@ -1013,7 +1021,7 @@
             label: 'Milky Way + host + intergalactic gas', err: function () { return 150; },
             f: function (z, p) { return p.a + A.dmCosmic(z, p.Ob); },
             params: [
-              { id: 'Ob', label: 'Ω_b, baryons between galaxies', min: 0, max: 0.12, value: 0, fmt: function (x) { return x.toFixed(3); } },
+              { id: 'Ob', label: 'Ω_b, all ordinary matter (the model puts 84% of it between galaxies)', min: 0, max: 0.12, value: 0, fmt: function (x) { return x.toFixed(3); } },
               { id: 'a', label: 'DM from the Milky Way and the host', min: 0, max: 500, value: 150, fmt: function (x) { return Math.round(x); }, unit: 'pc/cm³' }
             ],
             describe: function (p) { return 'Ω_b = ' + fix(p.Ob, 3) + ': a burst at z = 0.5 crosses ' + fix(A.dmCosmic(0.5, p.Ob), 0) + ' pc/cm³ of intergalactic electrons.'; }
@@ -1054,7 +1062,7 @@
         });
       },
       task: 'Each dot is one merger: the mass that disappeared (m₁ + m₂ − M_final) against the total mass before. The line starts at “no loss”, zero. Raise ε until the line runs through the dots. Heavier mergers lose more solar masses, but the same fraction.',
-      progress: function (app, st) { var p = st.model.p; return { done: p.eps > 0.03 && p.eps < 0.055 && p._fit.red < 1, text: 'ε = ' + (100 * p.eps).toFixed(1) + '%, χ²/N = ' + OBS.fmt(p._fit.red, 3) }; },
+      progress: function (app, st) { var p = st.model.p, ok = p.eps > 0.03 && p.eps < 0.055 && p._fit.red < 1; return { done: ok, text: 'ε = ' + (100 * p.eps).toFixed(1) + '%, χ²/N = ' + OBS.fmt(p._fit.red, 3) + (ok ? '' : p.eps <= 0.03 ? ': the line runs below most dots, raise ε' : p.eps >= 0.055 ? ': the line runs above most dots, lower ε' : '') }; },
       result: function (app, st) {
         var e = st.model.p.eps, E = e * 64.6 * A.C.Msun * A.C.c * A.C.c;
         return 'About ' + fix(100 * e, 1) + '% of the mass is radiated. For GW150914 that is ' + fix(e * 64.6, 1) + ' M☉, or ' + fmt(E, 2) + ' J, emitted in about 0.2 s: a peak power of some 4×10⁴⁹ W, more than all the stars in the observable Universe shine.';
@@ -1151,7 +1159,7 @@
         var ds = app.chart.ds, c = ds.table.cols, n = 0, sf = [], cls = OBS.column(ds, 'cls');
         for (var i = 0; i < ds.table.n; i++) if (cls[i] === 'star-forming') { sf.push(c.logsfr[i]); n++; }
         sf.sort(function (a, b) { return a - b; });
-        return 'Your line agrees with the published classification for ' + pct(st.agree) + ' of galaxies. Of the ' + ds.table.n.toLocaleString('en-US') + ', ' + n.toLocaleString('en-US') + ' are powered by star formation; their median rate is ' + fmt(Math.pow(10, sf[sf.length >> 1]), 2) + ' M☉ per year, about the Milky Way’s.';
+        return 'Your line agrees with the published classification for ' + pct(st.agree) + ' of the star-forming and AGN galaxies (composites left out). Of the ' + ds.table.n.toLocaleString('en-US') + ', ' + n.toLocaleString('en-US') + ' are powered by star formation; their median rate is ' + fmt(Math.pow(10, sf[sf.length >> 1]), 2) + ' M☉ per year, about the Milky Way’s.';
       },
       explain: 'Young O and B stars ionise hydrogen but few of their photons have the energy to excite the forbidden lines strongly; an accretion disc’s hard ultraviolet and X-rays do. So active galaxies lie up and to the right. Kauffmann et al. (2003) drew the empirical edge of the star-forming wing; Kewley et al. (2001) the theoretical maximum for star formation; between them lie composites. The Hα line of the star-forming galaxies measures their star formation rate; plotted against stellar mass it forms the “main sequence” of star-forming galaxies, and their oxygen abundance rises with mass (the mass–metallicity relation): try those axes in the lens.',
       real: 'Baldwin, Phillips and Terlevich proposed the diagram in 1981. With SDSS spectra of hundreds of thousands of galaxies, the MPA–JHU group (Brinchmann, Kauffmann, Tremonti and others) measured lines, masses, star formation rates and metallicities for all of them.'
@@ -1174,7 +1182,7 @@
       },
       task: 'Press “Run the chain” and watch where it goes: it starts far away, in a slowing universe. The step size it starts with is too small. Tune it until a quarter to a half of the steps are accepted (press “Start again” after a change), then set the burn-in so that it drops the walk in from the start (the grey part of the trace, up to the dotted line where the chain reaches the gold region), and let it run to a few thousand steps.',
       progress: function (app, st) {
-        var m = st.mc, s = m.stats, acc = m.tries ? m.acc / m.tries : 0, hint = '';
+        var m = st.mc, s = m.stats, acc = m.accRate(), hint = '';
         if (!m.tries) hint = 'Run the chain';
         else if (acc > 0.6) hint = 'steps too small: the chain creeps and its samples repeat each other';
         else if (acc < 0.15) hint = 'steps too large: almost every step is rejected';
@@ -1186,7 +1194,7 @@
       },
       result: function (app, st) {
         var s = st.mc.stats;
-        return 'From ' + s.n + ' samples: Ωm = ' + fix(s.Om[0], 2) + ' ± ' + fix(s.Om[1], 2) + ', ΩΛ = ' + fix(s.OL[0], 2) + ' ± ' + fix(s.OL[1], 2) + ', and ' + pct(s.pacc) + ' of the samples describe an accelerating universe. The grid needed ' + st.mc.evals + ' evaluations for two parameters; with ten, the chain’s cost would barely change.';
+        return 'From ' + s.n + ' samples: Ωm = ' + fix(s.Om[0], 2) + ' ± ' + fix(s.Om[1], 2) + ', ΩΛ = ' + fix(s.OL[0], 2) + ' ± ' + fix(s.OL[1], 2) + ', and ' + pct(s.pacc) + ' of the samples describe an accelerating universe. The grid needed ' + st.mc.evals.toLocaleString('en-US') + ' χ² evaluations for two parameters; your chain used ' + st.mc.tries.toLocaleString('en-US') + '. With ten parameters the grid would need 10²⁰, while a chain needs roughly ten times more steps than here, not 10¹⁶ times.';
       },
       explain: 'A chain is a random walk with a bias toward good fits: a step uphill in χ² is sometimes accepted, so the chain never gets stuck and visits each region as often as its probability. Too small a step and it creeps (acceptance near 100%, strongly correlated samples); too large and it is rejected almost always. The supernovae alone constrain a long, thin valley, Ωm and ΩΛ rising together; the CMB’s flatness cuts across it. Uncertainties from a chain, a bootstrap (refitting resampled data) or a jackknife (leaving one point out at a time) all answer the same question: how much would the answer change with other data like these?',
       real: 'Metropolis, the Rosenbluths and the Tellers published the algorithm in 1953 for physics simulations at Los Alamos; Hastings generalised it in 1970. Since about 2000 almost every cosmological parameter, including Planck’s, comes from Markov chains.'

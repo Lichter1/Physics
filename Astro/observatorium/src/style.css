@@ -410,3 +410,4 @@ table.kv tr.locked td { color: var(--ink-3); font-style: italic; }
 .quiz .choice.wrong span { color: var(--warn); text-decoration: line-through; }
 .quiz p.miss { color: var(--warn); }
 .quiz p.ok, .quiz p.miss { margin: 4px 0 10px; }
+.pop { box-sizing: border-box; max-width: calc(100% - 20px); }

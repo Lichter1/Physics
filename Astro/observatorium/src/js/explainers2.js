@@ -94,7 +94,7 @@
 
   // ------------------------------------------------------------------------------------------ 6.x the first three minutes
   X.bbn = function (host) {
-    var s = stage(host, 0.5), st = { tf: 1 };
+    var s = stage(host, 0.5), st = { tf: 0.92 };      // 0.74 MeV: the freeze-out that gives the observed Y ≈ 0.245
     function draw() {
       s.fit(); var c = s.ctx, C = s.C, Q = 1.293, tau = 879.4;
       // freeze-out: n/p = exp(-Q/kT) at T_f (MeV); T ~ 1 MeV / sqrt(t / 1 s)
@@ -109,7 +109,7 @@
       line(c, pts.filter(function (p) { return isFinite(p[1]); }), C.c1, 2.4);
       line(c, [[b.x(Math.log10(tnuc)), b.y(0)], [b.x(Math.log10(tnuc)), b.y(1.05)]], C.c4, 1, [4, 3]);
       text(c, 'deuterium survives: neutrons locked into helium', b.x(Math.log10(tnuc)) - 4, b.y(0.95), C.c4, 'right');
-      s.out.innerHTML = 'Reactions freeze out at kT = <b>' + fx(Tf, 2) + ' MeV</b> with n/p = e^(−1.29/' + fx(Tf, 2) + ') = ' + fx(x0, 3) + '; free neutrons then decay (lifetime 15 min) until nucleosynthesis at about 3 minutes leaves n/p = <b>' + fx(x, 3) + '</b>. Nearly all of them end in helium: Y = 2(n/p)/(1 + n/p) = <b>' + fx(Y, 3) + '</b> of the mass. The observed 0.245 needs freeze-out near 0.8 MeV, which the weak interaction sets.';
+      s.out.innerHTML = 'Reactions freeze out at kT = <b>' + fx(Tf, 2) + ' MeV</b> with n/p = e^(−1.29/' + fx(Tf, 2) + ') = ' + fx(x0, 3) + '; free neutrons then decay (lifetime 15 min) until nucleosynthesis at about 3 minutes leaves n/p = <b>' + fx(x, 3) + '</b>. Nearly all of them end in helium: Y = 2(n/p)/(1 + n/p) = <b>' + fx(Y, 3) + '</b> of the mass. The observed 0.245 needs freeze-out near 0.74 MeV (n/p ≈ 1/6 at freeze-out, about 1/7 once some neutrons have decayed), which the weak interaction sets.';
     }
     UI.slider(s.ctl, { label: 'Freeze-out temperature (× 0.8 MeV)', min: 0.6, max: 1.6, value: st.tf, fmt: function (x) { return (0.8 * x).toFixed(2) + ' MeV'; }, oninput: function (x) { st.tf = x; draw(); } });
     draw(); return { stop: function () { } };
@@ -287,8 +287,8 @@
       line(c, pts, C.ink, 2);
       var mags = FILTERS.map(function (fl) { var sm = 0, n = 0; vals.forEach(function (p) { if (Math.abs(p[0] - fl[1]) < fl[2] / 2) { sm += p[1]; n++; } }); return sm / n / mx; });
       mags.forEach(function (m, k) { disc(c, b.x(FILTERS[k][1]), b.y(m), 5, [C.c5, C.c1, C.c3, C.c2, C.c4][k]); });
-      var brk = st.kind === 'old' ? 400 * (1 + st.z) : 121.6 * (1 + st.z), drop = mags.findIndex(function (m) { return m > 0.15; });
-      s.out.innerHTML = (st.kind === 'old' ? 'An old galaxy: its 4000 Å break' : 'A young galaxy: its Lyman break (912–1216 Å)') + ' falls at <b>' + Math.round(brk) + ' nm</b> for z = ' + fx(st.z, 2) + '. The five dots are what broad filters measure: where the light jumps between filters tells the redshift without a spectrum. ' + (st.kind === 'young' && drop > 0 ? 'Here it “drops out” of ' + FILTERS.slice(0, drop).map(function (f) { return f[0]; }).join(', ') + ': a dropout galaxy.' : '');
+      var brk = st.kind === 'old' ? 400 * (1 + st.z) : 91.2 * (1 + st.z), drop = mags.findIndex(function (m) { return m > 0.15; });
+      s.out.innerHTML = (st.kind === 'old' ? 'An old galaxy: its 4000 Å break' : 'A young galaxy: its Lyman break (91.2 nm; the Lyman-α forest eats into it up to 121.6 nm)') + ' falls at <b>' + Math.round(brk) + ' nm</b> for z = ' + fx(st.z, 2) + '. The five dots are what broad filters measure: where the light jumps between filters tells the redshift without a spectrum. ' + (st.kind === 'young' && drop > 0 ? 'Here it “drops out” of ' + FILTERS.slice(0, drop).map(function (f) { return f[0]; }).join(', ') + ': a dropout galaxy.' : '');
     }
     UI.slider(s.ctl, { label: 'Redshift z', min: 0, max: 6.5, value: st.z, step: 0.01, fmt: function (x) { return x.toFixed(2); }, oninput: function (x) { st.z = x; draw(); } });
     var row = document.createElement('div'); row.className = 'ctl-row';

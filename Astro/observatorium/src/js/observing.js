@@ -45,7 +45,9 @@
     o = o || {};
     var cv = app.imageView(true), ctx = cv.getContext('2d'), W = field.w, H = field.h, ps = field.pixscale;
     var I = new Float32Array(W * H); for (var k = 0; k < I.length; k++) I[k] = field.data[k] / field.scale;
-    var st = { r: o.r || 2, sel: -1, done: {}, fwhm: NaN, last: null };     // a too-small aperture to begin with: the curve of growth is the lesson
+    var st = { r: o.r || 2, sel: -1, done: {}, fwhm: NaN, last: null };
+    var edge = function (s) { return Math.min(s.x, s.y, W - 1 - s.x, H - 1 - s.y); };
+    field.stars = field.stars.filter(function (s) { return edge(s) >= 18; }).concat(field.stars.filter(function (s) { return edge(s) < 18; }));     // a too-small aperture to begin with: the curve of growth is the lesson
     // display: asinh stretch
     var sorted = Array.prototype.slice.call(I).sort(function (a, b) { return a - b; }), lo = sorted[Math.floor(0.02 * I.length)], hi = sorted[Math.floor(0.998 * I.length)];
     var img = document.createElement('canvas'); img.width = W; img.height = H;
@@ -148,7 +150,7 @@
       if (!st.last) { out.innerHTML = 'Click a star (the marked ones are in the SDSS catalogue) to put an aperture on it.'; curve(); return; }
       var m = measure(st.last.x, st.last.y, st.r), s = st.sel >= 0 ? field.stars[st.sel] : null;
       st.last.m = m;
-      if (st.sel >= 0 && isFinite(m.m)) st.done[st.sel] = { m: m.m, snr: m.snr, r: st.r };
+      if (st.sel >= 0 && isFinite(m.m)) st.done[st.sel] = { m: m.m, snr: m.snr, r: st.r, fwhm: st.fwhm };
       out.innerHTML = (s ? 'Star ' + String.fromCharCode(65 + st.sel) + ' (SDSS r = ' + s.r.toFixed(2) + '): ' : 'Unlisted object: ') +
         'flux F = ' + f(m.F, 3) + ' nanomaggies in ' + fx(m.area, 0) + ' pixels, sky σ = ' + f(m.sky.sigma, 2) + ' per pixel. ' +
         'm = 22.5 − 2.5 log₁₀ F = ' + fx(m.m, 2) + ' ± ' + fx(1.0857 / m.snr, 2) + ' (S/N = ' + fx(m.snr, 0) + '). Star width (FWHM) ' + fx(st.fwhm, 2) + '″.';
@@ -199,8 +201,8 @@
       ctx.setLineDash([4, 4]); ctx.strokeStyle = C['ink-3']; ctx.beginPath(); ctx.moveTo(L, Y(30)); ctx.lineTo(R, Y(30)); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = C['ink-3']; ctx.fillText('airmass 2', L + 4, Y(30) - 4);
       function curve(pts, col, wd) { ctx.strokeStyle = col; ctx.lineWidth = wd; ctx.beginPath(); pts.forEach(function (p, k) { var x = X(p[0]), y = Y(Math.max(-20, p[1])); if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); }); ctx.stroke(); ctx.lineWidth = 1; }
-      curve(sun, '#ffd34d', 1.5); curve(tgt, C.accent, 2.5);
-      ctx.fillStyle = C.accent; ctx.fillText(t.name, L + 6, T + 14); ctx.fillStyle = '#d9a400'; ctx.fillText('the Sun · shaded: dark night (Sun below −18°)', L + 6, T + 28);
+      ctx.setLineDash([5, 4]); curve(sun, '#ff8c3a', 1.5); ctx.setLineDash([]); curve(tgt, C.accent, 2.5);
+      ctx.fillStyle = C.accent; ctx.fillText(t.name, L + 6, T + 14); ctx.fillStyle = '#ff8c3a'; ctx.fillText('the Sun (dashed) · shaded: dark night (Sun below −18°)', L + 6, T + 28);
       ctx.strokeStyle = C.sel; ctx.beginPath(); ctx.moveTo(X(st.hour), T); ctx.lineTo(X(st.hour), B); ctx.stroke();
     }
     var sel = document.createElement('label'); sel.className = 'sel'; sel.innerHTML = '<span>Target</span><select>' + o.targets.map(function (t, k) { return '<option value="' + k + '">' + t.name + '</option>'; }).join('') + '</select>';
@@ -291,7 +293,8 @@
       var Om = X0 + (X1 - X0) * (i + 0.5) / NX, OL = Y0 + (Y1 - Y0) * (j + 0.5) / NY, q = chi(Om, OL);
       grid.push(q.chi2); if (q.chi2 < gmin) { gmin = q.chi2; best = { Om: Om, OL: OL }; }
     }
-    var st = { chain: [], acc: 0, tries: 0, run: false, step: o.step || 0.004, burn: 0, evals: NX * NY, gmin: gmin, best: best, inAt: null };
+    var st = { chain: [], acc: 0, tries: 0, run: false, step: o.step || 0.004, burn: 0, evals: NX * NY, gmin: gmin, best: best, inAt: null, recent: [] };
+    st.accRate = function () { var r = st.recent; return r.length ? r.reduce(function (a, x) { return a + x; }, 0) / r.length : 0; };
     var map = document.createElement('canvas'); map.width = NX; map.height = NY;
     (function () {
       var mc = map.getContext('2d'), d = mc.createImageData(NX, NY);
@@ -343,13 +346,13 @@
       // every chain starts far from the answer, in a decelerating universe, so the walk-in is there to see
       if (!cur) { var s = [0.85 + 0.1 * Math.random(), 0.1 + 0.1 * Math.random()]; cur = { p: s, c: chi(s[0], s[1]).chi2 }; if (!isFinite(cur.c)) { cur = null; return; } st.chain.push(cur.p); }
       var t = [cur.p[0] + st.step * gauss(), cur.p[1] + st.step * gauss()];
-      st.tries++;
+      st.tries++; st.recent.push(0); if (st.recent.length > 500) st.recent.shift();
       var c = t[0] < 0 || t[0] > 1.2 || t[1] < -0.2 || t[1] > 1.6 ? Infinity : chi(t[0], t[1]).chi2;
-      if (isFinite(c) && (c <= cur.c || Math.random() < Math.exp(-(c - cur.c) / 2))) { cur = { p: t, c: c }; st.acc++; }
+      if (isFinite(c) && (c <= cur.c || Math.random() < Math.exp(-(c - cur.c) / 2))) { cur = { p: t, c: c }; st.acc++; st.recent[st.recent.length - 1] = 1; }
       st.chain.push(cur.p);
       if (st.inAt === null && cur.c - gmin < 6.17) st.inAt = st.chain.length;     // the step at which the chain reached the 95% region
     };
-    st.reset = function () { cur = null; st.chain = []; st.acc = 0; st.tries = 0; st.inAt = null; };
+    st.reset = function () { cur = null; st.chain = []; st.acc = 0; st.tries = 0; st.inAt = null; st.recent = []; };
     function stats() {
       var s = st.chain.slice(Math.min(st.chain.length, Math.round(st.burn)));
       if (s.length < 20) return null;
@@ -387,7 +390,8 @@
     function report() {
       var S = stats(); st.stats = S;
       out.innerHTML = 'Grid map: ' + f(st.evals, 4) + ' χ² evaluations; best Ωm = ' + fx(best.Om, 2) + ', ΩΛ = ' + fx(best.OL, 2) + ' (χ² = ' + f(gmin, 4) + ' for ' + f(sn.z.length, 4) + ' supernovae). ' +
-        'Chain: ' + f(st.chain.length, 4) + ' steps, acceptance ' + fx(st.tries ? 100 * st.acc / st.tries : 0, 0) + '%.' +
+        'A good fit has χ² near the number of points; this one is lower because these error bars include systematic parts that many supernovae share (the full analysis uses their covariance). ' +
+        'Chain: ' + f(st.chain.length, 4) + ' steps, acceptance ' + fx(100 * st.accRate(), 0) + '% over the last ' + st.recent.length + ' tries.' +
         (S ? ' After burn-in: Ωm = ' + fx(S.Om[0], 2) + ' ± ' + fx(S.Om[1], 2) + ', ΩΛ = ' + fx(S.OL[0], 2) + ' ± ' + fx(S.OL[1], 2) + '; ' + fx(100 * S.pacc, 0) + '% of the samples are accelerating universes.' : '');
       hist(S);
       if (o.onchange) o.onchange(st);

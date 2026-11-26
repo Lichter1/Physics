@@ -138,7 +138,7 @@
     ]
   });
   def({
-    id: 'pulsars', file: 'pulsars', level: 'stars', title: 'Pulsars', sub: 'Every pulsar in the ATNF catalogue with a measured period',
+    id: 'pulsars', file: 'pulsars', level: 'galaxy', title: 'Pulsars', sub: 'Every pulsar in the ATNF catalogue with a measured period',
     pos: true, x: 'P', y: 'Pdot', name: function (c, i) { return 'PSR ' + c.name[i]; },
     vars: POS.concat(GALB, [
       v('dm', 'Dispersion measure DM', 'pc/cm³', col('dm'), { scale: 'log', how: 'Free electrons along the line of sight: low frequencies arrive later by Δt ∝ DM / ν².' }),
@@ -158,7 +158,8 @@
       v('a', 'Orbit size a', 'AU', col('pl_orbsmax'), { scale: 'log' }),
       v('Mp', 'Planet mass', 'M_Jup', col('pl_bmassj'), { scale: 'log', how: 'Measured for some planets; for radial-velocity planets often M sin i, a lower limit; for most transiting planets an estimate from the radius (colour by “Where the mass comes from”).' }),
       v('massprov', 'Where the mass comes from', '', function (c, i) { return c.massprov ? c.massprov[i] || 'unknown' : 'unknown'; }, { cat: true, how: 'The archive’s pl_bmassprov: a measured mass, a minimum mass (M sin i), or an estimate from the radius with the Chen & Kipping (2017) relation.' }),
-      v('Rp', 'Planet radius', 'R_Jup', col('pl_radj'), { scale: 'log', how: 'Only for planets that transit.' }),
+      v('Rp', 'Planet radius', 'R_Jup', col('pl_radj'), { scale: 'log', needs: ['transit'], how: 'From the transit depth, (R_p/R★)² = ΔF/F: only for planets that transit.' }),
+      v('rho', 'Planet density', 'g/cm³', function (c, i) { return c.massprov && c.massprov[i] === 'estimated from radius' ? NaN : 1.326 * c.pl_bmassj[i] / Math.pow(c.pl_radj[i], 3); }, { scale: 'log', needs: ['transit'], how: 'ρ = M / (4/3 π R³) in g/cm³ (Jupiter 1.33, Earth 5.5, water 1). Only planets with a measured mass and a radius: an estimated mass would just return the relation it came from.' }),
       v('Teq', 'Equilibrium temperature', 'K', col('pl_eqt'), { scale: 'log' }),
       v('year', 'Year found', '', col('disc_year')),
       v('method', 'How it was found', '', col('method'), { cat: true }),
@@ -290,7 +291,7 @@
     vars: [v('year', 'Year', '', col('year'), { plain: true }), v('sn', 'Sunspot number', '', col('sn'), { how: 'Spots counted on the Sun, averaged over the year (version 2 of the international series).' })]
   });
   def({
-    id: 'grbs', file: 'grbs', level: 'galaxies', title: 'Gamma-ray bursts', sub: 'Every burst in the Fermi GBM catalogue with a measured duration',
+    id: 'grbs', file: 'grbs', level: 'universe', title: 'Gamma-ray bursts', sub: 'Every burst in the Fermi GBM catalogue with a measured duration',
     pos: true, x: 't90', y: '#', name: function (c, i) { return c.name[i]; },
     vars: POS.concat(GALB, [
       v('t90', 'Duration T₉₀', 's', col('t90'), { scale: 'log', how: 'Time over which 90% of the burst’s gamma-ray counts arrive.' }),
@@ -356,7 +357,8 @@
       v('ssfr', 'Specific star formation rate', 'log /yr', function (c, i) { return c.logsfr[i] - c.logm[i]; }, { how: 'SFR per unit stellar mass: how fast the galaxy is growing.' }),
       v('oh', 'Gas metallicity 12 + log(O/H)', '', col('oh'), { how: 'Oxygen abundance of the gas, from its emission lines (Tremonti et al. 2004). The Sun: 8.69.' }),
       v('lha', 'Hα luminosity (in the fibre)', 'erg/s', function (c, i) { var d = A.DL(c.z[i], 70, 0.3, 0.7) * 1e6 * A.C.pc * 100; return 4 * Math.PI * d * d * c.ha[i] * 1e-17; }, { scale: 'log', needs: ['cosmo'], how: 'L = 4π D_L² F, with F in the 3″ fibre (no dust correction).' }),
-      v('cls', 'MPA-JHU classification', '', function (c, i) { return BPT[c.bptclass[i]] || 'unclassified'; }, { cat: true, how: 'From the lines, using the Kauffmann et al. (2003) and Kewley et al. (2001) lines.' })
+      v('cls', 'MPA-JHU classification', '', function (c, i) { return BPT[c.bptclass[i]] || 'unclassified'; }, { cat: true, how: 'From the lines, using the Kauffmann et al. (2003) and Kewley et al. (2001) lines.' }),
+      tlb('z')
     ])
   });
   def({

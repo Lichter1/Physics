@@ -34,6 +34,7 @@
     OBS.app.lectureMode();
     render(true);
   };
+  OBS.on('theme', function () { if (LEC.m && OBS.app && OBS.app.lensMode() === 'lecture') render(false, true); });
   LEC.go = function (k) {
     var n = LEC.beats(LEC.m).length;
     LEC.k = Math.max(0, Math.min(n - 1, k));
@@ -67,7 +68,7 @@
       bt.addEventListener('click', function () {
         var box = document.createElement('div'); box.className = 'lightbox'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', bt.getAttribute('aria-label'));
         box.innerHTML = '<img src="' + src('img/lec/' + bt.dataset.img + '.jpg') + '" alt=""><button type="button" class="btn small" aria-label="Close">Close</button>';
-        function close() { box.remove(); document.removeEventListener('keydown', key); }
+        function close() { box.remove(); document.removeEventListener('keydown', key); bt.focus(); }     // back to the picture, for keyboard users
         function key(e) { if (e.key === 'Escape') close(); }
         box.addEventListener('click', close); document.addEventListener('keydown', key);
         document.body.appendChild(box); box.querySelector('button').focus();
@@ -104,7 +105,7 @@
     if (s.grid !== undefined) sky.layers.grid = s.grid;
     OBS.app.markers(s.markers || []);
     // a cue names its frame and wavelength; without them it returns to the equatorial sky in visible light
-    sky.goTo(s.ra, s.dec, s.fov, { mode: s.mode, frame: s.frame || (sky.frame === 'hor' ? 'equ' : undefined), photo: s.photo, band: s.band || 'visible' });
+    sky.goTo(s.ra, s.dec, s.fov, { mode: s.mode, frame: s.frame || (sky.frame === 'hor' ? 'equ' : undefined), photo: s.photo, band: s.band || 'visible', time: s.time });     // a horizon cue may name its moment
   }
   function render(first, quiet) {
     LEC.stop();

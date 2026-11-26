@@ -147,7 +147,12 @@
     ['x', 'y'].forEach(function (a) {
       $('log' + a).addEventListener('click', function () { chart.logOv[a] = !(a === 'x' ? chart.logX() : chart.logY()); chart.autoscale(); refreshLens(); });
     });
-    $('c-sel').addEventListener('change', function (e) { chart.colourBy = e.target.value; chart._cats = null; chart.draw(); sky.draw(); legend(); });
+    $('c-sel').addEventListener('change', function (e) {
+      chart.colourBy = e.target.value; chart._cats = null;
+      // outside an exercise, colouring by a category means you want to see it: a selection would grey the rest out
+      var lb = OBS.logbook.current(); if (e.target.value !== 'auto' && e.target.value !== 'none' && chart.selected().length && !(lb.m && lb.step === 2)) chart.clearSel();
+      chart.draw(); sky.draw(); legend();
+    });
     $('bins').addEventListener('input', function (e) { chart.bins = +e.target.value; chart._histMax(); chart.draw(); });
     [].forEach.call(document.querySelectorAll('[data-ltool]'), function (b) {
       b.addEventListener('click', function () { chart.tool = b.dataset.ltool; [].forEach.call(document.querySelectorAll('[data-ltool]'), function (x) { x.setAttribute('aria-pressed', x === b); }); });
@@ -288,6 +293,7 @@
       root.setAttribute('data-theme', OBS.colours().dark ? 'light' : 'dark');
       OBS.store.set('theme', root.getAttribute('data-theme'));
       label(); chart._cats = null; chart.draw(); sky._mwKey = null; sky.draw(true); legend();
+      OBS.emit('theme');      // lecture charts and explainers redraw in the new colours
     });
     var saved = OBS.store.get('theme', null); if (saved) root.setAttribute('data-theme', saved);
     try { G.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function () { label(); chart.draw(); sky._mwKey = null; sky.draw(true); }); } catch (e) { /* old browsers */ }

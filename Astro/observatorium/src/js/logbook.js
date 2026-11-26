@@ -179,6 +179,7 @@
     app.reset(); lockLens(m);
     Promise.resolve().then(function () { return m.setup(app, st); }).then(function () {
       if (cur.m !== m) return;
+      app.refresh();      // the lens menus and bins slider show what the setup chose
       check();
       cur.timer = setInterval(check, 400);
     }).catch(function (e) { $('m-status').textContent = 'Could not set up this mission: ' + e.message; });

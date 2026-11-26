@@ -508,7 +508,7 @@
     if (opts.frame && opts.frame !== this.frame) { var e = this.fromFrame(this.lon0, this.lat0); this.frame = opts.frame; var nf = this.toFrame(e[0], e[1]); this.lon0 = nf[0]; this.lat0 = nf[1]; }
     if (opts.photo !== undefined && this.images) this.layers.photo = opts.photo;
     if (opts.band !== undefined) { this.band = opts.band; if (opts.band !== 'visible' && this.images) this.layers.photo = true; }
-    else if (opts.photo === true) this.band = 'visible';   // asking for photographs means the visible-light ones
+    else if (opts.photo === true || opts.photo === false) this.band = 'visible';   // photographs, or the drawn sky: both in visible light
     if (opts.time !== undefined) this.obs.jd = A.jd(opts.time);
     this._mwKey = null; OBS.emit('skymode');
     var f = this.toFrame(ra, dec), self = this;
@@ -551,7 +551,7 @@
       }
     }
     if (this.ds && this.ds.pos && this.ds.id !== 'sky' && this.chart) scan(this.ds, this.chart.mask);
-    if (!best) scan(this.bg, null);
+    if (!best && (!this.band || this.band === 'visible')) scan(this.bg, null);
     return best;
   };
   P._circleSelect = function (d) {
