@@ -52,6 +52,7 @@ lens. A reload brings back the mission and step you were on.
 | 3.1 | A shadow crosses a star | Kepler light curve of HAT-P-7 | L3, HW4 Q1 |
 | 3.2 | Who finds which planets | NASA Exoplanet Archive | L3 |
 | 3.3 | A star brightens for a month (Paczyński) | OGLE-2019-BLG-0148 | L3–4, HW3 Q2 |
+| 3.4 | Rock, water or gas | NASA Exoplanet Archive, 2,472 planets with measured masses and radii | L3 |
 | 4.1 | Gaps in the belt (Kirkwood) | JPL Small-Body Database | L4 |
 | 4.2 | Where is the centre? (Shapley) | Harris globular-cluster catalogue | L4 |
 | 4.3 | Too fast at the edge (Rubin, Bosma; MOND) | SPARC rotation curve of NGC 3198 | L4, HW5 |
@@ -82,7 +83,7 @@ lens. A reload brings back the mission and step you were on.
 ```
 node build.mjs            # dist/index.html + dist/data/ (published page), observatorium.html (offline file)
 node --test               # unit tests: physics, CSV reader, every variable on the real data, mission plan
-# end-to-end: plays all 34 missions in Chromium, in course order without teacher mode, and checks each reaches
+# end-to-end: plays all 35 missions in Chromium, in course order without teacher mode, and checks each reaches
 # "done" (it fails if a solution needs an axis the student would still find locked)
 (cd dist && python3 -m http.server 8765 &) ; node e2e/missions.js http://localhost:8765/preview.html
 # the first-visit tour at desktop, tablet and phone widths: every step, both try-its, Tour, Esc, arrows
@@ -128,7 +129,7 @@ Using it for private study is fine; ask OGLE before sharing a page with their li
 | `src/js/sky.js` | The sky: stereographic dome and Hammer all-sky, equatorial, Galactic or horizon; drawn or photographed, in eight wavelengths |
 | `src/js/instruments.js` | Controls; spectrograph, parallax telescope, binary reader, folding, model fitting, sliding references |
 | `src/js/observing.js` | Chapter 6–9 instruments: redshift fitter, aperture photometry, night planner, sky isotropy, supernova χ², MCMC |
-| `src/js/missions.js` | The 34 missions, the chapters and the concept check (18 questions, each with its reason) |
+| `src/js/missions.js` | The 35 missions, the chapters and the concept check (18 questions, each with its reason) |
 | `src/js/lectures.js`, `lectures2.js`, `lectures3.js` | Each mission's lecture (theory, equations, sky cues, figures, live charts, worked examples) and practice problems, for chapters 1–5 and 6–9 |
 | `src/js/lecture.js` | Runs a lecture in the right-hand pane, mounts its pictures (with credits and a lightbox) and charts, and turns the sky with it |
 | `src/js/explainers.js`, `explainers2.js`, `explainers3.js` | 38 live diagrams used in the lectures |

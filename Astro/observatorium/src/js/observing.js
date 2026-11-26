@@ -186,10 +186,11 @@
       ctx.font = '11px ' + getComputedStyle(document.documentElement).getPropertyValue('--sans');
       var L = 48, R = w - 16, T = 16, B = h - 36;
       function X(hr) { return L + (hr - 16) / 16 * (R - L); } function Y(alt) { return B - (alt + 20) / 110 * (B - T); }
-      var lat = sky.obs.lat, lon = sky.obs.lon, tgt = [], sun = [];
+      var lat = sky.obs.lat, lon = sky.obs.lon, tgt = [], sun = [], moon = [];
       for (var hr = 16; hr <= 32.001; hr += 0.125) {
         var jd = A.jd(d0 + (hr - 2) * 3600000), lst = A.lst(jd, lon), sp = A.sunPos(jd);
-        tgt.push([hr, A.equToHor(t.ra, t.dec, lst, lat)[1]]); sun.push([hr, A.equToHor(sp[0], sp[1], lst, lat)[1]]);
+        var mp = A.moonPos(jd);
+        tgt.push([hr, A.equToHor(t.ra, t.dec, lst, lat)[1]]); sun.push([hr, A.equToHor(sp[0], sp[1], lst, lat)[1]]); moon.push([hr, A.equToHor(mp[0], mp[1], lst, lat)[1]]);
       }
       // dark hours shaded
       ctx.fillStyle = C.dark ? 'rgba(90,110,180,0.18)' : 'rgba(40,60,140,0.12)';
@@ -201,8 +202,8 @@
       ctx.setLineDash([4, 4]); ctx.strokeStyle = C['ink-3']; ctx.beginPath(); ctx.moveTo(L, Y(30)); ctx.lineTo(R, Y(30)); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = C['ink-3']; ctx.fillText('airmass 2', L + 4, Y(30) - 4);
       function curve(pts, col, wd) { ctx.strokeStyle = col; ctx.lineWidth = wd; ctx.beginPath(); pts.forEach(function (p, k) { var x = X(p[0]), y = Y(Math.max(-20, p[1])); if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); }); ctx.stroke(); ctx.lineWidth = 1; }
-      ctx.setLineDash([5, 4]); curve(sun, '#ff8c3a', 1.5); ctx.setLineDash([]); curve(tgt, C.accent, 2.5);
-      ctx.fillStyle = C.accent; ctx.fillText(t.name, L + 6, T + 14); ctx.fillStyle = '#ff8c3a'; ctx.fillText('the Sun (dashed) · shaded: dark night (Sun below −18°)', L + 6, T + 28);
+      ctx.setLineDash([5, 4]); curve(sun, '#ff8c3a', 1.5); ctx.setLineDash([2, 3]); curve(moon, C['ink-2'], 1.5); ctx.setLineDash([]); curve(tgt, C.accent, 2.5);
+      ctx.fillStyle = C.accent; ctx.fillText(t.name, L + 6, T + 14); ctx.fillStyle = '#ff8c3a'; ctx.fillText('the Sun (dashed) · shaded: dark night (Sun below −18°)', L + 6, T + 28); ctx.fillStyle = C['ink-2']; ctx.fillText('the Moon (dotted)', L + 6, T + 42);
       ctx.strokeStyle = C.sel; ctx.beginPath(); ctx.moveTo(X(st.hour), T); ctx.lineTo(X(st.hour), B); ctx.stroke();
     }
     var sel = document.createElement('label'); sel.className = 'sel'; sel.innerHTML = '<span>Target</span><select>' + o.targets.map(function (t, k) { return '<option value="' + k + '">' + t.name + '</option>'; }).join('') + '</select>';
@@ -230,7 +231,10 @@
       var dark = sAlt < -18 ? 'dark night' : sAlt < -12 ? 'astronomical twilight' : sAlt < -6 ? 'nautical twilight' : sAlt < 0 ? 'civil twilight' : 'daytime';
       var tt = ((transit % 24) + 24) % 24, TH = Math.floor(tt), TM = Math.round((tt % 1) * 60); if (TM === 60) { TH = (TH + 1) % 24; TM = 0; }
       out.innerHTML = t.name + ': altitude ' + fx(h[1], 1) + '°, azimuth ' + fx(h[0], 0) + '°' + (h[1] > 0 ? ', airmass ' + fx(X, 2) + ' (dimmed by ' + fx(0.21 * X, 2) + ' mag at 0.9 km)' : ', below the horizon') + '. ' +
-        'Highest possible: ' + fx(max, 1) + '°, when it crosses the meridian at ' + (TH < 10 ? '0' : '') + TH + ':' + (TM < 10 ? '0' : '') + TM + '. The Sun is at ' + fx(sAlt, 0) + '° (' + dark + ').';
+        'Highest possible: ' + fx(max, 1) + '°, when it crosses the meridian at ' + (TH < 10 ? '0' : '') + TH + ':' + (TM < 10 ? '0' : '') + TM + '. The Sun is at ' + fx(sAlt, 0) + '° (' + dark + ').' + (function () {
+        var mp = A.moonPos(sky.obs.jd), mh = A.equToHor(mp[0], mp[1], lst, sky.obs.lat)[1], sep = A.sep(mp[0], mp[1], t.ra, t.dec);
+        return ' The Moon is ' + Math.round(100 * mp[2]) + '% lit, ' + (mh > 0 ? fx(mh, 0) + '° up' : 'below the horizon') + ', ' + fx(sep, 0) + '° from the target' + (mh > 0 && mp[2] > 0.5 && sep < 40 ? ': its light will brighten the sky behind faint targets.' : '.');
+      })();
       if (o.onchange) o.onchange(st);
     }
     pick.addEventListener('change', update);

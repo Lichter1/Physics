@@ -137,6 +137,25 @@
       ]
     },
 
+    density: {
+      full: {
+        beats: [
+          { h: 'Mass and radius together', sky: { ra: 0, dec: 0, fov: 200, mode: 'allsky', frame: 'equ', photo: false },
+            eq: '\\rho = \\frac{M_p}{\\tfrac43 \\pi R_p^3}',
+            html: '<p>A transit gives the radius (mission 3.1) and a Doppler wobble the mass (mission 3.2, as \\(M \\sin i\\); a transiting planet’s orbit is edge-on, so \\(\\sin i \\approx 1\\)). Their ratio is the mean density. For reference: iron 7.9, the Earth 5.5 (rock around an iron core), water 1.0, Jupiter 1.33, Saturn 0.69 g/cm³.</p>',
+            example: '<p>A planet of 2 Earth radii and 5 Earth masses: \\(\\rho = 5.5 \\times 5/2^3 = 3.4\\) g/cm³. Rock compressed by its own weight would be denser than the Earth, so this planet must hold something lighter: water, or a thin hydrogen envelope.</p>' },
+          { h: 'Rock, water and gas',
+            html: '<p>For each material there is a curve of radius against mass. Rocky planets follow a curve close to \\(R \\propto M^{0.27}\\) up to about 1.6 Earth radii. Above that, most planets are puffier: mini-Neptunes with a few percent of their mass in hydrogen, which doubles their size. Gas giants behave differently again: beyond about a Jupiter mass, extra mass squeezes the planet, and all of them, from 0.3 to 10 Jupiter masses, have about Jupiter’s radius.</p>' },
+          { h: 'Why only measured masses',
+            html: '<p>For most transiting planets the archive lists a mass <i>estimated</i> from the radius with a mass–radius relation. Plotting those would show only the relation they came from, so this mission keeps the 2,472 planets whose mass was measured. (In the data lens, colour planets by “Where the mass comes from” to see the difference.)</p>' }
+        ],
+        practice: [
+          { q: 'A planet has 2 Earth radii and 5 Earth masses. What is its mean density, in g/cm³ (Earth: 5.51 g/cm³)?', a: 3.44, tol: 0.02, unit: 'g/cm³', sol: '\\(\\rho = 5.51 \\times 5 / 2^3 = 3.44\\) g/cm³.' },
+          { q: 'What is the mean density of a planet of 1 Jupiter mass (1.898×10²⁷ kg) and 1.5 Jupiter radii (R_J = 7.149×10⁷ m), in g/cm³?', a: 0.393, tol: 0.03, unit: 'g/cm³', sol: '\\(\\rho_J = 1.33\\) g/cm³ divided by \\(1.5^3 = 3.375\\): 0.393 g/cm³.' }
+        ]
+      }
+    },
+
     // ============================================================================== chapter 4 (lecture 4)
     kirkwood: {
       beats: [

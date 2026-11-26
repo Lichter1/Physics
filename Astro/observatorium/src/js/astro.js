@@ -261,6 +261,14 @@
     var ra = Math.atan2(Math.cos(eps) * Math.sin(lam), Math.cos(lam)) / D2R;
     return [(ra + 360) % 360, Math.asin(Math.sin(eps) * Math.sin(lam)) / D2R];
   };
+  /** The Moon, to about a degree (main terms only): [ra, dec, illuminated fraction 0..1]. */
+  A.moonPos = function (jd) {
+    var d = jd - 2451545.0, L = 218.316 + 13.176396 * d, M = (134.963 + 13.064993 * d) * D2R, F = (93.272 + 13.229350 * d) * D2R;
+    var lam = (L + 6.289 * Math.sin(M)) * D2R, bet = 5.128 * Math.sin(F) * D2R, eps = 23.439 * D2R;
+    var x = Math.cos(bet) * Math.cos(lam), y = Math.cos(eps) * Math.cos(bet) * Math.sin(lam) - Math.sin(eps) * Math.sin(bet), z = Math.sin(eps) * Math.cos(bet) * Math.sin(lam) + Math.cos(eps) * Math.sin(bet);
+    var ra = (Math.atan2(y, x) / D2R + 360) % 360, dec = Math.asin(z) / D2R, s = A.sunPos(jd), el = A.sep(ra, dec, s[0], s[1]);
+    return [ra, dec, (1 - Math.cos(el * D2R)) / 2];
+  };
   /** Airmass at altitude alt [deg] (Kasten & Young 1989; sec z above ~30 deg). */
   A.airmass = function (alt) { if (alt <= 0) return Infinity; var z = 90 - alt; return 1 / (Math.cos(z * D2R) + 0.50572 * Math.pow(96.07995 - z, -1.6364)); };
   /** The observatory the course's students are closest to: the Wise Observatory, Mitzpe Ramon. */

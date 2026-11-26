@@ -67,14 +67,14 @@ browser tests pass, and the browser test now fails if a solution needs an axis t
   - Ten new lecture pictures, with their credits.
 
 **Still open:**
-- **Interactive views:**
-  - the Ωm–ΩΛ χ² map inside 6.1;
-  - the Moon and twilight stages in the night planner;
+- **Interactive views:** (6.1 now has its Ωm–ΩΛ misfit map, and the 7.1 planner draws the Moon with its phase and
+  distance from the target)
+  - the three twilight stages in the night planner;
   - a second step for 6.4 (reading the forest);
   - de-dispersing an FRB;
   - a top-down solar system and a "powers of ten" ladder.
 - **Missions:**
-  - IMF, radial velocity and planet densities (chapter 3);
+  - IMF and radial velocity (chapter 3; planet densities is now mission 3.4, *Rock, water or gas*);
   - MACHO counts and Sgr A* (chapter 4);
   - a Faber–Jackson mission. The shipped SDSS sample gives L ∝ σ^1.8–2.3, not 4, so it needs better data first.
 - **Cosmetic:** some overlapping labels in lecture charts; IRAS and ROSAT coverage gaps not masked on the wavelength

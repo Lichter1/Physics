@@ -37,6 +37,7 @@ const SOLVE = {
   transit: (OBS, st) => { st.fold.coarse.set(2.204737); document.getElementById('fold-on').click(); OBS.app.chart.get('depth').value = 1 - 0.0067; },
   census: (OBS) => { const ch = OBS.app.chart, P = OBS.column(ch.ds, 'P'), M = OBS.column(ch.ds, 'Mp'), idx = []; for (let i = 0; i < P.length; i++) if (P[i] < 10 && M[i] > 0.3) idx.push(i); ch.setSel(idx); },
   microlens: (OBS, st) => { const e = st.ews; const s = st.model.sliders; s.t0.set(e.tmax - 2450000); s.tE.set(e.tE); s.u0.set(e.u0); s.fbl.set(e.fbl); s.I0.set(e.I0); },
+  density: (OBS) => { const ch = OBS.app.chart, r = OBS.column(ch.ds, 'rho'), rp = OBS.column(ch.ds, 'Rp'), idx = []; for (let i = 0; i < r.length; i++) if (ch.mask[i] && r[i] > 4 && rp[i] < 0.2) idx.push(i); ch.setSel(idx); },
   kirkwood: (OBS) => { const ch = OBS.app.chart; ch.get('g1').value = 2.502; ch.get('g2').value = 2.825; ch.get('g3').value = 2.958; },
   shapley: (OBS) => { const p = OBS.app.chart.get('centre'); p.x = 7.2; p.y = 0.3; },
   rotation: (OBS, st) => { const s = st.model.sliders; s.Y.set(0.9); s.Y.set(0.58); s.vh.set(142); s.rc.set(3.12); },

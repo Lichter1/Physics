@@ -552,6 +552,38 @@
     },
     // =================================================================================== chapter 4
     {
+      id: 'density', ch: 3, title: 'Rock, water or gas', era: '2010 →', who: 'Kepler, TESS and radial-velocity teams', course: 'Lecture 3 (exoplanets: mass, radius, composition)',
+      brief: 'A transit gives a planet’s radius; a radial-velocity curve (or timing) gives its mass. Together they give its mean density, the first clue to what it is made of: iron and rock (Earth, 5.5 g/cm³), water and ice, or mostly hydrogen and helium (Jupiter, 1.3; Saturn, 0.7). Here are the 2,472 planets with a measured mass and a radius.',
+      vars: [['M_p', 'Planet mass', 'M_Jup', 'Radial velocity or transit timing'], ['R_p', 'Planet radius', 'R_Jup', 'Transit depth (mission 3.1)'], ['ρ', 'Mean density', 'g/cm³', 'M / (4/3 π R³)']],
+      relation: 'ρ = M / (4/3 π R³): at a fixed density, R ∝ M^{1/3}. Gas giants break the rule: above about a Jupiter mass, adding mass squeezes them and the radius stays near 1 R_J.',
+      deduce: 'Which planets are rocky worlds, which are water worlds or mini-Neptunes wrapped in gas, and which are gas giants.',
+      question: 'A planet twice the Earth’s radius and five times its mass is, on average,…',
+      choices: [['rock', 'about as dense as the Earth: rock and iron'], ['less', 'less dense than the Earth: it must hold water or gas'], ['more', 'denser than iron']],
+      answer: 'less',
+      setup: function (app) {
+        return app.open('exoplanets', { x: 'Mp', y: 'Rp', colourBy: 'none', filter: function (c, i) { return c.massprov[i] === 'measured' && c.pl_radj[i] > 0 && c.pl_bmassj[i] > 0; } }).then(function () {
+          app.chart.setView({ x0: 0.001, x1: 30, y0: 0.05, y1: 2.5 });
+          var C = OBS.colours();
+          [[5.5, 'Earth-like rock (5.5 g/cm³)', C.c3], [1, 'water (1 g/cm³)', C.c1], [0.3, 'puffed-up gas (0.3 g/cm³)', C.c4]].forEach(function (d, k) {
+            app.chart.add({ type: 'curve', id: 'rho' + k, label: d[1], colour: d[2], dash: [5, 4], f: function (m) { return Math.pow(1.326 * m / d[0], 1 / 3); } });
+          });
+          app.sky.goTo(0, 0, 200, { mode: 'allsky', frame: 'equ', photo: false });
+        });
+      },
+      task: 'Each dot is a planet with a measured mass and radius; the dashed curves are constant density. Box the small planets that lie on or below the rock curve (radius under about 0.2 R_J): the rocky worlds.',
+      progress: function (app) {
+        var r = pick(app, 'rho'), rp = pick(app, 'Rp'), f = share(r, function (x) { return x > 3; }), small = share(rp, function (x) { return x < 0.25; });
+        return { done: r.length >= 30 && f >= 0.8 && small >= 0.9, text: r.length + ' selected' + (r.length ? ', ' + Math.round(100 * f) + '% denser than 3 g/cm³' : '') + (r.length && small < 0.9 ? ': keep to the small planets' : r.length && f < 0.8 ? ': keep below the water curve' : '') };
+      },
+      result: function (app) {
+        var r = pick(app, 'rho'), ds = app.chart.ds, all = OBS.column(ds, 'rho'), Rp = OBS.column(ds, 'Rp'), Mp = OBS.column(ds, 'Mp'), puffy = 0, giants = 0;
+        for (var i = 0; i < all.length; i++) if (app.chart.mask[i]) { if (Mp[i] > 0.3) { giants++; if (all[i] < 0.3) puffy++; } }
+        return 'Your ' + r.length + ' planets have a median density of ' + fmt(median(r), 2) + ' g/cm³ (the Earth: 5.5): rock and iron, some of them iron-rich or squeezed by their own weight. Of the ' + giants.toLocaleString('en-US') + ' giants above 0.3 Jupiter masses, ' + puffy + ' are less dense than 0.3 g/cm³, lighter than any planet in the Solar System: hot Jupiters puffed up by their stars.';
+      },
+      explain: 'Small planets follow the rock curve, up to about 1.6 Earth radii; above that, most planets are less dense than rock, so they must hold water or a hydrogen envelope (mini-Neptunes). Kepler found a gap near 1.8 Earth radii between the two (Fulton et al. 2017), thought to be planets whose envelopes were blown away by their young stars. Giants all have radii near Jupiter’s whatever their mass, because adding mass compresses them; those that sit above it are inflated by heat from very close stars.',
+      real: 'Corot-7b and Kepler-10b (2009–2011) were the first rocky exoplanets with measured densities. The TRAPPIST-1 planets, timed by their transits, have Earth-like densities. Most masses still come from the radial-velocity wobble of mission 3.2, at a few m/s.'
+    },
+    {
       id: 'kirkwood', ch: 4, title: 'Gaps in the belt', era: '1866', who: 'Daniel Kirkwood', course: 'Lecture 4 (asteroids, Kuiper belt, TNOs)', hw: '',
       brief: 'By 1866 about 90 asteroids were known, and Kirkwood noticed that none orbited at certain distances from the Sun. Here are 50,000 orbits from JPL’s Small-Body Database.',
       vars: [['a', 'Orbit size (semi-major axis)', 'AU', 'From the orbit fit'], ['P', 'Orbital period', 'yr', 'P² = a³'], ['P / P_J', 'Period over Jupiter’s', '', '(a / 5.203)^{3/2}']],
@@ -778,6 +810,26 @@
           var chi = OBS.snChi2(c); st.chiMin = Infinity;
           for (var om = 0.05; om <= 1.0; om += 0.05) for (var ol = 0; ol <= 1.4; ol += 0.05) st.chiMin = Math.min(st.chiMin, chi(om, ol).chi2);
           st.chiMatter = chi(1, 0).chi2;
+          // a map of the misfit over (Ωm, ΩΛ) with your universe on it: the supernovae pin down a long valley, not a point
+          var NX = 30, NY = 32, X0 = 0, X1 = 1.5, Y0 = -0.5, Y1 = 1.5, grid = [], gm = Infinity;
+          for (var jy = 0; jy < NY; jy++) for (var ix = 0; ix < NX; ix++) { var q = chi(X0 + (X1 - X0) * (ix + 0.5) / NX, Y0 + (Y1 - Y0) * (jy + 0.5) / NY).chi2; grid.push(q); if (q < gm) gm = q; }
+          var lab = document.createElement('p'); lab.className = 'small muted'; lab.textContent = 'The misfit over all universes: gold is within reach of the data (68% and 95%); the dot is yours. Dashed: flat universes; dotted: no acceleration.';
+          var mv = document.createElement('canvas'); mv.className = 'ins-mini'; mv.style.height = '220px';
+          st.drawMap = function (p) {
+            var r = mv.getBoundingClientRect(), dpr = Math.min(2, G.devicePixelRatio || 1), w = Math.max(200, r.width), h = 220, cx = mv.getContext('2d'), CC = OBS.colours();
+            mv.width = w * dpr; mv.height = h * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.fillStyle = CC.panel; cx.fillRect(0, 0, w, h);
+            var L = 40, T = 8, W = Math.min(w - 60, (h - 36) * (X1 - X0) / (Y1 - Y0) * 1.2), H = h - 36;
+            function px(x) { return L + (x - X0) / (X1 - X0) * W; } function py(y) { return T + H - (y - Y0) / (Y1 - Y0) * H; }
+            for (var j = 0; j < NY; j++) for (var i = 0; i < NX; i++) { var d = grid[j * NX + i] - gm; cx.fillStyle = !isFinite(d) ? 'rgba(60,60,70,0.9)' : d < 2.3 ? '#f1d08f' : d < 6.17 ? '#d9ae5f' : 'rgba(80,110,190,' + Math.max(0.08, Math.exp(-d / 60)).toFixed(2) + ')'; cx.fillRect(px(X0 + (X1 - X0) * i / NX), py(Y0 + (Y1 - Y0) * (j + 1) / NY), W / NX + 0.5, H / NY + 0.5); }
+            cx.strokeStyle = CC.rule; cx.strokeRect(L + 0.5, T + 0.5, W, H);
+            cx.setLineDash([5, 4]); cx.strokeStyle = CC.ink; cx.beginPath(); cx.moveTo(px(0), py(1)); cx.lineTo(px(1.5), py(-0.5)); cx.stroke();
+            cx.setLineDash([2, 3]); cx.strokeStyle = CC.c4; cx.beginPath(); cx.moveTo(px(0), py(0)); cx.lineTo(px(1.5), py(0.75)); cx.stroke(); cx.setLineDash([]);
+            cx.font = '11px ' + getComputedStyle(document.documentElement).getPropertyValue('--sans'); cx.fillStyle = CC['ink-3'];
+            [0, 0.5, 1, 1.5].forEach(function (v) { cx.textAlign = 'center'; cx.fillText(v.toFixed(1), px(v), T + H + 13); });
+            [-0.5, 0, 0.5, 1, 1.5].forEach(function (v) { cx.textAlign = 'right'; cx.fillText(v.toFixed(1), L - 4, py(v) + 4); });
+            cx.textAlign = 'center'; cx.fillText('Ωm', L + W / 2, h - 2); cx.textAlign = 'left'; cx.fillText('ΩΛ', 4, T + 10);
+            if (p) { cx.fillStyle = CC.sel; cx.beginPath(); cx.arc(px(Math.max(X0, Math.min(X1, p.Om))), py(Math.max(Y0, Math.min(Y1, p.OL))), 5, 0, 7); cx.fill(); }
+          };
           st.model = OBS.instruments.model(ch, app.tools, {
             label: 'your universe', err: function (i) { return c.emu[i]; },
             f: function (z, p) { return A.distModZ(z, p.H0, p.Om, p.OL) - A.distModEmpty(z, 73); },
@@ -788,6 +840,7 @@
               { id: 'H0', label: 'H₀', min: 60, max: 80, value: 73, step: 0.1, fmt: function (x) { return x.toFixed(1); }, unit: 'km/s/Mpc' }
             ],
             describe: function (p) {
+              if (st.drawMap) { if (!mv.isConnected) { app.tools.appendChild(lab); app.tools.appendChild(mv); } st.drawMap(p); }
               var q0 = A.q0(p.Om, p.OL), ok = p.Om * 1.0 + p.OL < 2.2;
               return 'Ωm + ΩΛ = ' + fix(p.Om + p.OL, 2) + (Math.abs(p.Om + p.OL - 1) < 0.03 ? ' (flat)' : p.Om + p.OL > 1 ? ' (closed)' : ' (open)') + '; q₀ = ' + fix(q0, 2) + ': the expansion is ' + (q0 < 0 ? '<b>speeding up</b>' : '<b>slowing down</b>') + (ok ? '; age ' + fix(A.age(0, p.H0, p.Om, p.OL), 1) + ' Gyr.' : '.');
             }
