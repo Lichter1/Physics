@@ -45,7 +45,7 @@
     o = o || {};
     var cv = app.imageView(true), ctx = cv.getContext('2d'), W = field.w, H = field.h, ps = field.pixscale;
     var I = new Float32Array(W * H); for (var k = 0; k < I.length; k++) I[k] = field.data[k] / field.scale;
-    var st = { r: 6, sel: -1, done: {}, fwhm: NaN, last: null };
+    var st = { r: o.r || 2, sel: -1, done: {}, fwhm: NaN, last: null };     // a too-small aperture to begin with: the curve of growth is the lesson
     // display: asinh stretch
     var sorted = Array.prototype.slice.call(I).sort(function (a, b) { return a - b; }), lo = sorted[Math.floor(0.02 * I.length)], hi = sorted[Math.floor(0.998 * I.length)];
     var img = document.createElement('canvas'); img.width = W; img.height = H;
@@ -166,7 +166,7 @@
     };
     var ro = G.ResizeObserver ? new G.ResizeObserver(function () { if (!cv.hidden) draw(); }) : null; if (ro) ro.observe(cv);
     st.measure = measure; st.pick = function (k) { var s = field.stars[k], c = centroid(s.x, s.y); st.sel = k; st.last = { x: c[0], y: c[1] }; st.fwhm = fwhm(c[0], c[1]); update(); };
-    st.slider = slider; st.stop = function () { if (ro) ro.disconnect(); cv.onclick = null; };
+    st.slider = slider; st.stop = function () { if (ro) ro.disconnect(); cv.onclick = null; }; OBS.cleanup(st.stop);
     update();
     return st;
   };
@@ -233,7 +233,7 @@
     }
     pick.addEventListener('change', update);
     var ro = G.ResizeObserver ? new G.ResizeObserver(function () { if (!cv.hidden && st.target) update(); }) : null; if (ro) ro.observe(cv);
-    st.update = update; st.sd = sd; st.sh = sh; st.pick = pick; st.stop = function () { if (ro) ro.disconnect(); };
+    st.update = update; st.sd = sd; st.sh = sh; st.pick = pick; st.stop = function () { if (ro) ro.disconnect(); }; OBS.cleanup(st.stop);
     update();
     return st;
   };
@@ -284,7 +284,7 @@
       var Om = X0 + (X1 - X0) * (i + 0.5) / NX, OL = Y0 + (Y1 - Y0) * (j + 0.5) / NY, q = chi(Om, OL);
       grid.push(q.chi2); if (q.chi2 < gmin) { gmin = q.chi2; best = { Om: Om, OL: OL }; }
     }
-    var st = { chain: [], acc: 0, tries: 0, run: false, step: 0.05, burn: 200, evals: NX * NY, gmin: gmin, best: best };
+    var st = { chain: [], acc: 0, tries: 0, run: false, step: o.step || 0.004, burn: 0, evals: NX * NY, gmin: gmin, best: best, inAt: null };
     var map = document.createElement('canvas'); map.width = NX; map.height = NY;
     (function () {
       var mc = map.getContext('2d'), d = mc.createImageData(NX, NY);
@@ -325,7 +325,7 @@
     }
     var out = UI.readout(tools), row = UI.row(tools);
     var runB = UI.button(row, 'Run the chain', function () { st.run = !st.run; runB.textContent = st.run ? 'Pause' : 'Run the chain'; if (st.run) loop(); }, 'primary');
-    UI.button(row, 'Start again', function () { st.chain = []; st.acc = 0; st.tries = 0; draw(); report(); });
+    UI.button(row, 'Start again', function () { st.reset(); draw(); report(); });
     var sStep = UI.slider(tools, { label: 'Step size', min: 0.003, max: 0.4, value: st.step, log: true, fmt: function (x) { return x.toFixed(3); }, oninput: function (x) { st.step = x; } });
     var sBurn = UI.slider(tools, { label: 'Burn-in (steps dropped)', min: 0, max: 2000, value: st.burn, step: 50, fmt: function (x) { return Math.round(x); }, oninput: function (x) { st.burn = x; report(); } });
     tools.appendChild(out);
@@ -333,14 +333,16 @@
     var cur = null;
     function gauss() { var u = 1 - Math.random(), v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
     st.stepOnce = function () {
-      if (!cur) { var s = [0.05 + 0.9 * Math.random(), 0.05 + 1.2 * Math.random()]; cur = { p: s, c: chi(s[0], s[1]).chi2 }; if (!isFinite(cur.c)) { cur = null; return; } st.chain.push(cur.p); }
+      // every chain starts far from the answer, in a decelerating universe, so the walk-in is there to see
+      if (!cur) { var s = [0.85 + 0.1 * Math.random(), 0.1 + 0.1 * Math.random()]; cur = { p: s, c: chi(s[0], s[1]).chi2 }; if (!isFinite(cur.c)) { cur = null; return; } st.chain.push(cur.p); }
       var t = [cur.p[0] + st.step * gauss(), cur.p[1] + st.step * gauss()];
       st.tries++;
       var c = t[0] < 0 || t[0] > 1.2 || t[1] < -0.2 || t[1] > 1.6 ? Infinity : chi(t[0], t[1]).chi2;
       if (isFinite(c) && (c <= cur.c || Math.random() < Math.exp(-(c - cur.c) / 2))) { cur = { p: t, c: c }; st.acc++; }
       st.chain.push(cur.p);
+      if (st.inAt === null && cur.c - gmin < 6.17) st.inAt = st.chain.length;     // the step at which the chain reached the 95% region
     };
-    st.reset = function () { cur = null; st.chain = []; st.acc = 0; st.tries = 0; };
+    st.reset = function () { cur = null; st.chain = []; st.acc = 0; st.tries = 0; st.inAt = null; };
     function stats() {
       var s = st.chain.slice(Math.min(st.chain.length, Math.round(st.burn)));
       if (s.length < 20) return null;
@@ -349,15 +351,31 @@
       return { n: s.length, Om: a, OL: b, pacc: acc, samples: s };
     }
     function hist(S) {
-      var r = mini.getBoundingClientRect(), dpr = Math.min(2, G.devicePixelRatio || 1), w = Math.max(200, r.width), h = 130, c = mini.getContext('2d'), C = OBS.colours();
-      mini.width = w * dpr; mini.height = h * dpr; c.setTransform(dpr, 0, 0, dpr, 0, 0); c.fillStyle = C.panel; c.fillRect(0, 0, w, h);
+      var r = mini.getBoundingClientRect(), dpr = Math.min(2, G.devicePixelRatio || 1), w = Math.max(200, r.width), H = 230, c = mini.getContext('2d'), C = OBS.colours();
+      mini.width = w * dpr; mini.height = H * dpr; mini.style.height = H + 'px'; c.setTransform(dpr, 0, 0, dpr, 0, 0); c.fillStyle = C.panel; c.fillRect(0, 0, w, H);
       c.font = '11px ' + getComputedStyle(document.documentElement).getPropertyValue('--sans');
-      if (!S) { c.fillStyle = C['ink-3']; c.fillText('The histogram of ΩΛ appears once the chain has run.', 10, h / 2); return; }
+      // the trace: ΩΛ against step number, with the burn-in marked; the walk in from the start is what burn-in drops
+      var ch = st.chain, th = 90, n = ch.length;
+      c.fillStyle = C['ink-2']; c.fillText('ΩΛ at each step (trace)', 12, 13);
+      if (n > 1) {
+        var stride = Math.max(1, Math.floor(n / (w - 20)));
+        c.strokeStyle = C.c2; c.lineWidth = 1; c.beginPath();
+        for (var k = 0; k < n; k += stride) { var X = 10 + (w - 20) * k / (n - 1), Yv = 18 + th - th * (ch[k][1] - Y0) / (Y1 - Y0); if (k === 0) c.moveTo(X, Yv); else c.lineTo(X, Yv); }
+        c.stroke();
+        var bx = 10 + (w - 20) * Math.min(1, st.burn / (n - 1));
+        c.fillStyle = 'rgba(128,128,128,0.25)'; c.fillRect(10, 18, bx - 10, th);
+        c.strokeStyle = C.accent; c.beginPath(); c.moveTo(bx, 16); c.lineTo(bx, 20 + th); c.stroke();
+        c.fillStyle = C['ink-3']; c.fillText('burn-in ' + Math.round(st.burn), Math.min(w - 80, bx + 4), 30);
+        if (st.inAt !== null) { var ix = 10 + (w - 20) * Math.min(1, st.inAt / (n - 1)); c.setLineDash([2, 3]); c.strokeStyle = C['ink-3']; c.beginPath(); c.moveTo(ix, 18); c.lineTo(ix, 18 + th); c.stroke(); c.setLineDash([]); }
+      } else { c.fillStyle = C['ink-3']; c.fillText('Run the chain to see its path.', 12, 60); }
+      c.translate(0, th + 28); var h = H - th - 28;
+      if (!S) { c.fillStyle = C['ink-3']; c.fillText('The histogram of ΩΛ appears once the chain has run past the burn-in.', 10, h / 2); c.setTransform(dpr, 0, 0, dpr, 0, 0); return; }
       var nb = 28, bins = new Array(nb).fill(0); S.samples.forEach(function (p) { var k = Math.floor((p[1] - Y0) / (Y1 - Y0) * nb); if (k >= 0 && k < nb) bins[k]++; });
       var mx = Math.max.apply(null, bins), bw = (w - 20) / nb;
       c.fillStyle = C.c1; bins.forEach(function (v, k) { var bh = (h - 30) * v / mx; c.fillRect(10 + k * bw, h - 20 - bh, bw - 1, bh); });
       c.fillStyle = C['ink-2']; c.fillText('ΩΛ from the chain: ' + S.OL[0].toFixed(2) + ' ± ' + S.OL[1].toFixed(2), 12, 14);
       c.fillStyle = C['ink-3']; c.fillText('0', 8, h - 6); c.fillText('1.4', w - 24, h - 6);
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     function report() {
       var S = stats(); st.stats = S;
@@ -378,7 +396,7 @@
     }
     var ro = G.ResizeObserver ? new G.ResizeObserver(function () { if (!cv.hidden) draw(); }) : null; if (ro) ro.observe(cv);
     st.report = report; st.draw = draw; st.sStep = sStep; st.sBurn = sBurn;
-    st.stop = function () { st.run = false; G.cancelAnimationFrame(raf); if (ro) ro.disconnect(); };
+    st.stop = function () { st.run = false; G.cancelAnimationFrame(raf); if (ro) ro.disconnect(); }; OBS.cleanup(st.stop);
     draw(); report();
     return st;
   };

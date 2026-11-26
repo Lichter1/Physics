@@ -88,7 +88,8 @@
   };
   P.setView = function (v) {
     var lx = this.logX(), ly = this.logY();
-    this.view = { x0: ax(v.x0, lx), x1: ax(v.x1, lx), y0: v.y0 === undefined ? this.view.y0 : ax(v.y0, ly), y1: v.y1 === undefined ? this.view.y1 : ax(v.y1, ly) };
+    function pick(val, old, log) { return val === undefined ? old : ax(val, log); }      // a side left out keeps its current range
+    this.view = { x0: pick(v.x0, this.view.x0, lx), x1: pick(v.x1, this.view.x1, lx), y0: pick(v.y0, this.view.y0, ly), y1: pick(v.y1, this.view.y1, ly) };
     if (this.hist()) this._histMax();
     this.draw();
   };
@@ -451,7 +452,7 @@
       var X = ax(xs[i], lx);
       for (var k = 0; k < cycles; k++) {
         var x = this.px(X + k);
-        if (x < xa || x > xb) continue;
+        if (!(x >= xa && x <= xb)) continue;          // also leaves out points with no value on this axis
         if (!this.hist()) { var y = this.py(ax(ys[i], ly)); if (!(y >= ya && y <= yb)) continue; }
         this.sel[i] = 1;
       }

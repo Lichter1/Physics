@@ -198,7 +198,7 @@
       try { d = x.getImageData(0, 0, c.width, c.height).data; } catch (e) { self._loading[key] = false; return; }
       self._pix[key] = { w: c.width, h: c.height, data: d, used: performance.now() };
       var keys = Object.keys(self._pix).filter(function (k) { return k !== 'allsky' && k.indexOf('band:') !== 0; });
-      if (keys.length > 5) { keys.sort(function (a, b) { return self._pix[a].used - self._pix[b].used; }); delete self._pix[keys[0]]; }
+      if (keys.length > 8) { keys.sort(function (a, b) { return self._pix[a].used - self._pix[b].used; }); delete self._pix[keys[0]]; }
       self._loading[key] = false; self._mwKey = null; self.draw(true);
     };
     img.onerror = function () { self._loading[key] = false; };
@@ -211,7 +211,7 @@
     var c = this.fromFrame(this.lon0, this.lat0), view = this.mode === 'dome' ? this.fov : 360, self = this;
     return this.images.cutouts.filter(function (k) {
       return k.fov > view / 400 && A.sep(c[0], c[1], k.ra, k.dec) < view * 0.75 + k.fov;
-    }).map(function (k) {
+    }).sort(function (a, b) { return b.fov - a.fov; }).slice(0, 6).map(function (k) {   // never more than the pixel cache holds
       var ra = k.ra * D2R, de = k.dec * D2R;
       return { k: k, c: [Math.cos(de) * Math.cos(ra), Math.cos(de) * Math.sin(ra), Math.sin(de)], e: [-Math.sin(ra), Math.cos(ra), 0], n: [-Math.sin(de) * Math.cos(ra), -Math.sin(de) * Math.sin(ra), Math.cos(de)], s: k.fov * D2R / k.w, px: self._pixels(k.id, k.file) };
     }).filter(function (q) { return q.px; });
@@ -532,7 +532,9 @@
   P.setFrame = function (f) {
     if (f === this.frame) return;
     var e = this.fromFrame(this.lon0, this.lat0); this.frame = f; var n = this.toFrame(e[0], e[1]);
-    this.lon0 = n[0]; this.lat0 = this.mode === 'allsky' ? 0 : n[1]; this._mwKey = null; this.draw(true);
+    this.lon0 = n[0]; this.lat0 = this.mode === 'allsky' ? 0 : n[1];
+    if (this.mode === 'allsky' && f === 'gal') this.lon0 = 0;    // a whole-sky Galactic map has the centre of the Galaxy in the middle
+    this._mwKey = null; this.draw(true);
   };
   P.centre = function () { return this.fromFrame(this.lon0, this.lat0); };
 

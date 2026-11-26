@@ -100,6 +100,39 @@ test('the mission plan is consistent', () => {
   for (const q of OBS.QUIZ) assert.ok(q.a >= 0 && q.a < q.c.length);
 });
 
+test('nothing a mission asks for is locked when a student gets there in course order', () => {
+  // Concepts open at a mission: everything earlier missions unlock, plus what the mission itself lends while open.
+  const have = new Set(), problems = [];
+  const findVar = (dsid, id) => { const ds = OBS.DATASETS[dsid]; return ds && ds.vars.find((v) => v.id === id); };
+  const check = (m, dsid, id, where) => {
+    if (!id || id === '#' || id === 'auto' || id === 'none') return;
+    const v = findVar(dsid, id);
+    if (!v) { problems.push(`${m.id}: ${where} names ${dsid}.${id}, which does not exist`); return; }
+    const miss = (v.needs || []).filter((k) => !have.has(k) && !(m.unlocks || []).includes(k));
+    if (miss.length) problems.push(`${m.id}: ${where} uses “${v.label}”, locked until ${miss.join(', ')}`);
+  };
+  for (const m of OBS.MISSIONS) {
+    const src = [m.setup, m.progress].filter(Boolean).map((f) => f.toString()).join('\n');
+    const opened = [];
+    // app.open('dataset', { x: 'a', y: 'b', colourBy: 'c' }) in setup or progress
+    for (const o of src.matchAll(/\.open\('(\w+)'(?:\s*,\s*\{([^}]*)\})?/g)) {
+      opened.push(o[1]);
+      for (const k of ['x', 'y', 'colourBy']) { const r = new RegExp(k + ":\\s*'([\\w#]+)'").exec(o[2] || ''); if (r) check(m, o[1], r[1], 'the exercise setup (' + k + ')'); }
+    }
+    // chart.setAxes(x, y) on the first dataset opened
+    for (const a of src.matchAll(/setAxes\((?:'(\w+)'|null)\s*,\s*(?:'([\w#]+)'|null)\)/g)) for (const id of [a[1], a[2]]) check(m, opened[0], id, 'setAxes');
+    // a variable named in quotes in the task text must be one the student can choose
+    for (const q of (m.task || '').matchAll(/“([^”]+)”/g)) for (const dsid of new Set(opened)) {
+      const v = OBS.DATASETS[dsid] && OBS.DATASETS[dsid].vars.find((x) => x.label.toLowerCase() === q[1].toLowerCase());
+      if (v) check(m, dsid, v.id, 'the task text');
+    }
+    // live charts in the lecture
+    for (const b of m.lecture || []) for (const f of [].concat(b.fig || [])) if (f && f.chart) for (const k of ['x', 'y', 'colourBy']) check(m, f.chart.ds, f.chart[k], 'lecture chart “' + b.h + '” (' + k + ')');
+    for (const k of m.unlocks || []) have.add(k);
+  }
+  assert.deepEqual(problems, []);
+});
+
 test('every mission has a lecture with valid sky cues, explainers and practice', () => {
   for (const m of OBS.MISSIONS) {
     assert.ok(m.lecture && m.lecture.length >= 3, m.id + ' has a lecture');

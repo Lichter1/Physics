@@ -207,7 +207,7 @@
         (OBS.unlocked(['kepler']) || st.reveal ? '<br>Masses: M₁ = <span class="num">' + OBS.fmt(st.m.M1, 3) + '</span> M☉, M₂ = <span class="num">' + OBS.fmt(st.m.M2, 3) + '</span> M☉; separation a = <span class="num">' + OBS.fmt(st.m.aRsun, 3) + '</span> R☉.' : '');
       if (onchange) onchange(st);
     }
-    OBS.on('overlay', function (e) { if (e.chart === chart && chart.ds === ds) read(); });
+    OBS.onMission('overlay', function (e) { if (e.chart === chart && chart.ds === ds) read(); });
     read();
     return { state: st, read: read };
   };
@@ -228,6 +228,42 @@
     });
     if (o.start) apply();
     st.coarse = sP; st.fine = fine;
+    // A periodogram: how sharp the fold is at every trial period. Dips mark periods that line the points up
+    // (and their aliases at half and double the period); click one to jump there, then fine-tune.
+    if (o.periodogram !== false) {
+      var xs = chart.xs(), ys = chart.ys(), t = [], yv = [];
+      for (var i = 0; i < xs.length; i++) if (chart.mask[i] && isFinite(xs[i]) && isFinite(ys[i])) { t.push(xs[i]); yv.push(ys[i]); }
+      var stride = Math.max(1, Math.floor(t.length / 3000)), tt = [], yy = [];
+      for (i = 0; i < t.length; i += stride) { tt.push(t[i]); yy.push(yv[i]); }
+      var NP = 1600, Ps = [], S = [], smin = Infinity, smax = 0;
+      for (var k = 0; k < NP; k++) { var P = o.min * Math.pow(o.max / o.min, k / (NP - 1)), s = INS.foldScatter(tt, yy, P, 40); Ps.push(P); S.push(s); smin = Math.min(smin, s); smax = Math.max(smax, s); }
+      var lab = document.createElement('p'); lab.className = 'small muted'; lab.textContent = 'How sharp the fold is at each trial period (lower is sharper). Click a dip to try that period; use the arrow keys on a slider for single steps.';
+      var pg = document.createElement('canvas'); pg.className = 'ins-mini'; pg.style.height = '110px'; pg.style.cursor = 'crosshair';
+      tools.appendChild(lab); tools.appendChild(pg);
+      var drawPg = function () {
+        var r = pg.getBoundingClientRect(), dpr = Math.min(2, G.devicePixelRatio || 1), w = Math.max(200, r.width), h = 110, c = pg.getContext('2d'), C = OBS.colours();
+        pg.width = w * dpr; pg.height = h * dpr; c.setTransform(dpr, 0, 0, dpr, 0, 0); c.fillStyle = C.panel; c.fillRect(0, 0, w, h);
+        var X = function (P) { return 8 + (w - 16) * Math.log(P / o.min) / Math.log(o.max / o.min); }, Y = function (s) { return 10 + (h - 30) * (s - smin) / (smax - smin || 1); };
+        c.strokeStyle = C.c1; c.lineWidth = 1; c.beginPath();
+        for (var k = 0; k < NP; k++) { if (k) c.lineTo(X(Ps[k]), Y(S[k])); else c.moveTo(X(Ps[k]), Y(S[k])); }
+        c.stroke();
+        c.strokeStyle = C.accent; c.beginPath(); c.moveTo(X(st.P), 4); c.lineTo(X(st.P), h - 18); c.stroke();
+        c.font = '11px ' + getComputedStyle(document.documentElement).getPropertyValue('--sans'); c.fillStyle = C['ink-3'];
+        [1, 2, 5, 10, 20, 50].forEach(function (P) { if (P >= o.min && P <= o.max) c.fillText(P + ' d', X(P) - 6, h - 4); });
+      };
+      pg.addEventListener('click', function (e) {
+        var r = pg.getBoundingClientRect(), u = (e.clientX - r.left - 8) / (r.width - 16), P = o.min * Math.pow(o.max / o.min, Math.max(0, Math.min(1, u)));
+        // snap to the sharpest period within a few pixels of the click
+        var kb = 0, best = Infinity; for (var k = 0; k < NP; k++) if (Math.abs(Math.log(Ps[k] / P)) < 6 / r.width * Math.log(o.max / o.min) && S[k] < best) { best = S[k]; kb = k; }
+        if (best < Infinity) P = Ps[kb];
+        sP.set(P, true); fine.set(0, true); st.P = P;
+        var cb = on.querySelector('input'); if (!cb.checked) { cb.checked = true; }
+        apply(); drawPg();
+      });
+      var onch = o.onchange; o.onchange = function (s) { drawPg(); if (onch) onch(s); };
+      requestAnimationFrame(drawPg);
+      var ro = G.ResizeObserver ? new G.ResizeObserver(drawPg) : null; if (ro) { ro.observe(pg); OBS.cleanup(function () { ro.disconnect(); }); }
+    }
     return st;
   };
   /** How sharp a fold is: mean scatter of the folded curve around its own running median (lower is better). */

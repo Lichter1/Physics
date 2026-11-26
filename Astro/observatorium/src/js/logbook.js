@@ -15,7 +15,7 @@
   function byId(id) { for (var i = 0; i < OBS.MISSIONS.length; i++) if (OBS.MISSIONS[i].id === id) return OBS.MISSIONS[i]; return null; }
   function number(m) { var list = OBS.MISSIONS.filter(function (x) { return x.ch === m.ch; }); return m.ch + '.' + (list.indexOf(m) + 1); }
   LB.number = number;
-  function needsMet(m) { return OBS.unlocked(m.needs); }
+  function needsMet(m) { return OBS.learned(m.needs); }
   function missingNames(m) {
     return (m.needs || []).filter(function (k) { return !OBS.state.concepts[k]; }).map(function (k) { var by = byId(OBS.CONCEPTS[k].by); return by ? number(by) + ' ' + by.title : k; });
   }
@@ -46,9 +46,15 @@
 
   // ------------------------------------------------------------------------------------------ the mission card
   var STEPS = ['Lecture', 'Predict', 'Exercise', 'Explain'];
+  /** Lend the mission's own concepts while it is open (or take them back with m = null). */
+  function lend(m) {
+    OBS.state.lend = {};
+    if (m) (m.unlocks || []).forEach(function (k) { OBS.state.lend[k] = true; });
+    OBS.emit('unlock');
+  }
   LB.start = function (m) {
-    stopTimer();
-    cur.m = m; cur.step = 0; cur.pred = (P.done[m.id] && P.done[m.id].pred) || null; cur.st = {};
+    stopTimer(); OBS.runCleanups();
+    cur.m = m; lend(m); cur.step = 0; cur.pred = (P.done[m.id] && P.done[m.id].pred) || null; cur.st = {};
     if (m.ch !== cur.ch) { cur.ch = m.ch; LB.renderChapters(); }
     LB.renderList(); LB.tab('missions');
     OBS.lecture.open(m, 0);      // the dome turns to the mission's part of the sky straight away
@@ -61,7 +67,7 @@
   /** Leave the mission card; if the lens still shows a lecture, give it back its data. */
   LB.leave = leave;
   function leave() {
-    cur.m = null; stopTimer(); renderCard(); LB.renderList();
+    cur.m = null; stopTimer(); OBS.runCleanups(); lend(null); renderCard(); LB.renderList();
     if (OBS.app.lensMode() === 'lecture') OBS.app.open(OBS.app.chart.ds && OBS.DATASETS[OBS.app.chart.ds.id] ? OBS.app.chart.ds.id : 'sky');
   }
   function stepper() {
@@ -119,7 +125,16 @@
     if (free) free.addEventListener('click', leave);
     if (next) next.addEventListener('click', function () {
       if (cur.step === 3) { var n = nextMission(m); if (n) LB.start(n); else leave(); return; }
-      if (cur.step === 2) finish();
+      if (cur.step === 2) {
+        // check once more: the measurement may have been undone since the button lit up
+        next.disabled = true;
+        Promise.resolve(safe(function () { return m.progress(OBS.app, cur.st); })).then(function (r) {
+          if (cur.m !== m || cur.step !== 2) return;
+          if (!r || !r.done) { showStatus(r, true); return; }
+          finish(); cur.step++; renderCard();
+        });
+        return;
+      }
       cur.step++; renderCard();
     });
   }
@@ -162,11 +177,14 @@
         r.then(function (x) { cur.busy = false; show(x); }, function (e) { cur.busy = false; $('m-status').textContent = e.message; });
       } else show(r);
     }
-    function show(r) {
-      var s = $('m-status'), b = $('m-next'); if (!s || !r) return;
-      s.innerHTML = (r.done ? '<span class="pill ok">done</span> ' : '<span class="pill">in progress</span> ') + esc(r.text || '');
-      if (r.done && b.disabled) { b.disabled = false; b.classList.add('pulse'); }
-    }
+    function show(r) { showStatus(r); }
+  }
+  /** Show the exercise's progress; the button follows it both ways (done → enabled, undone → disabled again). */
+  function showStatus(r, after) {
+    var s = $('m-status'), b = $('m-next'); if (!s || !b || !r) return;
+    s.innerHTML = (r.done ? '<span class="pill ok">done</span> ' : '<span class="pill">' + (after ? 'not yet' : 'in progress') + '</span> ') + esc(r.text || '');
+    if (r.done && b.disabled) { b.disabled = false; b.classList.add('pulse'); }
+    else if (!r.done && !b.disabled) { b.disabled = true; b.classList.remove('pulse'); }
   }
   function finish() {
     var m = cur.m; stopTimer();

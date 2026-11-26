@@ -351,10 +351,10 @@
         app.sky.goTo(80.9, -69.75, 14, { mode: 'dome', frame: 'equ' });
         app.markers([{ ra: 80.9, dec: -69.75, label: 'Large Magellanic Cloud' }, { ra: 13.19, dec: -72.83, label: 'Small Magellanic Cloud' }]);
         return app.open('cep_lc', { sub: 'OGLE-LMC-CEP-1109' }).then(function () {
-          st.fold = OBS.instruments.fold(app.chart, app.tools, { P0: 5, min: 1, max: 40, fine: 0.05, start: false, shift: true });
+          st.fold = OBS.instruments.fold(app.chart, app.tools, { P0: 5, min: 1, max: 40, fine: 0.25, start: false, shift: true });
         });
       },
-      task: 'Stage 1: five years of OGLE measurements of one Cepheid in the LMC. Tick “Fold”, then slide the trial period until the scattered points line up into one clean pulse.',
+      task: 'Stage 1: five years of OGLE measurements of one Cepheid in the LMC. Tick “Fold”, then find the trial period at which the scattered points line up into one clean pulse: slide it, or click a dip in the sharpness curve below the sliders and fine-tune. (Dips at half or double the true period are aliases: look at the folded curve.)',
       progress: function (app, st) {
         var ch = app.chart;
         if (st.stage === 0) {
@@ -363,6 +363,7 @@
           var s = OBS.instruments.foldScatter(t, m, st.fold.P), best = OBS.instruments.foldScatter(t, m, 11.8606);
           if (ch.fold && s < 1.6 * best) {
             st.stage = 1; st.P = st.fold.P;
+            app.tools.innerHTML = ''; ch.fold = null;     // the fold controls belong to stage 1 only
             return app.open('cep_ogle', { sub: 'smc', x: 'P', y: 'I' }).then(function () {
               app.sky.goTo(13.19, -72.83, 8);
               ch = app.chart;
@@ -457,7 +458,7 @@
         app.sky.goTo(292.25, 47.97, 18, { mode: 'dome', frame: 'equ' });
         app.markers([{ ra: 292.2474, dec: 47.9695, label: 'HAT-P-7' }]);
         return app.open('kepler', { sub: 'HAT-P-7' }).then(function () {
-          st.fold = OBS.instruments.fold(app.chart, app.tools, { P0: 1.3, min: 0.5, max: 10, fine: 0.01, start: false, shift: true });
+          st.fold = OBS.instruments.fold(app.chart, app.tools, { P0: 1.3, min: 0.5, max: 10, fine: 0.03, start: false, shift: true });
           app.chart.add({ type: 'hline', id: 'depth', value: 0.9985, label: 'bottom of the dip', colour: OBS.colours().c2, dash: [5, 4] });
         });
       },
@@ -601,7 +602,7 @@
       id: 'rotation', ch: 4, title: 'Too fast at the edge', era: '1970–1985', who: 'Vera Rubin and Kent Ford; Albert Bosma', course: 'Lecture 4 (dark matter, MOND)', hw: 'HW5 (MOND questions)',
       brief: 'Gas far out in a spiral galaxy orbits its centre. Its speed tells how much mass lies inside its orbit. NGC 3198’s hydrogen extends to 44 kpc, far beyond its stars. SPARC gives the measured speeds, and the speeds the stars and gas alone would produce.',
       vars: [['V(R)', 'Orbital speed', 'km/s', '21-cm and Hα Doppler shifts'], ['V_bar', 'Speed from visible matter', 'km/s', 'Stars (times a mass-to-light ratio) and gas'], ['Υ', 'Mass-to-light ratio', 'M☉ / L☉', 'Mass of stars per unit light']],
-      relation: 'V² = G M(<R) / R. Visible matter alone: V_bar² = V_gas² + Υ V_disk². A dark halo adds V_h²; MOND changes the force law instead.',
+      relation: 'V² = G M(&lt;R) / R. Visible matter alone: V_bar² = V_gas² + Υ V_disk². A dark halo adds V_h²; MOND changes the force law instead.',
       deduce: 'How much unseen mass the galaxy needs, and where it is.',
       question: 'Gas far beyond the stars of NGC 3198 orbits…',
       choices: [['fall', 'more slowly the farther out it is'], ['flat', 'at the same speed, however far out'], ['rise', 'faster the farther out it is']],
@@ -719,7 +720,12 @@
         });
       },
       task: 'Drag the line through the galaxies. Its slope is the power a in L ∝ V^a.',
-      progress: function (app) { var L = app.chart.lineFit('tf'), r = app.chart.lineRms('tf'); return { done: L.slope > 3.0 && L.slope < 4.6 && r < 0.45, text: 'Slope a = ' + L.slope.toFixed(2) + ', scatter ' + r.toFixed(2) + ' dex' }; },
+      progress: function (app) {
+        // the window comes from fits to these galaxies: least squares 4.4, bisector 4.6, orthogonal 4.8
+        var L = app.chart.lineFit('tf'), r = app.chart.lineRms('tf'), ok = L.slope > 3.6 && L.slope < 5.4 && r < 0.40;
+        var hint = ok ? '' : r >= 0.40 ? ': move the line into the middle of the cloud' : L.slope <= 3.6 ? ': too shallow, tilt it up' : ': too steep, tilt it down';
+        return { done: ok, text: 'Slope a = ' + L.slope.toFixed(2) + ', scatter ' + r.toFixed(2) + ' dex' + hint };
+      },
       result: function (app) {
         var L = app.chart.lineFit('tf');
         return 'Your relation: L ∝ V^' + fix(L.slope, 2) + '. A galaxy spinning at 200 km/s should give out about ' + fmt(Math.pow(10, L.at(Math.log10(200))), 2) + '×10⁹ L☉ at 3.6 μm. Measure its flux and you have its distance.';
@@ -792,7 +798,7 @@
       setup: function (app, st) {
         return app.open('cmbspec', { x: 'f', y: 'I' }).then(function () {
           app.chart.setView({ x0: 0, x1: 700, y0: 0, y1: 420 });
-          app.sky.goTo(0, 0, 200, { mode: 'allsky', frame: 'gal', band: 'cmb' });
+          app.sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal', band: 'cmb' });
           var c = app.chart.ds.table.cols;
           st.model = OBS.instruments.model(app.chart, app.tools, {
             label: 'blackbody', err: function (i) { return c.err[i]; },
@@ -831,7 +837,7 @@
           var DA0 = A.DA(1090, 67.4, 0.315, 0.685);
           st.ratio = function (Ot) { return A.DA(1090, 67.4, 0.315, Ot - 0.315) / DA0; };
           app.chart.setView({ x0: 0, x1: 2550, y0: -200, y1: 6600 });
-          app.sky.goTo(0, 0, 200, { mode: 'allsky', frame: 'gal', band: 'cmb' });
+          app.sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal', band: 'cmb' });
           st.model = OBS.instruments.model(app.chart, app.tools, {
             label: 'your universe', err: function (i) { return c.err[i]; },
             f: function (l, p) { return tt(l / st.ratio(p.Ot + p.dO)); },
@@ -864,7 +870,7 @@
       setup: function (app, st) {
         return app.open('zspec', { sub: 'qso' }).then(function () {
           app.chart.setView({ x0: 380, x1: 920, y0: 0, y1: 1.15 });
-          app.sky.goTo(0, 0, 200, { mode: 'allsky', frame: 'gal', band: 'visible', photo: true });
+          app.sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal', band: 'visible', photo: true });
           return OBS.loadJSON('zspec_meta').then(function (m) {
             st.meta = m.filter(function (x) { return x.obj === 'qso'; })[0];
             app.sky.markers = [{ ra: st.meta.ra, dec: st.meta.dec, label: 'the quasar' }];
@@ -934,7 +940,10 @@
       },
       result: function (app, st) {
         var d = st.phot.done, ks = Object.keys(d), dm = ks.map(function (k) { return d[k].m - st.field.stars[k].r; }), m = dm.reduce(function (a, x) { return a + x; }, 0) / dm.length;
-        return 'You measured ' + ks.length + ' stars; on average your magnitudes differ from SDSS’s by ' + fix(m, 2) + ' mag. Stars here are ' + fix(st.phot.fwhm, 2) + '″ wide (the seeing at the time). The faintest, at r ≈ 21.9, gives S/N of only a few: the sky behind it is brighter than the star.';
+        return 'You measured ' + ks.length + ' stars; on average your magnitudes differ from SDSS’s by ' + fix(m, 2) + ' mag. Stars here are ' + fix(st.phot.fwhm, 2) + '″ wide (the seeing at the time).' + (function () {
+          var f = ks.slice().sort(function (a, b) { return st.field.stars[b].r - st.field.stars[a].r; })[0];
+          return f === undefined ? '' : ' The faintest you measured, at r = ' + fix(st.field.stars[f].r, 1) + ', gave S/N = ' + fix(d[f].snr, 0) + ' with your aperture of ' + fix(d[f].r, 1) + ' px: ' + (d[f].snr < 10 ? 'the sky behind it is as bright as the star, so its noise sets the error.' : d[f].snr < 60 ? 'the sky’s noise inside that big aperture is already much of the error; a radius near the seeing would give a better S/N.' : 'bright enough that the sky’s noise matters little.');
+        })();
       },
       explain: 'The aperture has to hold most of a star’s light, but every extra pixel adds the sky’s noise. For a faint star the best signal-to-noise comes from a radius about the size of the seeing; the total flux needs two to three times that (or a small aperture plus an “aperture correction” measured on bright stars). Magnitudes only mean something with a zero point: here the images are calibrated so that 1 nanomaggie is 3.631 μJy, m_AB = 22.5. SDSS and the Legacy Surveys use slightly different r filters and fit profiles rather than using apertures, so a few hundredths of a magnitude difference is normal.',
       real: 'CCDs replaced photographic plates in the 1980s: they record 90% of photons instead of 1%, and are linear. The AB system (Oke & Gunn 1983) defines m = −2.5 log₁₀ f_ν − 48.60 in cgs units; Vega magnitudes instead set Vega to zero in every band.'
@@ -952,7 +961,7 @@
       setup: function (app, st) {
         return app.open('grbs', { x: 'sinb', y: '#' }).then(function () {
           app.chart.bins = 20; app.chart.setView({ x0: -1, x1: 1 });
-          app.sky.goTo(0, 0, 200, { mode: 'allsky', frame: 'gal', photo: false });
+          app.sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal', photo: false });
           var out = OBS.ui.readout(app.tools), row = OBS.ui.row(app.tools);
           function show() { var s = OBS.isotropy(app.chart.ds, app.chart.mask); out.innerHTML = '<b>' + app.chart.ds.title + '</b>: ' + s.n + ' objects; within 10° of the plane: <span class="num">' + Math.round(100 * s.plane) + '%</span> (an even sky: 17%). Toward the Galactic centre, ⟨cos θ⟩ = <span class="num">' + s.cosgc.toFixed(3) + '</span>; flattening ⟨sin² b − ⅓⟩ = <span class="num">' + s.sinb2.toFixed(3) + '</span> (both 0 ± ' + s.err.toFixed(3) + ' if even).'; }
           function go(id) { return app.open(id, { x: 'sinb', y: '#' }).then(function () { app.chart.bins = 20; app.chart.setView({ x0: -1, x1: 1 }); if (id === 'pulsars') st.sawPulsars = true; show(); }); }
@@ -987,7 +996,7 @@
       setup: function (app, st) {
         return app.open('frbs', { x: 'z', y: 'dm', filter: function (c, i) { return c.z[i] > 0; } }).then(function () {
           app.chart.setView({ x0: 0, x1: 1.1, y0: 0, y1: 2000 });
-          app.sky.goTo(0, 0, 200, { mode: 'allsky', frame: 'gal', band: 'radio' });
+          app.sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal', band: 'radio' });
           st.model = OBS.instruments.model(app.chart, app.tools, {
             label: 'Milky Way + host + intergalactic gas', err: function () { return 150; },
             f: function (z, p) { return p.a + A.dmCosmic(z, p.Ob); },
@@ -1018,19 +1027,21 @@
       choices: [['sum', 'exactly the sum of the two'], ['less', 'a few percent less: the rest leaves as gravitational waves'], ['more', 'more than the sum']],
       answer: 'less',
       setup: function (app, st) {
-        return app.open('gw', { x: 'mtot', y: 'mfinal', colourBy: 'kind' }).then(function () {
-          app.sky.goTo(0, 0, 200, { mode: 'allsky', frame: 'gal', band: 'visible', photo: true });
+        // the mass that disappears, against the total: a 4% effect is a clear slope here, invisible on final-against-total
+        return app.open('gw', { x: 'mtot', y: 'mrad', colourBy: 'kind' }).then(function () {
+          app.chart.setView({ y0: -1, y1: 14 });
+          app.sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal', band: 'visible', photo: true });
           var c = app.chart.ds.table.cols;
           st.model = OBS.instruments.model(app.chart, app.tools, {
-            label: 'final = (1 − ε) × total', err: function (i) { return 0.03 * c.mfinal[i]; },
-            f: function (m, p) { return (1 - p.eps) * m; },
-            extra: [{ id: 'sum', label: 'no loss', colour: OBS.colours()['ink-3'], f: function (m) { return m; } }],
+            label: 'radiated = ε × total', err: function (i) { return 0.03 * c.mfinal[i]; },
+            f: function (m, p) { return p.eps * m; },
+            extra: [{ id: 'sum', label: 'no loss', colour: OBS.colours()['ink-3'], f: function () { return 0; } }],
             params: [{ id: 'eps', label: 'Fraction radiated ε', min: 0, max: 0.15, value: 0, step: 0.001, fmt: function (x) { return (100 * x).toFixed(1) + '%'; } }],
             describe: function (p) { return 'ε = ' + fix(100 * p.eps, 1) + '%: GW150914 (34.6 + 30.0 M☉) would radiate ' + fix(p.eps * 64.6, 1) + ' M☉, ' + fmt(p.eps * 64.6 * A.C.Msun * A.C.c * A.C.c, 2) + ' J.'; }
           });
         });
       },
-      task: 'Each dot is one merger: final mass against the total before. The line starts at “no loss”. Raise ε until the line runs through the dots.',
+      task: 'Each dot is one merger: the mass that disappeared (m₁ + m₂ − M_final) against the total mass before. The line starts at “no loss”, zero. Raise ε until the line runs through the dots. Heavier mergers lose more solar masses, but the same fraction.',
       progress: function (app, st) { var p = st.model.p; return { done: p.eps > 0.03 && p.eps < 0.055 && p._fit.red < 1, text: 'ε = ' + (100 * p.eps).toFixed(1) + '%, χ²/N = ' + OBS.fmt(p._fit.red, 3) }; },
       result: function (app, st) {
         var e = st.model.p.eps, E = e * 64.6 * A.C.Msun * A.C.c * A.C.c;
@@ -1059,10 +1070,22 @@
             return app.open('zspec', { sub: k }).then(function () {
               app.chart.setView({ x0: 380, x1: 920, y0: 0, y1: k === 'sf' ? 2.6 : 1.2 });
               app.tools.innerHTML = ''; row = OBS.ui.row(app.tools);
-              [['sf', 'Star-forming galaxy'], ['ell', 'Elliptical'], ['lrg', 'Distant red galaxy']].forEach(function (b) { OBS.ui.button(row, b[1] + (st.z[b[0]] !== undefined ? ' ✓' : ''), function () { go(b[0]); }, b[0] === k ? 'small primary' : 'small ghost'); });
+              var names = { sf: 'Star-forming galaxy', ell: 'Elliptical', lrg: 'Distant red galaxy' }, btn = {};
+              Object.keys(names).forEach(function (j) { btn[j] = OBS.ui.button(row, names[j] + (st.z[j] !== undefined ? ' ✓' : ''), function () { go(j); }, j === k ? 'small primary' : 'small ghost'); });
               var m = st.meta[k]; app.sky.markers = [{ ra: m.ra, dec: m.dec, label: m.name.split(' (')[0] }];
-              st.fit = OBS.instruments.zfit(app.chart, app.tools, { lines: k === 'sf' ? OBS.LINES.emission : OBS.LINES.absorption, main: k === 'sf' ? 3 : 0, z: 0, min: 0, max: 0.6,
-                onchange: function (s) { var tol = k === 'lrg' ? 0.004 : 0.002; if (Math.abs(s.z - m.z) < tol) st.z[k] = s.z; } });
+              st.fit = OBS.instruments.zfit(app.chart, app.tools, { lines: k === 'sf' ? OBS.LINES.emission : OBS.LINES.absorption, main: k === 'sf' ? 3 : 0, z: 0, min: 0, max: 0.6 });
+              // a measurement is what you record when the lines sit on the features, not a value the slider swept past
+              var rec = OBS.ui.row(app.tools), msg = OBS.ui.readout(app.tools);
+              OBS.ui.button(rec, 'Record this redshift', function () {
+                var tol = k === 'lrg' ? 0.004 : 0.002, z = st.fit.z;
+                if (Math.abs(z - m.z) < tol) {
+                  st.z[k] = z; btn[k].innerHTML = names[k] + ' ✓';
+                  msg.innerHTML = 'Recorded <span class="num">z = ' + z.toFixed(4) + '</span> for the ' + names[k].toLowerCase() + '.' + (Object.keys(st.z).length < 3 ? ' Now the next galaxy.' : '');
+                } else {
+                  delete st.z[k]; btn[k].innerHTML = names[k];
+                  msg.innerHTML = 'Not yet: the ' + (k === 'sf' ? 'dashed lines are not on the emission peaks. Find the tallest peak (Hα with [N II] beside it) and bring the Hα line onto it; the others should then fall into place.' : 'dotted lines are not on the dips. Find the 4000 Å step first, where the spectrum drops to the blue, and put Ca H and K just blueward of it; Mg and Na should then sit in dips too.');
+                }
+              }, 'small primary');
             });
           }
           st.go = go;
@@ -1070,7 +1093,7 @@
           return go('sf');
         });
       },
-      task: 'For each galaxy, slide the redshift until the lines match: emission lines (dashed red) for the star-forming galaxy; absorption lines (dotted orange: Ca K and H, Mg, Na) for the elliptical and the distant red galaxy. Switch galaxies with the buttons.',
+      task: 'For each galaxy, slide the redshift until the lines match, then press “Record this redshift”: emission lines (dashed red) for the star-forming galaxy; absorption lines (dotted orange: Ca K and H, Mg, Na) for the elliptical and the distant red galaxy. Switch galaxies with the buttons.',
       progress: function (app, st) { var n = Object.keys(st.z).length; return { done: n >= 3, text: n + ' of 3 galaxies measured' + (st.fit ? '; now z = ' + st.fit.z.toFixed(4) : '') }; },
       result: function (app, st) {
         return ['sf', 'ell', 'lrg'].map(function (k) { var z = st.z[k], m = st.meta[k]; return m.name.split(' (')[0] + ': z = ' + fix(z, 4) + ' (SDSS ' + fix(m.z, 4) + ')' + (z < 0.15 ? ', d ≈ cz/H₀ = ' + fix(z * 299792.458 / 70, 0) + ' Mpc' : ', light ' + fix(A.lookback(z, 70, 0.31, 0.69), 1) + ' Gyr old'); }).join('; ') + '.';
@@ -1095,16 +1118,18 @@
           var out = OBS.ui.readout(app.tools), ds = app.chart.ds, cls = OBS.column(ds, 'cls'), x = OBS.column(ds, 'n2ha'), y = OBS.column(ds, 'o3hb');
           function score() {
             var L = app.chart.get('cut'), ok = 0, n = 0, agn = 0;
+            if (!L) return;
+            function side(px, py) { return (L.x2 - L.x1) * (py - L.y1) - (L.y2 - L.y1) * (px - L.x1) > 0; }
+            var agnSide = side(0.3, 0.8);     // the AGN side is the one that holds the upper right of the diagram, whichever way the line was drawn
             for (var i = 0; i < x.length; i++) {
               if (cls[i] !== 'star-forming' && cls[i] !== 'AGN') continue;
-              var above = (L.x2 - L.x1) * (y[i] - L.y1) - (L.y2 - L.y1) * (x[i] - L.x1) > 0, isAgn = cls[i] === 'AGN';
-              if (L.x2 < L.x1) above = !above;
-              n++; if (above === isAgn) ok++; if (isAgn) agn++;
+              var isAgn = cls[i] === 'AGN';
+              n++; if ((side(x[i], y[i]) === agnSide) === isAgn) ok++; if (isAgn) agn++;
             }
             st.agree = ok / n;
-            out.innerHTML = 'Your line agrees with the MPA–JHU classification for <span class="num">' + Math.round(100 * st.agree) + '%</span> of the star-forming and AGN galaxies (above or right of your line = AGN). Composites are left out.';
+            out.innerHTML = 'Your line agrees with the MPA–JHU classification for <span class="num">' + Math.round(100 * st.agree) + '%</span> of the star-forming and AGN galaxies (the side of your line toward the upper right = AGN). Composites are left out.';
           }
-          OBS.on('overlay', function (e) { if (e.chart === app.chart && app.chart.ds === ds) score(); });
+          OBS.onMission('overlay', function (e) { if (e.chart === app.chart && app.chart.ds === ds) score(); });
           app.tools.appendChild(out); score(); st.score = score;
         });
       },
@@ -1131,14 +1156,21 @@
       setup: function (app, st) {
         app.instrument('A Markov chain on the supernova χ² map');
         return OBS.open('supernovae').then(function (ds) {
-          app.sky.goTo(0, 0, 200, { mode: 'allsky', frame: 'gal', band: 'cmb' });
+          app.sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal', band: 'cmb' });
           st.mc = OBS.instruments.mcmc(app, app.tools, ds.table.cols);
         });
       },
-      task: 'Press “Run the chain”. Watch it wander into the gold region. Tune the step size until about a quarter to a half of the steps are accepted, set a burn-in that drops the walk in from the start, and let it run to a few thousand steps.',
+      task: 'Press “Run the chain” and watch where it goes: it starts far away, in a slowing universe. The step size it starts with is too small. Tune it until a quarter to a half of the steps are accepted (press “Start again” after a change), then set the burn-in so that it drops the walk in from the start (the grey part of the trace, up to the dotted line where the chain reaches the gold region), and let it run to a few thousand steps.',
       progress: function (app, st) {
-        var m = st.mc, s = m.stats, acc = m.tries ? m.acc / m.tries : 0;
-        return { done: !!(s && s.n >= 3000 && acc > 0.15 && acc < 0.6 && Math.abs(s.OL[0] - m.best.OL) < 0.12), text: (s ? s.n + ' samples after burn-in' : 'Run the chain') + ', acceptance ' + Math.round(100 * acc) + '%' };
+        var m = st.mc, s = m.stats, acc = m.tries ? m.acc / m.tries : 0, hint = '';
+        if (!m.tries) hint = 'Run the chain';
+        else if (acc > 0.6) hint = 'steps too small: the chain creeps and its samples repeat each other';
+        else if (acc < 0.15) hint = 'steps too large: almost every step is rejected';
+        else if (m.inAt === null) hint = 'still walking in toward the gold region';
+        else if (m.burn < m.inAt) hint = 'raise the burn-in to at least ' + m.inAt + ': before that the chain was still walking in';
+        else if (!s || s.n < 3000) hint = 'let it run: ' + (s ? s.n : 0) + ' of 3000 samples after burn-in';
+        var done = !!(s && s.n >= 3000 && acc > 0.15 && acc < 0.6 && m.inAt !== null && m.burn >= m.inAt && Math.abs(s.OL[0] - m.best.OL) < 0.12);
+        return { done: done, text: 'Acceptance ' + Math.round(100 * acc) + '%' + (s ? ', ' + s.n + ' samples after burn-in' : '') + (done ? '' : '. ' + hint.charAt(0).toUpperCase() + hint.slice(1) + '.') };
       },
       result: function (app, st) {
         var s = st.mc.stats;

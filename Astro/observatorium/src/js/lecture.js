@@ -26,7 +26,7 @@
       '<p class="course">In your course: ' + esc(m.course) + (m.hw ? ' · ' + esc(m.hw) : '') + '</p>' +
       (miss.length && !OBS.state.sandbox ? '<p class="warn">This mission uses what you learn in ' + miss.map(function (k) { var b = OBS.MISSIONS.filter(function (x) { return x.id === OBS.CONCEPTS[k].by; })[0]; return esc(OBS.logbook.number(b) + ' ' + b.title); }).join(' and ') + '. Do that first, or turn on teacher mode in the Notebook.</p>' : '');
   }
-  LEC.blocked = function (m) { return !OBS.unlocked(m.needs); };
+  LEC.blocked = function (m) { return !OBS.learned(m.needs); };
 
   LEC.open = function (m, k) {
     LEC.m = m; LEC.k = k || 0;
@@ -112,7 +112,7 @@
     var eqs = b.eq ? (Array.isArray(b.eq) ? b.eq : [b.eq]) : [];
     el.innerHTML = '<header class="lec-head"><p class="eyebrow">Lecture · Mission ' + OBS.logbook.number(m) + ' · ' + esc(m.title) + '</p><h3>' + esc(b.h) + '</h3></header>' +
       (b.summary ? summary(m) : '<div class="lec-body prose">' + b.html + '</div>') +
-      eqs.map(function (e) { return '<div class="lec-eq">\\[' + e + '\\]</div>'; }).join('') +
+      eqs.map(function (e) { return '<div class="lec-eq">\\[' + esc(e) + '\\]</div>'; }).join('') +
       figures(b) +
       (b.ex ? '<div class="lec-ex" id="lec-ex"></div>' : '') +
       (b.example ? '<div class="lec-example"><h4>Worked example</h4>' + b.example + '</div>' : '') +

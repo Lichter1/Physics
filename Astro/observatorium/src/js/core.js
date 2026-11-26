@@ -42,6 +42,13 @@
     return function () { handlers[ev] = (handlers[ev] || []).filter(function (h) { return h !== fn; }); };
   };
   OBS.emit = function (ev, data) { (handlers[ev] || []).slice().forEach(function (fn) { fn(data); }); };
+  // Things an exercise starts (observers, timers, listeners, click handlers) register a cleanup here; leaving the
+  // exercise, starting another mission or resetting the view runs them all, so nothing leaks into the next mission.
+  var cleanups = [];
+  OBS.cleanup = function (fn) { if (typeof fn === 'function') cleanups.push(fn); return fn; };
+  OBS.runCleanups = function () { var c = cleanups; cleanups = []; c.forEach(function (f) { try { f(); } catch (e) { /* already gone */ } }); };
+  /** An event listener that lives only as long as the current exercise. */
+  OBS.onMission = function (ev, fn) { return OBS.cleanup(OBS.on(ev, fn)); };
 
   // ---------------------------------------------------------------- CSV
   function splitLine(line) {

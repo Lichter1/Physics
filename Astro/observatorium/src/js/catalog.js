@@ -17,8 +17,14 @@
     transit: { label: 'Transit depth gives size', rel: 'ΔF/F = (R_p / R★)²', by: 'transit' },
     cosmo: { label: 'Redshift gives distance and age', rel: 'D_L = (1+z) (c/H₀) ∫ dz/E(z),  E² = Ωm(1+z)³ + ΩΛ  (ΩΛ ≈ 0.7)', by: 'accel' }
   };
-  var S = OBS.state = OBS.state || { concepts: {}, sandbox: false };
+  var S = OBS.state = OBS.state || { concepts: {}, sandbox: false, lend: {} };
+  // A mission lends you the ideas it teaches while it is open (S.lend), so its own exercise can use them.
   OBS.unlocked = function (needs) {
+    if (!needs || !needs.length || S.sandbox) return true;
+    return needs.every(function (k) { return S.concepts[k] || (S.lend && S.lend[k]); });
+  };
+  /** Whether the ideas a mission needs were learned in earlier missions (lent ones do not count). */
+  OBS.learned = function (needs) {
     if (!needs || !needs.length || S.sandbox) return true;
     return needs.every(function (k) { return S.concepts[k]; });
   };

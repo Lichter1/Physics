@@ -416,7 +416,7 @@
         { h: 'Measuring rotation', sky: { ra: 10.685, dec: 41.269, fov: 2.496, photo: true, markers: [mk(10.685, 41.269, 'M31')] }, eq: 'v = \\frac{v_\\text{obs} - v_\\text{sys}}{\\sin i}',
           html: '<p>Neutral hydrogen emits at 21 cm (a hyperfine transition, Lecture 3) and extends far beyond a galaxy’s visible stars. Its Doppler shift across the disk, corrected for the tilt \\(i\\), gives the rotation speed. Vera Rubin and Kent Ford measured Andromeda’s rotation from 1970 using optical emission lines.</p>' },
         { h: 'Flat curves', ex: { id: 'rotation' },
-          html: '<p>If the mass were where the light is, speeds would fall beyond the stars. Instead they stay flat. A flat curve means \\(M(<r) \\propto r\\): the enclosed mass keeps growing where there is almost no light. The usual explanation is a halo of <b>dark matter</b> around every galaxy.</p>' },
+          html: '<p>If the mass were where the light is, speeds would fall beyond the stars. Instead they stay flat. A flat curve means \\(M(\\lt r) \\propto r\\): the enclosed mass keeps growing where there is almost no light. The usual explanation is a halo of <b>dark matter</b> around every galaxy.</p>' },
         { h: 'Or different gravity?', eq: 'g = \\sqrt{g_N a_0}\\ \\ (g_N \\ll a_0) \\;\\Rightarrow\\; v^4 = G M a_0,\\qquad a_0 \\approx 1.2\\times10^{-10}\\ \\text{m s}^{-2}',
           html: '<p>Milgrom’s MOND (1983) changes the force law instead: below a tiny acceleration \\(a_0\\) gravity weakens more slowly than \\(1/r^2\\). Then speeds stay flat, with \\(v^4 = GMa_0\\), and no halo is needed (HW5). You will test both on NGC 3198.</p>' },
         { h: 'What could dark matter be?',

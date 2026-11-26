@@ -59,9 +59,9 @@ const SOLVE = {
   },
   frb: (OBS, st) => { const s = st.model.sliders; s.Ob.set(0.048); s.a.set(250); },
   gw: (OBS, st) => st.model.sliders.eps.set(0.042),
-  redshift: async (OBS, st) => { for (const k of ['sf', 'ell', 'lrg']) { await st.go(k); st.fit.set(st.meta[k].z); } },
+  redshift: async (OBS, st) => { for (const k of ['sf', 'ell', 'lrg']) { await st.go(k); st.fit.set(st.meta[k].z); [...document.querySelectorAll('#tools button')].find((b) => b.textContent === 'Record this redshift').click(); } },
   bpt: (OBS, st) => { Object.assign(OBS.app.chart.get('cut'), { x1: -0.22, y1: 1.2, x2: -0.22, y2: -1.2 }); st.score(); },
-  chain: (OBS, st) => { const m = st.mc; m.sStep.set(0.05); m.sBurn.set(300); for (let k = 0; k < 6000; k++) m.stepOnce(); m.report(); }
+  chain: (OBS, st) => { const m = st.mc; m.sStep.set(0.05); m.reset(); for (let k = 0; k < 6000; k++) m.stepOnce(); m.sBurn.set(Math.ceil(((m.inAt || 0) + 100) / 50) * 50); m.report(); }
 };
 
 (async () => {
@@ -85,12 +85,23 @@ const SOLVE = {
     await p.evaluate((id) => document.querySelector('input[name="pred"][value="' + OBS.MISSIONS.find((m) => m.id === id).answer + '"]').click(), id);
     await p.click('#m-next');
     await p.waitForTimeout(1800);
+    await p.evaluate(() => {
+      window.__locked = [];
+      const ch = OBS.app.chart, set = ch.setAxes;
+      ch.setAxes = function (x, y) {
+        [['across', x], ['up', y]].forEach(([id, v]) => { if (!v || v === '#') return; const q = this.ds.vars.find((w) => w.id === v); if (!q || !OBS.unlocked(q.needs)) window.__locked.push(id + ' = ' + v + ' in ' + this.ds.id); });
+        return set.call(this, x, y);
+      };
+      window.__restore = () => { ch.setAxes = set; };
+    });
     await p.evaluate('(' + SOLVE[id].toString() + ')(OBS, OBS.logbook.current().st)');
+    const locked = await p.evaluate(() => { window.__restore(); return window.__locked; });
+    if (locked.length) errs.push('the solution needs a locked menu option: ' + locked.join(', '));
     await p.waitForTimeout(1500);
     const status = (await p.textContent('#m-status')).trim();
     const done = status.startsWith('done');
     if (done) await p.click('#m-next');
-    await p.waitForTimeout(500);
+    await p.waitForTimeout(900);
     const verdict = done ? (await p.textContent('.verdict')).trim() : '';
     const result = done ? (await p.textContent('.result')).trim() : '';
     if (shots) await p.screenshot({ path: `${shots}/done-${id}.png` });

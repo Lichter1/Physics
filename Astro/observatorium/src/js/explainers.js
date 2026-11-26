@@ -460,7 +460,7 @@
       line(c, disk, C.c4, 2, [5, 4]); line(c, hal, C.c5, 1.5, [2, 3]); line(c, tot, C.accent, 2.5);
       for (r = 4; r <= 38; r += 3) disc(c, pb.x(r), pb.y(150 + 4 * Math.sin(r)), 3, C.ink);
       text(c, 'stars + gas', pb.x(30), pb.y(70) + 14, C.c4); text(c, 'measured (typical)', pb.x(25), pb.y(150) - 10, C.ink);
-      s.out.innerHTML = 'V² = G M(<r) / r. The visible matter is concentrated, so its curve falls like 1/√r outside the disk. Flat measured speeds mean M(<r) ∝ r: add a halo (dotted) to make the total (gold) match. Halo speed far out: <b>' + Math.round(st.halo) + ' km/s</b>.';
+      s.out.innerHTML = 'V² = G M(&lt;r) / r. The visible matter is concentrated, so its curve falls like 1/√r outside the disk. Flat measured speeds mean M(&lt;r) ∝ r: add a halo (dotted) to make the total (gold) match. Halo speed far out: <b>' + Math.round(st.halo) + ' km/s</b>.';
     }
     UI.slider(s.ctl, { label: 'Dark halo strength', min: 0, max: 200, value: st.halo, unit: 'km/s', fmt: function (x) { return Math.round(x); }, oninput: function (x) { st.halo = x; draw(); } });
     draw(); return { stop: function () { } };

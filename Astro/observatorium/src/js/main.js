@@ -34,7 +34,7 @@
         app.tools.innerHTML = '';
         return { chart: chart, tools: app.tools };
       },
-      reset: function () { app.tools.innerHTML = ''; app.note(''); sky.markers = []; chart.fold = null; chart.equal = false; app.imageView(false); sky.draw(); },
+      reset: function () { OBS.runCleanups(); var iv = $('imgview'); iv.onclick = iv.onpointerdown = iv.onpointermove = iv.onpointerup = null; app.tools.innerHTML = ''; app.note(''); sky.markers = []; chart.fold = null; chart.equal = false; app.imageView(false); sky.draw(); },
       /** Show (or hide) the instrument's own canvas in place of the chart, for images and parameter maps. */
       imageView: function (on) { var cv = $('imgview'); cv.hidden = !on; $('chart').style.visibility = on ? 'hidden' : ''; $('legend').hidden = !!on; return cv; },
       lectureMode: function () { lensMode('lecture'); },
