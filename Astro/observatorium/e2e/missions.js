@@ -64,6 +64,7 @@ const SOLVE = {
   },
   frb: (OBS, st) => { const s = st.model.sliders; s.Ob.set(0.048); s.a.set(250); },
   gw: (OBS, st) => st.model.sliders.eps.set(0.042),
+  grbtwo: (OBS) => { OBS.app.chart.get('cut').value = 2; },
   redshift: async (OBS, st) => { for (const k of ['sf', 'ell', 'lrg']) { await st.go(k); st.fit.set(st.meta[k].z); [...document.querySelectorAll('#tools button')].find((b) => b.textContent === 'Record this redshift').click(); } },
   bpt: (OBS, st) => { Object.assign(OBS.app.chart.get('cut'), { x1: -0.22, y1: 1.2, x2: -0.22, y2: -1.2 }); st.score(); },
   chain: (OBS, st) => { const m = st.mc; m.sStep.set(0.05); m.reset(); for (let k = 0; k < 6000; k++) m.stepOnce(); m.sBurn.set(Math.ceil(((m.inAt || 0) + 100) / 50) * 50); m.report(); }

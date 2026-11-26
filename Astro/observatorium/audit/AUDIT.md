@@ -36,6 +36,54 @@ which goes around locked menus, so it could not see most of what is below.
 
 The two blockers are the same bug, found by two reviewers. A few other bugs also appear twice.
 
+## Status after the fixes (26 November 2026)
+
+All five phases of the fix plan below have been carried out, in five commits on this branch. The unit tests and both
+browser tests pass, and the browser test now fails if a solution needs an axis the student would find locked.
+- **Phase 1:**
+  - The 1.3 blocker: a mission lends the concepts it teaches while it is open. A unit test checks every task, setup
+    and lecture chart against the course order.
+  - Instruments clean up after themselves.
+  - Every answer check in the table below was fixed.
+  - The Galactic centring, the escaping, the NaN box selection and the photo reload loop are fixed.
+- **Phase 2:** the dataset menu and the ladder are fixed during exercises, and so are the axes unless the task asks for
+  them.
+  - The lens: log/lin toggles, a smarter autoscale, the hover readout no longer resizes the chart, and locked default
+    axes fall back to open ones.
+  - Mission 1.3 is rebuilt on the naked-eye sky.
+  - The data: white-dwarf temperatures, planet mass provenance, the OGLE credit.
+  - Saving: the open mission comes back after a reload; the quiz explains its answers.
+  - Most minor and cosmetic bugs in every chapter.
+- **Phase 3:** phones get "Tap to use" canvases that let the page scroll, pinch zoom on the sky and the lens, and the
+  exercise status under the lens. The laptop header is one row.
+- **Phase 4:** 34 new lecture steps and 20 practice problems for the slide gaps listed per chapter, plus consistent
+  CMB angular-scale numbers.
+- **Phase 5:**
+  - New explainers: move every star to 10 pc (1.3), a microlensing builder (3.3), a redshifting blackbody (6.2), a
+    cost function with a false valley (9.3), a pulsar's life on the P–Ṗ chart (2.4).
+  - The windows explainer gains an altitude slider, and the fringes now change with the baseline.
+  - A new mission, 8.4 *Two kinds of burst*.
+  - 9.3 gains a trace plot with the burn-in, and 2.2 a periodogram.
+  - Ten new lecture pictures, with their credits.
+
+**Still open:**
+- **Interactive views:**
+  - the Ωm–ΩΛ χ² map inside 6.1;
+  - the Moon and twilight stages in the night planner;
+  - a second step for 6.4 (reading the forest);
+  - de-dispersing an FRB;
+  - a top-down solar system and a "powers of ten" ladder.
+- **Missions:**
+  - IMF, radial velocity and planet densities (chapter 3);
+  - MACHO counts and Sgr A* (chapter 4);
+  - a Faber–Jackson mission. The shipped SDSS sample gives L ∝ σ^1.8–2.3, not 4, so it needs better data first.
+- **Cosmetic:** some overlapping labels in lecture charts; IRAS and ROSAT coverage gaps not masked on the wavelength
+  maps; an orange block on the M31 close-up.
+- **Small behaviours:** shift-drag replaces rather than adds on the sky (`shell-B11`); the ladder does not follow
+  lecture sky cues (`ch5-B12`); 8.1 quotes one error for two statistics (`ch8-B10`); a few GW mergers have a negative
+  radiated mass from their posteriors (`ch8-B13`).
+- **Pictures:** the SS Leporis picture suggested for 1.6 turned out to be the wrong ESO image and was left out.
+
 ## The short version
 
 - **One mission cannot be finished, and it blocks four more.** Mission 1.3 *Correct for distance* says "Switch the

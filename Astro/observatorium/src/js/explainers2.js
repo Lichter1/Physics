@@ -214,15 +214,21 @@
 
   // ------------------------------------------------------------------------------------------ 8 two-element interferometer
   X.interferometer = function (host) {
-    var s = stage(host, 0.5), st = { B: 100, lam: 0.21 };
+    var s = stage(host, 0.5), st = { B: 1, lam: 0.21 }, D = 25;      // dishes 25 m across
     function draw() {
-      s.fit(); var c = s.ctx, C = s.C, th = st.lam / (st.B * 1000), thArc = th * 206265;   // B in km, lambda in m
-      var b = box(s, 50, 14, s.W - 70, s.H - 52, [-3, 3], [0, 1.05], { xl: 'source position, in units of λ/B', yl: 'correlated signal' });
-      var pts = []; for (var x = -3; x <= 3.0001; x += 0.01) pts.push([b.x(x), b.y(0.5 + 0.5 * Math.cos(2 * Math.PI * x))]);
-      line(c, pts, C.c1, 2.2);
-      var res = thArc > 60 ? fx(thArc / 60, 1) + '′' : thArc > 1 ? fx(thArc, 2) + '″' : fx(thArc * 1e3, 2) + ' mas';
-      if (thArc < 1e-3) res = fx(thArc * 1e6, 1) + ' μas';
-      s.out.innerHTML = 'Two dishes ' + fm(st.B, 3) + ' km apart, observing at λ = ' + (st.lam < 0.01 ? fx(st.lam * 1000, 1) + ' mm' : fx(st.lam * 100, 0) + ' cm') + ': the fringes are λ/B = <b>' + res + '</b> apart, the resolution of a single dish ' + fm(st.B, 3) + ' km across. A source moving by one fringe makes the signals go in and out of step once.';
+      s.fit(); var c = s.ctx, C = s.C, th = st.lam / (st.B * 1000), thArc = th * 206265, beam = 1.03 * st.lam / D * 206265;   // B in km
+      // on a fixed angular range set by one dish's beam: a longer baseline packs more, finer fringes into it
+      var half = 1.5 * beam, b = box(s, 50, 14, s.W - 70, s.H - 56, [-half, half], [0, 1.05], { xl: 'position on the sky [arcsec]', yl: 'signal' });
+      [-1, -0.5, 0, 0.5, 1].forEach(function (u) { var v = u * half; text(c, fm(v, 2), b.x(v), b.y(0) + 13, C['ink-3'], 'center'); });
+      var env = []; for (var x = -half; x <= half * 1.0001; x += half / 200) env.push([b.x(x), b.y(Math.exp(-2.77 * (x / beam) * (x / beam)))]);
+      line(c, env, C['ink-3'], 1.4, [4, 3]);
+      var nfr = 2 * half / thArc;
+      if (nfr < 400) {
+        var pts = [], dx = Math.min(half / 400, thArc / 24); for (x = -half; x <= half * 1.0001; x += dx) pts.push([b.x(x), b.y(Math.exp(-2.77 * (x / beam) * (x / beam)) * (0.5 + 0.5 * Math.cos(2 * Math.PI * x / thArc)))]);
+        line(c, pts, C.c1, 1.6);
+      } else { c.fillStyle = C.dark ? 'rgba(120,170,255,0.25)' : 'rgba(40,90,200,0.2)'; c.beginPath(); c.moveTo(env[0][0], b.y(0)); env.forEach(function (p) { c.lineTo(p[0], p[1]); }); c.lineTo(env[env.length - 1][0], b.y(0)); c.fill(); text(c, fm(nfr, 2) + ' fringes across the beam: too fine to draw', b.x(-half) + 8, b.y(0.95), C['ink-2']); }
+      var res = thArc > 60 ? fx(thArc / 60, 1) + '′' : thArc > 1 ? fx(thArc, 2) + '″' : thArc > 1e-3 ? fx(thArc * 1e3, 2) + ' mas' : fx(thArc * 1e6, 1) + ' μas';
+      s.out.innerHTML = 'One 25 m dish sees a patch ' + fm(beam, 2) + '″ across (dashed). Two of them ' + fm(st.B, 3) + ' km apart, at λ = ' + (st.lam < 0.01 ? fx(st.lam * 1000, 1) + ' mm' : fx(st.lam * 100, 0) + ' cm') + ', lay fringes λ/B = <b>' + res + '</b> apart across it: the resolution of a single dish ' + fm(st.B, 3) + ' km wide. The dish size sets the field of view; the baseline sets the detail.';
     }
     UI.slider(s.ctl, { label: 'Baseline B', min: 0.03, max: 12000, value: st.B, log: true, fmt: function (x) { return fm(x, 2) + ' km'; }, oninput: function (x) { st.B = x; draw(); } });
     UI.slider(s.ctl, { label: 'Wavelength', min: 0.0013, max: 2, value: st.lam, log: true, fmt: function (x) { return x < 0.01 ? (x * 1000).toFixed(1) + ' mm' : (x * 100).toFixed(0) + ' cm'; }, oninput: function (x) { st.lam = x; draw(); } });
@@ -299,18 +305,39 @@
 
   // ------------------------------------------------------------------------------------------ 8 the atmosphere's windows
   X.windows = function (host) {
-    var s = stage(host, 0.42);
-    // approximate fraction of the atmosphere a ground telescope looks through that absorbs, by log10 wavelength (m)
-    var OP = [[-12, 1], [-8, 1], [-7.4, 1], [-6.6, 0.0], [-6.2, 0.0], [-5.9, 0.3], [-5.5, 0.6], [-5.0, 0.4], [-4.7, 1], [-3.6, 1], [-3.2, 0.5], [-3.0, 0.3], [-2.0, 0.0], [0, 0.0], [1.2, 0.0], [1.5, 1], [3, 1]];
-    var BANDS = [['γ', -12, -11], ['X', -11, -8], ['UV', -8, -6.4], ['visible', -6.4, -6.15], ['infrared', -6.15, -3], ['radio', -3, 3]];
+    var s = stage(host, 0.46), SITES = [['sea level', 0], ['Mitzpe Ramon (0.9 km)', 0.9], ['Mauna Kea (4.2 km)', 4.2], ['SOFIA aircraft (12 km)', 12], ['balloon (40 km)', 40], ['orbit (500 km)', 500]], st = { k: 0 };
+    // opacity at sea level by log10 wavelength (m): near-infrared windows (J, H, K, L, M) between water bands
+    var OP = [[-12, 1], [-7.4, 1], [-6.62, 1], [-6.55, 0.05], [-6.2, 0.0], [-6.1, 0.15], [-6.04, 0.0], [-5.98, 0.6], [-5.8, 0.05], [-5.72, 0.6], [-5.66, 0.1], [-5.58, 0.9],
+      [-5.45, 0.15], [-5.3, 0.9], [-5.0, 0.2], [-4.9, 0.9], [-4.7, 1], [-3.6, 1], [-3.3, 0.6], [-3.1, 0.4], [-2.7, 0.15], [-2.0, 0.0], [1.2, 0.0], [1.5, 1], [3, 1]];
+    var BANDS = [['γ', -12, -11], ['X', -11, -8], ['UV', -8, -6.4], ['vis', -6.4, -6.15], ['infrared', -6.15, -3], ['radio', -3, 3]];
+    function op0(x) { var k = 0; while (k < OP.length - 2 && OP[k + 1][0] < x) k++; var a = OP[k], q = OP[k + 1]; return a[1] + (q[1] - a[1]) * (x - a[0]) / (q[0] - a[0]); }
+    // what still absorbs above a height h (km): water vapour has a 2 km scale height, the air 7 km; ozone (UV) sits at
+    // 20-30 km; X- and gamma rays are stopped by the whole column; long radio waves by the ionosphere (100-300 km)
+    function blocked(x, h) {
+      if (x > 1.45) return h < 300 ? op0(x) : 0;
+      var o = op0(x), tau;
+      if (x < -8) tau = 1e6 * Math.exp(-h / 7);
+      else if (x < -6.55) tau = 3e3 * Math.exp(-Math.max(0, h - 25) / 4) * (h < 25 ? 1 : 1);
+      else if (x < -3.0 && x > -6.15) tau = 30 * o * Math.exp(-h / 2);
+      else tau = -Math.log(Math.max(1e-3, 1 - o)) * Math.exp(-h / 7);
+      return 1 - Math.exp(-tau);
+    }
     function draw() {
-      s.fit(); var c = s.ctx, C = s.C, b = box(s, 30, 30, s.W - 50, s.H - 70, [-12, 3], [0, 1.05], { xl: 'wavelength (log₁₀ metres)' });
-      var pts = []; for (var x = -12; x <= 3; x += 0.05) { var k = 0; while (k < OP.length - 2 && OP[k + 1][0] < x) k++; var a = OP[k], q = OP[k + 1], y = a[1] + (q[1] - a[1]) * (x - a[0]) / (q[0] - a[0]); pts.push([b.x(x), b.y(y)]); }
+      s.fit(); var c = s.ctx, C = s.C, h = SITES[st.k][1], b = box(s, 30, 30, s.W - 50, s.H - 74, [-12, 3], [0, 1.05], { xl: 'wavelength (log₁₀ metres)' });
+      var pts = []; for (var x = -12; x <= 3; x += 0.02) pts.push([b.x(x), b.y(blocked(x, h))]);
       c.fillStyle = C.dark ? 'rgba(160,170,190,0.35)' : 'rgba(90,100,120,0.3)'; c.beginPath(); c.moveTo(b.x(-12), b.y(0)); pts.forEach(function (p) { c.lineTo(p[0], p[1]); }); c.lineTo(b.x(3), b.y(0)); c.fill();
       BANDS.forEach(function (bd) { text(c, bd[0], b.x((bd[1] + bd[2]) / 2), 20, C['ink-2'], 'center'); });
-      text(c, 'grey: blocked by the atmosphere', b.x(-11.8), b.y(0.55), C.ink);
-      s.out.innerHTML = 'Only visible light, a few near-infrared bands and radio waves (about 1 mm to 30 m) reach the ground. Gamma rays, X-rays, most ultraviolet and far infrared need balloons, rockets and satellites; long radio waves bounce off the ionosphere.';
+      [-12, -9, -6, -3, 0, 3].forEach(function (v) { text(c, String(v), b.x(v), b.y(0) + 13, C['ink-3'], 'center'); });
+      text(c, 'grey: absorbed above ' + SITES[st.k][0], b.x(-11.8), b.y(0.55), C.ink);
+      var msg = ['From sea level only visible light, a few near-infrared windows and radio waves (about 1 mm to 30 m) get through.',
+        'Mitzpe Ramon, at 0.9 km in a dry desert, is above a third of the water vapour: the near-infrared windows are a little cleaner.',
+        'On Mauna Kea or in the Atacama, above most of the water, the near- and mid-infrared windows open and the submillimetre (ALMA) becomes possible.',
+        'In an aircraft at 12 km, 99% of the water vapour is below: the far infrared opens (SOFIA, 2010–2022).',
+        'A balloon at 40 km sees the whole infrared and the longer ultraviolet, above the ozone layer; X-rays still need more.',
+        'In orbit everything reaches you, from gamma rays to the long radio waves the ionosphere reflects.'][st.k];
+      s.out.innerHTML = msg;
     }
+    UI.slider(s.ctl, { label: 'Telescope altitude', min: 0, max: SITES.length - 1, value: 0, step: 1, fmt: function (k) { return SITES[Math.round(k)][0]; }, oninput: function (k) { st.k = Math.round(k); draw(); } });
     draw(); return { stop: function () { } };
   };
 })(typeof window !== 'undefined' ? window : globalThis);

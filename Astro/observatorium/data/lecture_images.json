@@ -222,5 +222,85 @@
   "h": 739,
   "credit": "NASA, ESA and the Hubble SM4 ERO Team (ESA/Hubble heic0910f), CC BY 4.0",
   "source": "https://cdn.esahubble.org/archives/images/screen/heic0910f.jpg"
+ },
+ {
+  "id": "sirius_b",
+  "file": "img/lec/sirius_b.jpg",
+  "w": 1280,
+  "h": 1398,
+  "credit": "NASA, ESA, H. Bond (STScI) and M. Barstow (University of Leicester) (ESA/Hubble heic0516a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/heic0516a.jpg"
+ },
+ {
+  "id": "hubble_var",
+  "file": "img/lec/hubble_var.jpg",
+  "w": 1280,
+  "h": 1024,
+  "credit": "NASA, ESA, the Hubble Heritage Team (STScI/AURA); Hubble\u2019s 1923 plate: Carnegie Observatories (ESA/Hubble opo1115a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/opo1115a.jpg"
+ },
+ {
+  "id": "crab",
+  "file": "img/lec/crab.jpg",
+  "w": 1280,
+  "h": 1280,
+  "credit": "NASA, ESA, J. Hester and A. Loll (Arizona State University) (ESA/Hubble heic0515a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/heic0515a.jpg"
+ },
+ {
+  "id": "xdf",
+  "file": "img/lec/xdf.jpg",
+  "w": 1280,
+  "h": 1117,
+  "credit": "NASA, ESA, G. Illingworth, D. Magee, P. Oesch, R. Bouwens and the HUDF09 Team (ESA/Hubble heic1214a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/heic1214a.jpg"
+ },
+ {
+  "id": "m82",
+  "file": "img/lec/m82.jpg",
+  "w": 1280,
+  "h": 997,
+  "credit": "NASA, ESA and the Hubble Heritage Team (STScI/AURA) (ESA/Hubble heic0604a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/heic0604a.jpg"
+ },
+ {
+  "id": "h0licow",
+  "file": "img/lec/h0licow.jpg",
+  "w": 1280,
+  "h": 1280,
+  "credit": "ESA/Hubble, NASA, Suyu et al. (ESA/Hubble heic1702a), CC BY 4.0",
+  "source": "https://cdn.esahubble.org/archives/images/screen/heic1702a.jpg"
+ },
+ {
+  "id": "neptune_ao",
+  "file": "img/lec/neptune_ao.jpg",
+  "w": 1280,
+  "h": 1320,
+  "credit": "ESO/P. Weilbacher (AIP) (ESO eso1824a), CC BY 4.0",
+  "source": "https://cdn.eso.org/images/screen/eso1824a.jpg"
+ },
+ {
+  "id": "wr124",
+  "file": "img/lec/wr124.jpg",
+  "w": 1280,
+  "h": 1260,
+  "credit": "ESA/Webb, NASA, CSA, STScI, Webb ERO Production Team (ESA/Webb weic2307a), CC BY 4.0",
+  "source": "https://cdn.esawebb.org/archives/images/screen/weic2307a.jpg"
+ },
+ {
+  "id": "wise_obs",
+  "file": "img/lec/wise_obs.jpg",
+  "w": 1280,
+  "h": 1026,
+  "credit": "Etan J. Tal (Wikimedia Commons, File:WiseObservatory.jpg), CC BY 3.0",
+  "source": "https://commons.wikimedia.org/wiki/Special:FilePath/WiseObservatory.jpg?width=1280"
+ },
+ {
+  "id": "opacity",
+  "file": "img/lec/opacity.jpg",
+  "w": 1400,
+  "h": 662,
+  "credit": "NASA (Wikimedia Commons, File:Atmospheric electromagnetic opacity.svg), public domain",
+  "source": "https://commons.wikimedia.org/wiki/Special:FilePath/Atmospheric_electromagnetic_opacity.svg?width=1400"
  }
 ]

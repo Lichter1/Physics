@@ -12,12 +12,16 @@ The November 2026 review of every chapter (bugs, gaps against the slides, ideas)
 ## Use it
 
 - **Published page:** the artifact link from the session (data load per chapter).
-- **Offline:** run `node build.mjs`, then open `observatorium.html` (one 37 MB file with every dataset and photograph
+- **Offline:** run `node build.mjs`, then open `observatorium.html` (one 40 MB file with every dataset and photograph
   inside; the equations need an internet connection for MathJax).
 
 On a first visit a **two-minute tour** walks through the page: each part is lit up in turn with what it is for and how to
 work it, with two small "try it" moments (turn the sky, select in the data lens) and a real lecture step on show. Leave it
 any time with Esc; replay it from **Tour** at the top, or from *How this observatory works* under the missions.
+
+On a **phone**, the sky and the data lens let the page scroll until you tap them (*Tap to use*, then *Done*); pinch to
+zoom either one. On laptop and phone widths the exercise's status and its *What does it mean?* button also sit under the
+lens. A reload brings back the mission and step you were on.
 
 | Part | What it does |
 |---|---|
@@ -68,6 +72,7 @@ any time with Esc; replay it from **Tour** at the top, or from *How this observa
 | 8.1 | Where do the bursts come from? (BATSE) | Fermi GBM, 4,430 gamma-ray bursts | L11 |
 | 8.2 | Weighing the missing baryons (Lorimer, Macquart) | 183 fast radio bursts (FRBs/FRB compilation), with host redshifts | L10 |
 | 8.3 | Hearing black holes merge (LIGO, Virgo, KAGRA) | GWOSC, 282 mergers through GWTC-5 | L11 |
+| 8.4 | Two kinds of burst (Kouveliotou; GW170817) | Fermi GBM durations of 4,430 bursts | L11 |
 | 9.1 | How far is that galaxy? (Slipher; SDSS) | Three SDSS galaxy spectra (star-forming, elliptical, distant red) | L9, L12 |
 | 9.2 | Young stars or a black hole? (Baldwin, Phillips, Terlevich) | 20,000 SDSS galaxies with MPA–JHU line fluxes, masses, star-formation rates, metallicities | L12–13 |
 | 9.3 | Let the chain find it (Metropolis) | Pantheon+ again, sampled by MCMC | L13 |
@@ -77,7 +82,8 @@ any time with Esc; replay it from **Tour** at the top, or from *How this observa
 ```
 node build.mjs            # dist/index.html + dist/data/ (published page), observatorium.html (offline file)
 node --test               # unit tests: physics, CSV reader, every variable on the real data, mission plan
-# end-to-end: plays all 33 missions in Chromium and checks each reaches "done"
+# end-to-end: plays all 34 missions in Chromium, in course order without teacher mode, and checks each reaches
+# "done" (it fails if a solution needs an axis the student would still find locked)
 (cd dist && python3 -m http.server 8765 &) ; node e2e/missions.js http://localhost:8765/preview.html
 # the first-visit tour at desktop, tablet and phone widths: every step, both try-its, Tour, Esc, arrows
 node e2e/tour.js http://localhost:8765/preview.html
@@ -96,6 +102,8 @@ python3 fetch_lecture_media.py  # lecture pictures (ESA/Hubble, ESA/Webb, ESO, N
 python3 fetch_universe.py # chapters 6-9: Pantheon+, COBE FIRAS, Planck, SDSS spectra and MPA-JHU lines, Fermi GBM
                           # positions, FRBs, GWOSC, a Legacy Surveys image, SkyView all-sky maps, lecture pictures
                           # (needs matplotlib for the colour maps; run last, it rewrites manifest.json entries)
+python3 fetch_audit_images.py  # the ten pictures added after the November 2026 audit
+# exoplanets: the mass provenance (pl_bmassprov) is read from cache/exoplanets_massprov.csv when present
 ```
 
 `data/manifest.json` records, for every file, the source, the query, the cuts, the citation and the licence.
@@ -120,10 +128,10 @@ Using it for private study is fine; ask OGLE before sharing a page with their li
 | `src/js/sky.js` | The sky: stereographic dome and Hammer all-sky, equatorial, Galactic or horizon; drawn or photographed, in eight wavelengths |
 | `src/js/instruments.js` | Controls; spectrograph, parallax telescope, binary reader, folding, model fitting, sliding references |
 | `src/js/observing.js` | Chapter 6–9 instruments: redshift fitter, aperture photometry, night planner, sky isotropy, supernova χ², MCMC |
-| `src/js/missions.js` | The 33 missions, the chapters and the concept check |
-| `src/js/lectures.js`, `lectures2.js` | Each mission's lecture (theory, equations, sky cues, figures, live charts, worked examples) and practice problems, for chapters 1–5 and 6–9 |
+| `src/js/missions.js` | The 34 missions, the chapters and the concept check (18 questions, each with its reason) |
+| `src/js/lectures.js`, `lectures2.js`, `lectures3.js` | Each mission's lecture (theory, equations, sky cues, figures, live charts, worked examples) and practice problems, for chapters 1–5 and 6–9 |
 | `src/js/lecture.js` | Runs a lecture in the right-hand pane, mounts its pictures (with credits and a lightbox) and charts, and turns the sky with it |
-| `src/js/explainers.js`, `explainers2.js` | 33 live diagrams used in the lectures |
+| `src/js/explainers.js`, `explainers2.js`, `explainers3.js` | 38 live diagrams used in the lectures |
 | `src/js/logbook.js` | Mission runner, notebook, quiz, data sources |
 | `src/js/tour.js` | The first-visit tour: spotlight, step cards, try-it checks |
 | `src/js/main.js` | Wiring, controls, object cards, theme |

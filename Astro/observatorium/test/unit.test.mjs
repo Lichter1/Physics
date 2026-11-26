@@ -13,7 +13,7 @@ ctx.globalThis = ctx; ctx.window = ctx;
 ctx.OBS_INLINE = {};
 for (const f of readdirSync(join(root, 'data')).filter((x) => /\.(csv|json)$/.test(x))) ctx.OBS_INLINE[f] = readFileSync(join(root, 'data', f), 'utf8');
 vm.createContext(ctx);
-for (const s of ['core', 'astro', 'catalog', 'instruments', 'observing', 'explainers', 'explainers2', 'missions', 'lectures', 'lectures2', 'lectures3']) vm.runInContext(readFileSync(join(root, 'src/js', s + '.js'), 'utf8'), ctx, { filename: s + '.js' });
+for (const s of ['core', 'astro', 'catalog', 'instruments', 'observing', 'explainers', 'explainers2', 'explainers3', 'missions', 'lectures', 'lectures2', 'lectures3']) vm.runInContext(readFileSync(join(root, 'src/js', s + '.js'), 'utf8'), ctx, { filename: s + '.js' });
 const OBS = ctx.OBS, A = OBS.astro;
 const close = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (±${tol})`);
 

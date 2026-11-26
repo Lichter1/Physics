@@ -1070,6 +1070,36 @@
       explain: 'Gravitational waves carry energy, so the merged black hole is lighter than its parts by 3–5%, the most efficient process known (fusion releases 0.7%). The catalogue also maps the black-hole population: masses from a few to over 100 M☉, many heavier than any black hole seen in X-ray binaries, and few objects between about 2.5 and 5 M☉, the “mass gap” between neutron stars and black holes. GW170817, two neutron stars at 40 Mpc, was also seen as a short gamma-ray burst and a kilonova that forged gold and platinum.',
       real: 'Hulse and Taylor’s binary pulsar (1974) showed orbits shrinking exactly as gravitational waves predict (Nobel 1993). Weiss, Barish and Thorne won the 2017 Nobel Prize for LIGO. GW170817’s distance from the waves and redshift from its host gave H₀ = 70 (+12, −8) km/s/Mpc: a standard siren.'
     },
+    {
+      id: 'grbtwo', ch: 8, title: 'Two kinds of burst', era: '1993; 2017', who: 'Chryssa Kouveliotou and the BATSE team; LIGO, Virgo and Fermi', course: 'Lecture 11 (gamma-ray bursts: short and long)',
+      brief: 'Gamma-ray bursts last from a few milliseconds to several minutes. In 1993 Kouveliotou and colleagues plotted how many BATSE bursts last how long, and saw two populations. Here are the durations of 4,430 bursts seen by Fermi’s GBM.',
+      vars: [['T₉₀', 'Duration', 's', 'Time over which 90% of the counts arrive'], ['N', 'Number of bursts', '', 'Per bin of log T₉₀']],
+      relation: 'Two humps in the histogram of log T₉₀ mean two kinds of source; the dip between them, near 2 s, separates short from long.',
+      deduce: 'That gamma-ray bursts have two origins, and which one goes with neutron-star mergers.',
+      question: 'Counted by duration, on a logarithmic scale, gamma-ray bursts form…',
+      choices: [['one', 'one broad hump: every burst is a variation of one kind'], ['two', 'two humps: short bursts near half a second and long ones near half a minute'], ['flat', 'a flat spread from milliseconds to minutes']],
+      answer: 'two',
+      setup: function (app, st) {
+        return app.open('grbs', { x: 't90', y: '#' }).then(function () {
+          app.chart.bins = 34; app.chart.setView({ x0: 0.01, x1: 1000 }); app.refresh();
+          app.sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal', photo: false });
+          app.chart.add({ type: 'vline', id: 'cut', value: 30, label: 'your divider', colour: OBS.colours().accent });
+        });
+      },
+      task: 'The histogram counts bursts by their duration T₉₀, on a logarithmic axis. Drag your divider into the dip between the two humps. Then colour by “Short or long”: where are the short ones on the sky?',
+      progress: function (app, st) {
+        var o = app.chart.get('cut'); if (!o) return { done: false, text: 'Press “Reset the view” to bring the divider back' };
+        var v = o.value, t = OBS.column(app.chart.ds, 't90'), n = 0; for (var i = 0; i < t.length; i++) if (t[i] < v) n++;
+        st.cut = v; st.nShort = n; st.n = t.length;
+        var ok = v > 1 && v < 4;
+        return { done: ok, text: 'Divider at ' + OBS.fmt(v, 2) + ' s: ' + n + ' short, ' + (t.length - n) + ' long' + (ok ? '' : v >= 4 ? ': move it left, into the dip' : ': move it right, into the dip') };
+      },
+      result: function (app, st) {
+        return 'With your divider at ' + fmt(st.cut, 2) + ' s, ' + st.nShort.toLocaleString('en-US') + ' of the ' + st.n.toLocaleString('en-US') + ' bursts are short (' + pct(st.nShort / st.n) + '). The short ones peak near half a second, the long ones near half a minute; both kinds are spread evenly over the sky, so both are cosmological. GBM sees fewer short bursts than exist: they are fainter, with harder spectra.';
+      },
+      explain: 'Two humps mean two kinds of engine. Long bursts come from the collapse of massive, rapidly spinning stars: they sit in star-forming regions of their galaxies, and several, starting with GRB 980425 and SN 1998bw, arrived with a supernova. Short bursts come from merging neutron stars: on 17 August 2017 Fermi recorded GRB 170817A, a two-second burst, 1.7 s after LIGO and Virgo heard the merger GW170817, 40 Mpc away (mission 8.3). Its kilonova forged gold and platinum.',
+      real: 'Kouveliotou et al. (1993) used 222 BATSE bursts. Swift (2004) found the first afterglows of short bursts, in old galaxies without star formation, a clue to mergers; GW170817 settled it. Some long bursts without supernovae, and short bursts with long tails, blur the line: duration is a first sorting, not a definition.'
+    },
     // =================================================================================== chapter 9 (lectures 12–13)
     {
       id: 'redshift', ch: 9, title: 'How far is that galaxy?', era: '1912 → today', who: 'Vesto Slipher; the Sloan Digital Sky Survey', course: 'Lectures 9 and 12 (spectroscopy, galaxy spectra, redshifts)',

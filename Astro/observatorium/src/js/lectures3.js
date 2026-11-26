@@ -74,7 +74,7 @@
           eq: '\\frac{GM}{R^2} \\ge \\Omega^2 R \\;\\Rightarrow\\; \\rho = \\frac{M}{\\tfrac43 \\pi R^3} \\ge \\frac{3\\pi}{G P^2}',
           html: '<p>A star spinning with period \\(P\\) holds together only if gravity at its equator beats the centrifugal pull. That sets a minimum mean density, whatever the mass. For the Crab pulsar, \\(P = 33\\) ms, it is \\(1.3\\times10^{14}\\) kg/m³. A white dwarf, at about \\(10^{9}\\) kg/m³, would fly apart; only a neutron star, as dense as an atomic nucleus (\\(2\\times10^{17}\\) kg/m³), survives. That argument, from a period alone, is how the 1968 pulsars were identified.</p>',
           example: '<p>The fastest known pulsar, PSR J1748−2446ad, spins in 1.40 ms: \\(\\rho \\ge 3\\pi/(6.67\\times10^{-11} \\times (1.40\\times10^{-3})^2) = 7.2\\times10^{16}\\) kg/m³, a third of nuclear density.</p>' },
-        { after: 'Spinning down', h: 'A pulsar’s life on the P–Ṗ chart',
+        { after: 'Spinning down', h: 'A pulsar’s life on the P–Ṗ chart', ex: { id: 'pulsarlife' },
           html: '<p>A pulsar is born at the upper left of the P–Ṗ diagram, spinning fast and slowing fast (the Crab). As it ages it moves right, along lines of constant magnetic field, crossing the lines of characteristic age. When the voltage its spin can generate drops too low (roughly \\(B/P^2\\) below a threshold) it stops shining: the <b>death line</b>, beyond which lies the pulsar graveyard. <b>Magnetars</b>, at the top right, have fields of \\(10^{14}\\)–\\(10^{15}\\) gauss and shine from the decay of their fields, not their spin. A companion can later spin a dead pulsar up again to milliseconds: the recycled pulsars at the bottom left.</p>' },
         { after: 'Black holes', h: 'Clocks and tides near a black hole',
           eq: '1 + z = \\frac{1}{\\sqrt{1 - R_s/r}}, \\qquad \\Delta a \\approx \\frac{2GM}{r^3}\\,\\ell',
@@ -225,7 +225,7 @@
         { after: 'Found by accident', h: 'One frequency, one temperature',
           eq: 'T_b = \\frac{c^2}{2 k \\nu^2}\\, I_\\nu \\quad \\text{(Rayleigh–Jeans)}',
           html: '<p>Penzias and Wilson measured at a single frequency, 4.08 GHz, far down the long-wavelength side of a 3 K blackbody, where intensity is proportional to temperature. Because the radiation filled the whole sky, its intensity per steradian could be compared directly with a blackbody’s: unlike a star’s flux, it does not depend on any distance or size. One number, an excess of about 3.5 K over what the antenna and the air explained, gave the temperature. COBE’s FIRAS later measured the whole curve (your exercise).</p>' },
-        { after: 'More photons than anything', h: 'A redshifted blackbody stays a blackbody',
+        { after: 'More photons than anything', h: 'A redshifted blackbody stays a blackbody', ex: { id: 'cmbz' },
           html: '<p>As the Universe expands by a factor \\(a\\), the number of photons per volume falls as \\(a^{-3}\\) and each photon’s energy as \\(a^{-1}\\), its wavelength stretching with space. A Planck spectrum at temperature \\(T\\) then becomes exactly a Planck spectrum at \\(T/a\\): the shape is kept, only the temperature falls. That is why the CMB, emitted at about 3,000 K, is still a perfect blackbody at 2.725 K, and why \\(T = T_0 (1 + z)\\) at every redshift, a prediction since confirmed with molecules in distant gas clouds.</p>' }
       ]
     },
@@ -285,6 +285,24 @@
       ]
     },
 
+    grbtwo: {
+      full: {
+        beats: [
+          { h: 'A burst every day', sky: { ra: 266.4, dec: -28.9, fov: 200, mode: 'allsky', frame: 'gal', photo: true, band: 'gamma' },
+            html: '<p>About once a day, somewhere in the sky, a gamma-ray burst outshines every other gamma-ray source for a few seconds. Mission 8.1 showed they come evenly from every direction, so they are far beyond the Milky Way: billions of light-years. To be seen so far they release, in seconds, as much energy as the Sun does in its whole life, beamed into narrow jets.</p>' },
+          { h: 'Counting by duration',
+            fig: { chart: { ds: 'grbs', x: 't90', y: '#', bins: 34, colourBy: 'kind', view: { x0: 0.01, x1: 1000 } }, caption: 'Fermi GBM bursts counted by T₉₀ on a logarithmic axis, coloured by the usual 2 s divide.' },
+            html: '<p>The duration \\(T_{90}\\) is the time over which 90% of a burst’s counts arrive. Counted on a logarithmic axis, the durations do not spread evenly: they fall into two groups, with a dip between them near 2 s. The short bursts also have harder spectra (more high-energy photons). Two groups that differ in two independent properties suggest two kinds of source.</p>' },
+          { h: 'Two engines',
+            html: '<p>A <b>long</b> burst is the death of a massive star: its core collapses to a black hole while a jet punches out through the star in tens of seconds. A <b>short</b> burst is the merger of two neutron stars (or a neutron star and a black hole): the debris falls in within a fraction of a second. The test came on 17 August 2017, when a short burst arrived 1.7 s after the gravitational waves of a neutron-star merger.</p>',
+            example: '<p>A burst at 1 Gpc with a fluence of \\(10^{-5}\\) erg/cm² released, if it shone equally in all directions, \\(4\\pi d^2 F = 4\\pi (3.1\\times10^{27}\\ \\text{cm})^2 \\times 10^{-5} = 1.2\\times10^{51}\\) erg: a supernova’s worth of energy in gamma rays alone, in seconds. Beaming into jets a few degrees wide lowers the true energy a hundredfold.</p>' }
+        ],
+        practice: [
+          { q: 'A burst at 1 Gpc delivers a fluence of 10⁻⁵ erg/cm². Assuming it shone equally in all directions, how much energy did it release, in units of 10⁵¹ erg? (1 Gpc = 3.086×10²⁷ cm)', a: 1.2, tol: 0.03, unit: '×10⁵¹ erg', sol: '\\(4\\pi (3.086\\times10^{27})^2 \\times 10^{-5} = 1.20\\times10^{51}\\) erg.' }
+        ]
+      }
+    },
+
     // ============================================================================== chapter 9 (lectures 12-13)
     redshift: {
       beats: [
@@ -304,7 +322,7 @@
     },
     chain: {
       beats: [
-        { after: 'Fitting a model', h: 'Local minima',
+        { after: 'Fitting a model', h: 'Local minima', ex: { id: 'costfn' },
           html: '<p>A misfit like χ² can have several valleys. A method that always walks downhill (gradient descent, Newton’s method) stops in whichever valley it starts in: a <b>local minimum</b>, not necessarily the best. A grid finds the global one, but costs \\(n^d\\) evaluations for \\(d\\) parameters (written as nested loops: <code>for x … for y … cost(x, y)</code>), so it is used only for one to three parameters; random or adaptive grids help a little. A Markov chain sometimes steps uphill, so it can climb out of a shallow valley, and it spends its time in proportion to probability rather than searching everywhere. Comparing two models, rather than fitting one, needs more: the evidence, the probability of the data under each model.</p>' },
         { after: 'Errors without formulas', h: 'Bootstrap and jackknife, by example',
           html: '<p>Suppose you measured the heights of 30 students and want the uncertainty of their mean. The <b>bootstrap</b>: draw 30 heights at random from your 30, with replacement (some appear twice, some not at all), take the mean, and repeat a thousand times; the spread of those means is the error. The <b>jackknife</b>: leave out one student at a time, compute 30 means of 29, and scale their spread by \\(\\sqrt{n-1}\\). Both work for any statistic, a median, a slope or a correlation, with no formula.</p>' },
@@ -315,8 +333,30 @@
     }
   };
 
+  // explainers and pictures added to existing steps
+  var SET = { hrd: [['Absolute magnitude', 'tenpc']], microlens: [['The Einstein radius', 'lensbuild']] };
+  var FIGS = {
+    radius: [['Sirius B', 'sirius_b', 'Sirius A and its white dwarf companion Sirius B, the faint dot at lower left (Hubble): ten thousand times fainter, yet hotter.']],
+    yardstick: [['Island universes', 'hubble_var', 'Hubble’s 1923 plate of Andromeda, where he crossed out “N” (nova) and wrote “VAR!”: the Cepheid V1 that put M31 outside the Milky Way.']],
+    pulsars: [['What a supernova leaves', 'crab', 'The Crab Nebula (Hubble), the debris of the supernova of 1054; at its centre spins the Crab pulsar, 30 times a second.']],
+    turnoff: [['How stars end', 'wr124', 'WR 124 (Webb): a Wolf–Rayet star shedding its outer layers in dusty knots before it explodes.']],
+    redshift: [['Deep fields', 'xdf', 'The Hubble eXtreme Deep Field: about 5,500 galaxies in a patch a tenth of the full Moon’s width, some seen 13 billion years ago.']],
+    bpt: [['Star formation rates', 'm82', 'M82 (Hubble): a starburst galaxy. The red filaments are hydrogen glowing in Hα, blown out by thousands of supernovae.']],
+    forest: [['Lensed quasars', 'h0licow', 'HE 0435−1223 (Hubble): one quasar seen four times around a lensing galaxy. The delays between the images measure H₀ (H0LiCOW).']],
+    night: [['Telescopes', 'wise_obs', 'The Wise Observatory near Mitzpe Ramon, Israel’s optical observatory, at 875 m in the Negev.'], ['Resolution', 'neptune_ao', 'Neptune from the VLT with adaptive optics (MUSE/GALACSI): sharper than the atmosphere would allow.']],
+    thermometer: [['Light and the windows of the air', 'opacity', 'How far each wavelength gets through the atmosphere: visible light and radio reach the ground; most of the rest needs space.']]
+  };
   OBS.MISSIONS.forEach(function (m) {
-    var a = ADD[m.id]; if (!a || !m.lecture) return;
+    (SET[m.id] || []).forEach(function (p) { (m.lecture || []).forEach(function (b) { if (b.h === p[0] && !b.ex) b.ex = { id: p[1] }; }); });
+    (FIGS[m.id] || []).forEach(function (p) {
+      (m.lecture || []).concat((ADD[m.id] && ADD[m.id].beats) || []).forEach(function (b) {
+        if (b.h !== p[0] || b._fig) return; b._fig = true;
+        var f = { img: p[1], caption: p[2] }; b.fig = b.fig ? [].concat(b.fig, f) : f;
+      });
+    });
+    var a = ADD[m.id]; if (!a) return;
+    if (a.full) { m.lecture = a.full.beats; m.practice = a.full.practice || []; m.target = a.full.beats[0].sky || null; return; }
+    if (!m.lecture) return;
     (a.beats || []).forEach(function (b) {
       var at = -1;
       if (b.after) for (var k = 0; k < m.lecture.length; k++) if (m.lecture[k].h === b.after) at = k + 1;
