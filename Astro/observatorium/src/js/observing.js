@@ -192,9 +192,9 @@
         var mp = A.moonPos(jd);
         tgt.push([hr, A.equToHor(t.ra, t.dec, lst, lat)[1]]); sun.push([hr, A.equToHor(sp[0], sp[1], lst, lat)[1]]); moon.push([hr, A.equToHor(mp[0], mp[1], lst, lat)[1]]);
       }
-      // dark hours shaded
-      ctx.fillStyle = C.dark ? 'rgba(90,110,180,0.18)' : 'rgba(40,60,140,0.12)';
-      var d0x = null; sun.concat([[33, 99]]).forEach(function (p) { if (p[1] < -18 && d0x === null) d0x = p[0]; else if (p[1] >= -18 && d0x !== null) { ctx.fillRect(X(d0x), T, X(p[0]) - X(d0x), B - T); d0x = null; } });
+      // the night in four tones: civil (Sun 0 to −6°), nautical (−6 to −12°), astronomical (−12 to −18°) twilight, dark night
+      var tone = function (alt) { return alt >= 0 ? 0 : alt > -6 ? 0.06 : alt > -12 ? 0.11 : alt > -18 ? 0.16 : 0.24; };
+      for (var q = 0; q < sun.length - 1; q++) { var tn = tone((sun[q][1] + sun[q + 1][1]) / 2); if (!tn) continue; ctx.fillStyle = C.dark ? 'rgba(90,110,180,' + tn + ')' : 'rgba(40,60,140,' + (tn * 0.7) + ')'; var xa = Math.round(X(sun[q][0])), xb = Math.round(X(sun[q + 1][0])); ctx.fillRect(xa, T, xb - xa, B - T); }
       ctx.strokeStyle = C.rule; ctx.strokeRect(L + 0.5, T + 0.5, R - L, B - T);
       for (var a = 0; a <= 90; a += 30) { ctx.fillStyle = C['ink-3']; ctx.textAlign = 'right'; ctx.fillText(a + '°', L - 6, Y(a) + 4); ctx.strokeStyle = C.rule; ctx.beginPath(); ctx.moveTo(L, Y(a)); ctx.lineTo(R, Y(a)); ctx.stroke(); }
       for (hr = 16; hr <= 32; hr += 2) { ctx.textAlign = 'center'; ctx.fillText((hr % 24 < 10 ? '0' : '') + (hr % 24) + ':00', X(hr), B + 14); }
@@ -203,7 +203,7 @@
       ctx.fillStyle = C['ink-3']; ctx.fillText('airmass 2', L + 4, Y(30) - 4);
       function curve(pts, col, wd) { ctx.strokeStyle = col; ctx.lineWidth = wd; ctx.beginPath(); pts.forEach(function (p, k) { var x = X(p[0]), y = Y(Math.max(-20, p[1])); if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); }); ctx.stroke(); ctx.lineWidth = 1; }
       ctx.setLineDash([5, 4]); curve(sun, '#ff8c3a', 1.5); ctx.setLineDash([2, 3]); curve(moon, C['ink-2'], 1.5); ctx.setLineDash([]); curve(tgt, C.accent, 2.5);
-      ctx.fillStyle = C.accent; ctx.fillText(t.name, L + 6, T + 14); ctx.fillStyle = '#ff8c3a'; ctx.fillText('the Sun (dashed) · shaded: dark night (Sun below −18°)', L + 6, T + 28); ctx.fillStyle = C['ink-2']; ctx.fillText('the Moon (dotted)', L + 6, T + 42);
+      ctx.fillStyle = C.accent; ctx.fillText(t.name, L + 6, T + 14); ctx.fillStyle = '#ff8c3a'; ctx.fillText('the Sun (dashed) · shading deepens through civil, nautical and astronomical twilight to dark night', L + 6, T + 28); ctx.fillStyle = C['ink-2']; ctx.fillText('the Moon (dotted)', L + 6, T + 42);
       ctx.strokeStyle = C.sel; ctx.beginPath(); ctx.moveTo(X(st.hour), T); ctx.lineTo(X(st.hour), B); ctx.stroke();
     }
     var sel = document.createElement('label'); sel.className = 'sel'; sel.innerHTML = '<span>Target</span><select>' + o.targets.map(function (t, k) { return '<option value="' + k + '">' + t.name + '</option>'; }).join('') + '</select>';
@@ -262,7 +262,8 @@
       n++; if (Math.abs(g[1]) < 10) plane++;
       cgc += Math.cos(b) * Math.cos(l); q += Math.sin(b) * Math.sin(b) - 1 / 3;
     }
-    return { n: n, plane: plane / n, cosgc: cgc / n, sinb2: q / n, err: 1 / Math.sqrt(3 * n) };
+    // for an even sky cos θ has variance 1/3 and sin²b − ⅓ has variance 1/5 − 1/9 = 4/45: each statistic has its own error
+    return { n: n, plane: plane / n, cosgc: cgc / n, sinb2: q / n, err: 1 / Math.sqrt(3 * n), errCos: 1 / Math.sqrt(3 * n), errSin: Math.sqrt(4 / (45 * n)) };
   };
 
   // ------------------------------------------------------------------------------------------ a Markov chain over a chi-squared map
@@ -326,7 +327,7 @@
       ctx.textAlign = 'center'; ctx.fillText('Ωm, the density of matter', box.x + box.w / 2, box.y + box.h + 30);
       ctx.save(); ctx.translate(box.x - 40, box.y + box.h / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('ΩΛ, dark energy', 0, 0); ctx.restore(); ctx.textAlign = 'left';
       // flat universes, and the line between slowing down and speeding up
-      function seg(a, b, col, lab, dash) { var p = P(a[0], a[1]), q = P(b[0], b[1]); ctx.strokeStyle = col; ctx.setLineDash(dash || []); ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = col; if (lab) ctx.fillText(lab, q[0] - 90, q[1] - 6); }
+      function seg(a, b, col, lab, dash) { var p = P(a[0], a[1]), q = P(b[0], b[1]); ctx.strokeStyle = col; ctx.setLineDash(dash || []); ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = col; if (lab) { var mx = p[0] + 0.62 * (q[0] - p[0]), my = p[1] + 0.62 * (q[1] - p[1]), tw = ctx.measureText(lab).width; ctx.fillText(lab, Math.min(box.x + box.w - tw - 4, mx + 6), my - 6); } }     // along the line, inside the frame
       seg([0, 1], [1, 0], C.ink, 'flat (Ωm + ΩΛ = 1)', [6, 4]);
       seg([0, 0], [1, 0.5], C.c4, 'accelerating ↑ / slowing ↓', [3, 3]);
       // the chain

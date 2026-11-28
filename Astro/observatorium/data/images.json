@@ -371,7 +371,7 @@
    "proj": "car",
    "lon_center": 0,
    "lon_left": true,
-   "credit": "IRIS (Miville-Deschenes & Lagache 2005, reprocessed IRAS), via NASA SkyView"
+   "credit": "IRIS (Miville-Deschenes & Lagache 2005, reprocessed IRAS), via NASA SkyView. Grey: no data"
   },
   {
    "id": "halpha",
@@ -395,7 +395,7 @@
    "proj": "car",
    "lon_center": 0,
    "lon_left": true,
-   "credit": "ROSAT All-Sky Survey diffuse background, R6 band (Snowden et al. 1997), via NASA SkyView"
+   "credit": "ROSAT All-Sky Survey diffuse background, R6 band (Snowden et al. 1997), via NASA SkyView. Grey: no data"
   },
   {
    "id": "gamma",

@@ -51,6 +51,21 @@ TARGETS = [
 PIX = 1600
 
 
+
+def clean_plate(img):
+    """DSS colour composites can carry flat, saturated orange patches at plate edges (the M31 field has one):
+    paint them with the surrounding sky so they are not mistaken for objects."""
+    import numpy as np
+    from scipy.ndimage import binary_dilation
+    a = np.asarray(img.convert('RGB')).astype(float); r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    m = (r > 150) & (r - b > 90) & (g < r - 40)
+    if m.sum() < 500: return img          # stars are small: only large flat patches are artefacts
+    m = binary_dilation(m, iterations=4); ys, xs = np.nonzero(m)
+    y0, y1, x0, x1 = max(0, ys.min() - 40), ys.max() + 40, max(0, xs.min() - 60), xs.max() + 60
+    sky = np.median(a[y0:y1, x0:x1][~m[y0:y1, x0:x1]], axis=0)
+    a[m] = sky + np.random.default_rng(1).normal(0, 3, (m.sum(), 3))
+    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
+
 def get(url, path, tries=3):
     if os.path.exists(path) and os.path.getsize(path) > 1000:
         return open(path, 'rb').read()
@@ -125,6 +140,7 @@ def main():
         except Exception as e:
             print('FAILED', t[0], e, flush=True); continue
         f = f'img/{t[0]}.jpg'
+        img = clean_plate(img)
         img.save(os.path.join(OUT, '..', f), quality=84, optimize=True, progressive=True)
         meta['cutouts'].append({'id': t[0], 'label': t[1], 'ra': t[2], 'dec': t[3], 'fov': t[4], 'w': img.width, 'h': img.height,
                                 'file': f, 'proj': 'tan', 'credit': credit})

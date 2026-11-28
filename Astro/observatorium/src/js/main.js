@@ -47,7 +47,8 @@
       note: function (html) { var n = $('lens-note'); n.innerHTML = html || ''; n.hidden = !html; },
       markers: function (list) { sky.markers = list || []; sky.draw(); },
       refresh: function () { refreshLens(); applyLock(); },
-      legend: function () { legend(); }
+      legend: function () { legend(); },
+      setLevel: function (id) { setLevel(id); }
     };
     // a mission may call setAxes directly; keep the menus in step
     var setAxes = chart.setAxes;
@@ -115,7 +116,7 @@
       b.title = lk && lk.axes ? why : !ok ? 'This quantity has zero or negative values: a log scale would hide them' : on ? 'Switch to a linear scale' : 'Switch to a logarithmic scale';
     });
     [['ds-sel', lk && lk.ds], ['sub-sel', lk && lk.ds], ['x-sel', lk && lk.axes], ['y-sel', lk && lk.axes]].forEach(function (p) { var e = $(p[0]); e.disabled = !!p[1]; e.title = p[1] ? why : ''; });
-    [].forEach.call(document.querySelectorAll('.lv'), function (b) { var L = OBS.LEVELS.filter(function (x) { return x.id === b.dataset.lv; })[0]; b.disabled = !!(L && L.locked) || !!(lk && lk.ds); b.title = lk && lk.ds ? why : (L ? L.note : ''); });
+    [].forEach.call(document.querySelectorAll('.lv[data-lv]'), function (b) { var L = OBS.LEVELS.filter(function (x) { return x.id === b.dataset.lv; })[0]; b.disabled = !!(L && L.locked) || !!(lk && lk.ds); b.title = lk && lk.ds ? why : (L ? L.note : ''); });
   }
   function legend() {
     var cats = chart.categories(), el = $('legend'), C = OBS.colours(), pal = [C.c1, C.c2, C.c3, C.c4, C.c5, C.c6, C.c7, C.c8];
@@ -190,6 +191,20 @@
       return '<li><button type="button" class="lv" data-lv="' + L.id + '"' + (L.locked ? ' disabled' : '') + ' title="' + esc(L.note) + '"><span class="lv-s">' + esc(L.scale) + '</span><span class="lv-l">' + esc(L.label) + '</span></button></li>';
     }).join('');
     [].forEach.call(document.querySelectorAll('.lv'), function (b) { b.addEventListener('click', function () { if (LEVEL_GO[b.dataset.lv]) LEVEL_GO[b.dataset.lv](); }); });
+    // the whole ladder at once: a powers-of-ten zoom with real data at every scale, in a window over the page
+    var pw = document.createElement('li'); pw.innerHTML = '<button type="button" class="lv lv-pow" title="Zoom from the planets to the CMB in steps of ten, with real data at every scale"><span class="lv-s">1 AU – 30 Gpc</span><span class="lv-l">Powers of ten</span></button>';
+    $('ladder').appendChild(pw);
+    pw.querySelector('button').addEventListener('click', function () {
+      var box = document.createElement('div'); box.className = 'modal'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Powers of ten');
+      box.innerHTML = '<div class="modal-panel"><div class="modal-head"><h3>Powers of ten</h3><button type="button" class="btn small" aria-label="Close">Close</button></div><div class="modal-body lec-ex"></div></div>';
+      document.body.appendChild(box);
+      var ex = OBS.EXPLAINERS.powers(box.querySelector('.modal-body'));
+      function close() { if (ex && ex.stop) ex.stop(); box.remove(); document.removeEventListener('keydown', key); pw.querySelector('button').focus(); }
+      function key(e) { if (e.key === 'Escape') close(); }
+      box.querySelector('.modal-head button').addEventListener('click', close);
+      box.addEventListener('click', function (e) { if (e.target === box) close(); });
+      document.addEventListener('keydown', key); box.querySelector('.modal-head button').focus();
+    });
     function seg(attr, fn) {
       [].forEach.call(document.querySelectorAll('[' + attr + ']'), function (b) {
         b.addEventListener('click', function () { fn(b.getAttribute(attr)); syncSky(); });

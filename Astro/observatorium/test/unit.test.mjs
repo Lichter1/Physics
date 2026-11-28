@@ -120,7 +120,7 @@ test('nothing a mission asks for is locked when a student gets there in course o
       for (const k of ['x', 'y', 'colourBy']) { const r = new RegExp(k + ":\\s*'([\\w#]+)'").exec(o[2] || ''); if (r) check(m, o[1], r[1], 'the exercise setup (' + k + ')'); }
     }
     // chart.setAxes(x, y) on the first dataset opened
-    for (const a of src.matchAll(/setAxes\((?:'(\w+)'|null)\s*,\s*(?:'([\w#]+)'|null)\)/g)) for (const id of [a[1], a[2]]) check(m, opened[0], id, 'setAxes');
+    if (!/OBS\.pseudo\(/.test(src)) for (const a of src.matchAll(/setAxes\((?:'(\w+)'|null)\s*,\s*(?:'([\w#]+)'|null)\)/g)) for (const id of [a[1], a[2]]) check(m, opened[0], id, 'setAxes');   // axes of an in-memory dataset are not catalogue variables
     // a variable named in quotes in the task text must be one the student can choose
     for (const q of (m.task || '').matchAll(/“([^”]+)”/g)) for (const dsid of new Set(opened)) {
       const v = OBS.DATASETS[dsid] && OBS.DATASETS[dsid].vars.find((x) => x.label.toLowerCase() === q[1].toLowerCase());

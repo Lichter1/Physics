@@ -15,6 +15,8 @@
   };
   OBS.mathReady = function () { var p = pending; pending = []; p.forEach(OBS.typeset); };
 
+  var CH_LEVEL = { 1: 'stars', 2: 'clusters', 3: 'stars', 4: 'galaxy', 5: 'galaxies', 6: 'universe', 7: 'sky', 8: 'universe', 9: 'galaxies' };
+  var LEVEL_OF = { sky: 'sky', kirkwood: 'solar', pleiades: 'clusters', turnoff: 'clusters', leavitt: 'galaxies', yardstick: 'galaxies', pulsars: 'galaxy', microlens: 'galaxy', density: 'stars', macho: 'galaxy', frb: 'universe', gw: 'universe', bursts: 'universe', grbtwo: 'universe' };
   LEC.beats = function (m) { return (m.lecture || []).concat([{ h: 'Your mission', summary: true }]); };
   function summary(m) {
     var miss = (m.needs || []).filter(function (k) { return !OBS.state.concepts[k]; });
@@ -106,6 +108,8 @@
     OBS.app.markers(s.markers || []);
     // a cue names its frame and wavelength; without them it returns to the equatorial sky in visible light
     sky.goTo(s.ra, s.dec, s.fov, { mode: s.mode, frame: s.frame || (sky.frame === 'hor' ? 'equ' : undefined), photo: s.photo, band: s.band || 'visible', time: s.time });     // a horizon cue may name its moment
+    // the scale ladder shows the scale the lecture is talking about: a cue may name it, or it follows from the mission
+    if (OBS.app && OBS.app.setLevel) OBS.app.setLevel(s.level || LEVEL_OF[LEC.m && LEC.m.id] || CH_LEVEL[LEC.m && LEC.m.ch] || 'sky');
   }
   function render(first, quiet) {
     LEC.stop();

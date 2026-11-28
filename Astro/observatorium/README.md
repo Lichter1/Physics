@@ -12,7 +12,7 @@ The November 2026 review of every chapter (bugs, gaps against the slides, ideas)
 ## Use it
 
 - **Published page:** the artifact link from the session (data load per chapter).
-- **Offline:** run `node build.mjs`, then open `observatorium.html` (one 40 MB file with every dataset and photograph
+- **Offline:** run `node build.mjs`, then open `observatorium.html` (one 41 MB file with every dataset and photograph
   inside; the equations need an internet connection for MathJax).
 
 On a first visit a **two-minute tour** walks through the page: each part is lit up in turn with what it is for and how to
@@ -52,13 +52,18 @@ lens. A reload brings back the mission and step you were on.
 | 3.1 | A shadow crosses a star | Kepler light curve of HAT-P-7 | L3, HW4 Q1 |
 | 3.2 | Who finds which planets | NASA Exoplanet Archive | L3 |
 | 3.3 | A star brightens for a month (Paczyński) | OGLE-2019-BLG-0148 | L3–4, HW3 Q2 |
-| 3.4 | Rock, water or gas | NASA Exoplanet Archive, 2,472 planets with measured masses and radii | L3 |
+| 3.4 | A star that wobbles (Mayor, Queloz) | Lick velocities of 51 Pegasi (Fischer et al. 2014) | L3 |
+| 3.5 | Rock, water or gas | NASA Exoplanet Archive, 2,472 planets with measured masses and radii | L3 |
+| 3.6 | How many stars of each mass (Salpeter) | Gaia 100 pc main-sequence stars | L3, HW3 Q1 |
 | 4.1 | Gaps in the belt (Kirkwood) | JPL Small-Body Database | L4 |
 | 4.2 | Where is the centre? (Shapley) | Harris globular-cluster catalogue | L4 |
-| 4.3 | Too fast at the edge (Rubin, Bosma; MOND) | SPARC rotation curve of NGC 3198 | L4, HW5 |
+| 4.3 | Weighing the black hole (Genzel, Ghez) | S2's orbit around Sgr A* (Gillessen et al. 2017) | L4 |
+| 4.4 | Too fast at the edge (Rubin, Bosma; MOND) | SPARC rotation curve of NGC 3198 | L4, HW4 Q3 |
+| 4.5 | Is the halo made of dim stars? (MACHO, EROS, OGLE) | 1,490 OGLE events of 2019 with their time scales | L3–4 |
 | 5.1 | Red and blue galaxies (Hubble; Galaxy Zoo) | SDSS DR18 + Galaxy Zoo | L5, HW5 |
 | 5.2 | Weighing a cluster of galaxies (Zwicky) | SDSS redshifts toward Coma | L5 |
 | 5.3 | Spin tells power (Tully, Fisher) | SPARC galaxy table | L5, HW5 |
+| 5.4 | Speed tells power, for ellipticals (Faber, Jackson) | 8,000 SDSS Galaxy Zoo ellipticals with velocity dispersions | L5 |
 
 ### Lectures 7–13 (lecture 6 is not part of the Observatorium)
 
@@ -83,7 +88,7 @@ lens. A reload brings back the mission and step you were on.
 ```
 node build.mjs            # dist/index.html + dist/data/ (published page), observatorium.html (offline file)
 node --test               # unit tests: physics, CSV reader, every variable on the real data, mission plan
-# end-to-end: plays all 35 missions in Chromium, in course order without teacher mode, and checks each reaches
+# end-to-end: plays all 40 missions in Chromium, in course order without teacher mode, and checks each reaches
 # "done" (it fails if a solution needs an axis the student would still find locked)
 (cd dist && python3 -m http.server 8765 &) ; node e2e/missions.js http://localhost:8765/preview.html
 # the first-visit tour at desktop, tablet and phone widths: every step, both try-its, Tour, Esc, arrows
@@ -103,7 +108,9 @@ python3 fetch_lecture_media.py  # lecture pictures (ESA/Hubble, ESA/Webb, ESO, N
 python3 fetch_universe.py # chapters 6-9: Pantheon+, COBE FIRAS, Planck, SDSS spectra and MPA-JHU lines, Fermi GBM
                           # positions, FRBs, GWOSC, a Legacy Surveys image, SkyView all-sky maps, lecture pictures
                           # (needs matplotlib for the colour maps; run last, it rewrites manifest.json entries)
-python3 fetch_audit_images.py  # the ten pictures added after the November 2026 audit
+python3 fetch_audit_images.py  # the pictures added after the November 2026 audit
+python3 fetch_audit_data.py    # 51 Peg velocities, S2's orbit, SDSS ellipticals, OGLE event time scales
+python3 fetch_orbits.py        # full orbits of 8,843 bright asteroids and TNOs (JPL SBDB), for the solar-system views
 # exoplanets: the mass provenance (pl_bmassprov) is read from cache/exoplanets_massprov.csv when present
 ```
 
@@ -129,10 +136,10 @@ Using it for private study is fine; ask OGLE before sharing a page with their li
 | `src/js/sky.js` | The sky: stereographic dome and Hammer all-sky, equatorial, Galactic or horizon; drawn or photographed, in eight wavelengths |
 | `src/js/instruments.js` | Controls; spectrograph, parallax telescope, binary reader, folding, model fitting, sliding references |
 | `src/js/observing.js` | Chapter 6–9 instruments: redshift fitter, aperture photometry, night planner, sky isotropy, supernova χ², MCMC |
-| `src/js/missions.js` | The 35 missions, the chapters and the concept check (18 questions, each with its reason) |
+| `src/js/missions.js` | The 40 missions, the chapters and the concept check (18 questions, each with its reason) |
 | `src/js/lectures.js`, `lectures2.js`, `lectures3.js` | Each mission's lecture (theory, equations, sky cues, figures, live charts, worked examples) and practice problems, for chapters 1–5 and 6–9 |
 | `src/js/lecture.js` | Runs a lecture in the right-hand pane, mounts its pictures (with credits and a lightbox) and charts, and turns the sky with it |
-| `src/js/explainers.js`, `explainers2.js`, `explainers3.js` | 38 live diagrams used in the lectures |
+| `src/js/explainers.js`, `explainers2.js`, `explainers3.js` | 41 live diagrams used in the lectures (and the Powers of ten window on the scale ladder) |
 | `src/js/logbook.js` | Mission runner, notebook, quiz, data sources |
 | `src/js/tour.js` | The first-visit tour: spotlight, step cards, try-it checks |
 | `src/js/main.js` | Wiring, controls, object cards, theme |

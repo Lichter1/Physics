@@ -552,6 +552,39 @@
     },
     // =================================================================================== chapter 4
     {
+      id: 'rv', ch: 3, title: 'A star that wobbles', era: '1995', who: 'Michel Mayor and Didier Queloz; the Lick planet search', course: 'Lecture 3 (radial velocities, 51 Pegasi b)',
+      brief: 'In 1995 Mayor and Queloz saw the Sun-like star 51 Pegasi move toward and away from us by about 50 m/s every few days: a planet half as massive as Jupiter, closer to its star than Mercury is to the Sun. Here are 354 velocities of 51 Peg from Lick Observatory, 1995–2011.',
+      vars: [['v_r', 'Radial velocity', 'm/s', 'Doppler shift of the star’s lines'], ['P', 'Orbital period', 'days', 'From folding'], ['K', 'Semi-amplitude', 'm/s', 'Half the peak-to-peak swing'], ['M sin i', 'Planet mass', 'M_Jup', 'From K, P and the star’s mass']],
+      relation: 'K = (2πG/P)^{1/3} m_p sin i / M★^{2/3}: the planet’s mass from the star’s wobble, the period and the star’s mass (1.11 M☉ for 51 Peg).',
+      deduce: 'The planet’s minimum mass and its distance from the star.',
+      question: 'A star 1.1 times the Sun’s mass wobbles at 56 m/s every 4.2 days. Its planet is about…',
+      choices: [['earth', 'as massive as the Earth'], ['half', 'half as massive as Jupiter'], ['bd', 'fifty times Jupiter: a brown dwarf']],
+      answer: 'half',
+      setup: function (app, st) {
+        app.sky.goTo(344.37, 20.77, 30, { mode: 'dome', frame: 'equ' }); app.markers([{ ra: 344.37, dec: 20.77, label: '51 Pegasi' }]);
+        return app.open('rv51peg', { x: 't', y: 'rv' }).then(function () {
+          st.fold = OBS.instruments.fold(app.chart, app.tools, { P0: 10, min: 1, max: 20, fine: 0.02, start: false, shift: true });
+          var C = OBS.colours();
+          app.chart.add({ type: 'hline', id: 'top', value: 90, label: 'top of the swing', colour: C.c1, dash: [5, 4] });
+          app.chart.add({ type: 'hline', id: 'bot', value: -90, label: 'bottom', colour: C.c1, dash: [5, 4] });
+          var c = app.chart.ds.table.cols; st.t = Array.from(c.t); st.v = Array.from(c.rv); st.best = OBS.instruments.foldScatter(st.t, st.v, 4.230785);
+        });
+      },
+      task: 'Tick “Fold” and find the period at which the velocities line up into one smooth wave (the sharpness curve helps). Then drag the two dashed lines to the top and the bottom of the wave: half their gap is K.',
+      progress: function (app, st) {
+        var ch = app.chart, P = st.fold.P, okP = ch.fold && OBS.instruments.foldScatter(st.t, st.v, P) < 1.25 * st.best, top = ch.get('top'), bot = ch.get('bot');
+        if (!top || !bot) return { done: false, text: 'Press “Reset the view”' };
+        st.P = P; st.K = Math.abs(top.value - bot.value) / 2; var okK = Math.abs(st.K / 56 - 1) < 0.15;
+        return { done: okP && okK, text: (ch.fold ? 'Folded at ' + P.toFixed(4) + ' d' + (okP ? ' (one clean wave)' : '') : 'Tick “Fold”') + ' · K = ' + st.K.toFixed(0) + ' m/s' + (okP && !okK ? ': set the lines on the top and bottom of the wave, not on stray points' : '') };
+      },
+      result: function (app, st) {
+        var Ms = 1.11 * A.C.Msun, P = st.P * 86400, m = st.K * Math.pow(P / (2 * Math.PI * A.C.G), 1 / 3) * Math.pow(Ms, 2 / 3), a = Math.pow(A.C.G * Ms * P * P / (4 * Math.PI * Math.PI), 1 / 3) / A.C.AU;
+        return 'P = ' + fix(st.P, 4) + ' days, K = ' + fix(st.K, 0) + ' m/s. So M sin i = ' + fix(m / A.C.Mjup, 2) + ' Jupiter masses (' + fix(m / 5.97e24, 0) + ' Earths), orbiting ' + fix(a, 3) + ' AU from its star: ' + fix(0.387 / a, 0) + ' times closer than Mercury to the Sun. Published: 0.46 M_J, 0.052 AU.';
+      },
+      explain: 'The star and the planet circle their common centre of mass. The star’s orbit is tiny, a few thousand km, but its 56 m/s speed shifts every line in its spectrum by a part in five million, which a stabilised spectrograph measures. Only the component along our line of sight shows, so the mass is a minimum, m sin i. A hot Jupiter this close was not supposed to exist: giant planets form beyond the snow line and must have migrated inward.',
+      real: 'Mayor and Queloz (1995) found 51 Peg b with ELODIE at Haute-Provence (Nobel Prize 2019); Marcy and Butler confirmed it within days from Lick. Radial velocities have since found about a thousand planets, and now measure masses of transiting ones.'
+    },
+    {
       id: 'density', ch: 3, title: 'Rock, water or gas', era: '2010 →', who: 'Kepler, TESS and radial-velocity teams', course: 'Lecture 3 (exoplanets: mass, radius, composition)',
       brief: 'A transit gives a planet’s radius; a radial-velocity curve (or timing) gives its mass. Together they give its mean density, the first clue to what it is made of: iron and rock (Earth, 5.5 g/cm³), water and ice, or mostly hydrogen and helium (Jupiter, 1.3; Saturn, 0.7). Here are the 2,472 planets with a measured mass and a radius.',
       vars: [['M_p', 'Planet mass', 'M_Jup', 'Radial velocity or transit timing'], ['R_p', 'Planet radius', 'R_Jup', 'Transit depth (mission 3.1)'], ['ρ', 'Mean density', 'g/cm³', 'M / (4/3 π R³)']],
@@ -582,6 +615,51 @@
       },
       explain: 'Small planets follow the rock curve, up to about 1.6 Earth radii; above that, most planets are less dense than rock, so they must hold water or a hydrogen envelope (mini-Neptunes). Kepler found a gap near 1.8 Earth radii between the two (Fulton et al. 2017), thought to be planets whose envelopes were blown away by their young stars. Giants all have radii near Jupiter’s whatever their mass, because adding mass compresses them; those that sit above it are inflated by heat from very close stars.',
       real: 'Corot-7b and Kepler-10b (2009–2011) were the first rocky exoplanets with measured densities. The TRAPPIST-1 planets, timed by their transits, have Earth-like densities. Most masses still come from the radial-velocity wobble of mission 3.2, at a few m/s.'
+    },
+    {
+      id: 'imf', ch: 3, title: 'How many stars of each mass', era: '1955', who: 'Edwin Salpeter', course: 'Lecture 3 (star formation, the initial mass function)', hw: 'HW3 Q1', needs: ['invsq', 'masslum'],
+      brief: 'In 1955 Salpeter counted stars by mass and found that nature makes many more small stars than big ones, as a power law. Here are the main-sequence stars within 100 pc measured by Gaia, their masses from your mass–luminosity law (mission 1.7), counted in bins of log mass.',
+      vars: [['M', 'Stellar mass', 'M☉', 'From the luminosity (mission 1.7)'], ['dN/dlog M', 'Stars per bin of log mass', '', 'Counted'], ['Γ', 'Slope', '', 'dN/dlog M ∝ M^(−Γ); Salpeter: 1.35']],
+      relation: 'dN/dlog M ∝ M^(−Γ), with Γ = 1.35 (Salpeter) for stars more massive than about half a solar mass.',
+      deduce: 'Where the mass and where the light of a population are.',
+      question: 'Going from 0.5 to 1 solar mass, the number of stars per bin of log mass…',
+      choices: [['up', 'rises: bigger stars are more common'], ['down', 'falls by about a factor of 2 to 3'], ['flat', 'stays the same']],
+      answer: 'down',
+      setup: function (app, st) {
+        app.instrument('The mass function within 100 pc');
+        app.sky.goTo(0, 0, 200, { mode: 'allsky', frame: 'equ', photo: false });
+        return OBS.open('nearby').then(function (nb) {
+          var MG = OBS.column(nb, 'MG'), br = OBS.column(nb, 'bp_rp'), Ms = OBS.column(nb, 'Mms'), wd = nb.table.cols.wd, counts = {};
+          for (var i = 0; i < nb.table.n; i++) {
+            if (wd[i] || !isFinite(MG[i]) || MG[i] < 4.4 * br[i] - 1.6 || MG[i] > 4.4 * br[i] + 3.0 || !(Ms[i] > 0.08)) continue;
+            var k = Math.floor(Math.log10(Ms[i]) / 0.1); counts[k] = (counts[k] || 0) + 1;
+          }
+          var M = [], N = [], inr = [];
+          Object.keys(counts).map(Number).sort(function (a, b) { return a - b; }).forEach(function (k) { if (counts[k] < 5) return; var m = Math.pow(10, (k + 0.5) * 0.1); M.push(m); N.push(counts[k]); inr.push(m > 0.38 && m < 1.05 ? 1 : 0); });
+          st.M = M; st.N = N; st.inr = inr;
+          var ds = OBS.pseudo({ id: 'imfbins', title: 'Main-sequence stars within 100 pc, by mass', x: 'M', y: 'N',
+            vars: [{ id: 'M', label: 'Stellar mass', unit: 'M☉', scale: 'log', f: function (c, i) { return c.M[i]; } }, { id: 'N', label: 'Stars per 0.1 dex of mass', unit: '', scale: 'log', f: function (c, i) { return c.N[i]; } }] }, { M: M, N: N });
+          var ch = app.chart; ch.setDataset(ds); ch.setAxes('M', 'N'); ch.setView({ x0: 0.15, x1: 3.5, y0: 20, y1: 10000 });
+          ch.add({ type: 'span', id: 'fitrange', x0: 0.4, x1: 1.0, label: 'fit range: long-lived stars', colour: OBS.colours().c3 });
+          st.model = OBS.instruments.model(ch, app.tools, {
+            label: 'your power law', err: function (i) { return inr[i] ? Math.sqrt(N[i]) + 0.03 * N[i] : 1e12; },
+            f: function (m, p) { return p.N0 * Math.pow(m / 0.5, -p.G); },
+            params: [{ id: 'G', label: 'Slope Γ', min: -1, max: 4, value: 0, fmt: function (x) { return x.toFixed(2); } }, { id: 'N0', label: 'Stars per bin at 0.5 M☉', min: 300, max: 10000, value: 1500, log: true, fmt: function (x) { return Math.round(x); } }],
+            describe: function (p) { return 'dN/dlog M ∝ M^(−' + fix(p.G, 2) + '). Per bin of log mass, a 1 M☉ star is ' + fmt(Math.pow(2, p.G), 2) + ' times rarer than a 0.5 M☉ one.'; }
+          });
+        });
+      },
+      task: 'Each point counts the stars in one bin of log mass (log axes). Tilt and slide your power law until it runs through the points inside the green fit range (0.4–1 M☉). Then look at what happens above 1 M☉.',
+      progress: function (app, st) { var p = st.model.p, ok = p.G > 1.05 && p.G < 1.8 && p._fit.red < 8; return { done: ok, text: 'Γ = ' + p.G.toFixed(2) + ', χ²/N in the fit range = ' + OBS.fmt(p._fit.red, 3) + (ok ? '' : p.G <= 1.05 ? ': too shallow' : p.G >= 1.8 ? ': too steep' : ': slide it onto the points') }; },
+      result: function (app, st) {
+        var p = st.model.p, G = p.G, hi = 0, hiPred = 0;
+        st.M.forEach(function (m, i) { if (m > 1.5) { hi += st.N[i]; hiPred += p.N0 * Math.pow(m / 0.5, -G); } });
+        var mass = 0, light = 0; for (var m = 0.1; m < 50; m *= 1.05) { var n = Math.pow(m / 0.5, -G) * Math.log10(1.05); mass += n * m; light += n * Math.pow(m, 3.86); }
+        var massLow = 0, lightHigh = 0; for (m = 0.1; m < 50; m *= 1.05) { n = Math.pow(m / 0.5, -G) * Math.log10(1.05); if (m < 1) massLow += n * m; if (m > 10) lightHigh += n * Math.pow(m, 3.86); }
+        return 'Your slope: Γ = ' + fix(G, 2) + ' (Salpeter: 1.35). Above 1.5 M☉ there are only ' + hi + ' stars where your law predicts ' + fmt(hiPred, 2) + ': those stars have lived out their short lives, so today’s count is steeper than the birth function. A newborn population with your slope, from 0.1 to 50 M☉, keeps ' + pct(massLow / mass) + ' of its mass in stars lighter than the Sun but gets ' + pct(lightHigh / light) + ' of its light from stars heavier than 10 M☉.';
+      },
+      explain: 'Small stars dominate by number and by mass; the few massive ones dominate the light, as long as they live. That is why a galaxy’s light tells you about its youngest stars and its mass about its oldest. Below about 0.5 M☉ the function flattens (Kroupa, Chabrier), so brown dwarfs do not hold much mass either. The same slope appears in young clusters and in the field, one of the most universal facts of star formation, and nobody fully knows why.',
+      real: 'Salpeter (1955) derived Γ = 1.35 from the luminosity function of nearby stars, the method you used. Kroupa (2001) and Chabrier (2003) added the turnover at low mass. HW3 Q1 works out where the mass and the light are for the same law.'
     },
     {
       id: 'kirkwood', ch: 4, title: 'Gaps in the belt', era: '1866', who: 'Daniel Kirkwood', course: 'Lecture 4 (asteroids, Kuiper belt, TNOs)', hw: '',
@@ -643,6 +721,42 @@
       real: 'Shapley got about 15 kpc in 1918, too large because nobody yet knew that dust dims distant objects (Trumpler showed it in 1930). In the 1920 Great Debate he argued, wrongly, that the spiral nebulae were inside the Milky Way; Curtis argued they were other galaxies.'
     },
     {
+      id: 'sgra', ch: 4, title: 'Weighing the black hole', era: '1992–2020', who: 'Reinhard Genzel and Andrea Ghez', course: 'Lecture 4 (the Galactic centre, black holes)',
+      brief: 'Infrared cameras with adaptive optics have followed the stars around the Milky Way’s centre since 1992. One of them, S2, completes an orbit in about 16 years, coming within 120 AU of an invisible mass. Here are its positions relative to the radio source Sgr A*, 1992–2016.',
+      vars: [['Δα, Δδ', 'Offsets from Sgr A*', 'mas', 'Adaptive-optics images'], ['a', 'Semi-major axis', 'mas → AU', 'Angle × distance (8.32 kpc)'], ['P', 'Period', 'yr', 'Time for one orbit'], ['M', 'Central mass', 'M☉', 'a³/P² (AU, yr)']],
+      relation: 'Kepler’s third law in solar units: M [M☉] = a³ [AU] / P² [yr], with a [AU] = a [″] × d [pc].',
+      deduce: 'The mass in the centre of the Milky Way, and how small a volume holds it.',
+      question: 'S2 orbits in 16 years on an ellipse about 1,000 AU across. The mass it orbits is about…',
+      choices: [['sun', 'a few solar masses: a stellar black hole'], ['mil', 'four million solar masses'], ['gal', 'a hundred billion solar masses, the whole Galaxy']],
+      answer: 'mil',
+      setup: function (app, st) {
+        app.sky.goTo(266.417, -29.008, 0.5, { mode: 'dome', frame: 'equ', photo: true }); app.markers([{ ra: 266.417, dec: -29.008, label: 'Sgr A*' }]);
+        return app.open('s2', { x: 'year', y: 'y', filter: function (c, i) { return isFinite(c.y[i]); } }).then(function () {
+          app.chart.setView({ x0: 1991, x1: 2017.5, y0: -20, y1: 190 });
+          var c = app.chart.ds.table.cols, e = 0.8839, inc = 134.18 * Math.PI / 180, Om = 226.94 * Math.PI / 180, w = 65.51 * Math.PI / 180, tp = 2002.33;
+          function north(t, a, P) {
+            var Mn = 2 * Math.PI * (t - tp) / P, E = Mn; for (var k = 0; k < 40; k++) E -= (E - e * Math.sin(E) - Mn) / (1 - e * Math.cos(E));
+            var nu = 2 * Math.atan2(Math.sqrt(1 + e) * Math.sin(E / 2), Math.sqrt(1 - e) * Math.cos(E / 2)), r = a * (1 - e * Math.cos(E));
+            return r * (Math.cos(w + nu) * Math.cos(Om) - Math.sin(w + nu) * Math.sin(Om) * Math.cos(inc));
+          }
+          st.model = OBS.instruments.model(app.chart, app.tools, {
+            label: 'Kepler orbit', err: function (i) { return Math.max(2, c.ey[i]); },
+            f: function (t, p) { return north(t, p.a, p.P); },
+            params: [{ id: 'a', label: 'Semi-major axis a', min: 60, max: 200, value: 90, unit: 'mas', fmt: function (x) { return x.toFixed(1); } }, { id: 'P', label: 'Period P', min: 8, max: 30, value: 22, unit: 'yr', fmt: function (x) { return x.toFixed(2); } }],
+            describe: function (p) { var aAU = p.a / 1000 * 8320; return 'a = ' + fix(aAU, 0) + ' AU at 8.32 kpc: M = a³/P² = ' + fmt(aAU * aAU * aAU / (p.P * p.P), 3) + ' M☉. (The shape and tilt of the orbit are set to Gillessen et al.’s; you fit its size and period.)'; }
+          });
+        });
+      },
+      task: 'The points are S2’s offset north of Sgr A* over 25 years: the steep drop in 2002 is its closest approach. The curve is an orbit with the right shape and tilt; adjust its size a and period P until it runs through the points.',
+      progress: function (app, st) { var p = st.model.p, ok = Math.abs(p.a / 125.5 - 1) < 0.06 && Math.abs(p.P / 16.0 - 1) < 0.04; return { done: ok, text: 'a = ' + p.a.toFixed(1) + ' mas, P = ' + p.P.toFixed(2) + ' yr, χ²/N = ' + OBS.fmt(p._fit.red, 3) + (ok ? '' : Math.abs(p.P / 16 - 1) >= 0.04 ? ': the period sets when the dips repeat' : ': the size sets how far the curve swings') }; },
+      result: function (app, st) {
+        var p = st.model.p, aAU = p.a / 1000 * 8320, M = aAU * aAU * aAU / (p.P * p.P), rp = aAU * (1 - 0.8839);
+        return 'a = ' + fix(p.a, 1) + ' mas = ' + fix(aAU, 0) + ' AU, P = ' + fix(p.P, 2) + ' yr: M = ' + fmt(M, 3) + ' M☉. At closest approach S2 is only ' + fix(rp, 0) + ' AU from the centre, about ' + fmt(rp / (2953 * M / A.C.AU), 2) + ' times the Schwarzschild radius of that mass (' + fix(2953 * M / A.C.AU, 3) + ' AU), moving at about 7,700 km/s. Nothing but a black hole fits that much mass into so small a volume.';
+      },
+      explain: 'Four million solar masses inside S2’s pericentre, 120 AU, rules out a cluster of stars or dead stars: it would evaporate or collapse in far less than the Galaxy’s age. In 2018 GRAVITY saw S2’s light redshifted by the black hole’s gravity as Einstein predicts, and in 2020 its orbit precessing like Mercury’s but 30,000 times faster. In 2022 the Event Horizon Telescope imaged the shadow of Sgr A* (see the picture in mission 4.2).',
+      real: 'Genzel’s group (VLT) and Ghez’s (Keck) tracked these stars for three decades; they shared the 2020 Nobel Prize with Roger Penrose. GRAVITY (2019) gives M = 4.15 million M☉ and R₀ = 8.18 kpc.'
+    },
+    {
       id: 'rotation', ch: 4, title: 'Too fast at the edge', era: '1970–1985', who: 'Vera Rubin and Kent Ford; Albert Bosma', course: 'Lecture 4 (dark matter, MOND)', hw: 'HW4 Q3 (MOND)',
       brief: 'Gas far out in a spiral galaxy orbits its centre. Its speed tells how much mass lies inside its orbit. NGC 3198’s hydrogen extends to 44 kpc, far beyond its stars. SPARC gives the measured speeds, and the speeds the stars and gas alone would produce.',
       vars: [['V(R)', 'Orbital speed', 'km/s', '21-cm and Hα Doppler shifts'], ['V_bar', 'Speed from visible matter', 'km/s', 'Stars (times a mass-to-light ratio) and gas'], ['Υ', 'Mass-to-light ratio', 'M☉ / L☉', 'Mass of stars per unit light']],
@@ -701,6 +815,37 @@
       },
       explain: 'If the mass were where the light is, speeds would fall as 1/√R beyond the stars, like the planets round the Sun. They stay flat, so the enclosed mass keeps growing in proportion to R: there is a halo of matter that does not shine. MOND, with one universal constant and no halo (HW4 Q3), brings χ²/N from about 200 down to about 10 for this galaxy: far closer than Newton with the visible matter alone, though not as close as a halo with two free parameters (a slightly larger distance to NGC 3198 helps it). That MOND does this well across hundreds of galaxies, and badly for galaxy clusters, is why both ideas are still argued about.',
       real: 'Rubin and Ford measured flat rotation in Andromeda from 1970; Bosma (1978) extended curves with 21-cm radio data; van Albada et al. (1985) made NGC 3198 the textbook case for a dark halo. Milgrom proposed MOND in 1983.'
+    },
+    {
+      id: 'macho', ch: 4, title: 'Is the halo made of dim stars?', era: '1993–2007', who: 'The MACHO, EROS and OGLE teams', course: 'Lecture 4 (dark matter: MACHOs); Lecture 3 (microlensing)',
+      brief: 'If the Milky Way’s dark halo were made of compact objects (MACHOs), they would lens background stars. The time an event lasts grows as the square root of the lens mass. Here are the time scales of the 1,490 events OGLE found toward the bulge in 2019: what masses do ordinary lenses have?',
+      vars: [['t_E', 'Einstein time', 'days', 'Fitted to each light curve'], ['M', 'Lens mass', 'M☉', 'What you set'], ['t_E', 'Predicted', 'days', '≈ 22 d × √(M / 0.3 M☉) toward the bulge']],
+      relation: 't_E = R_E / v with R_E = √(4GM D_L D_LS / (c² D_S)): t_E ∝ √M for lenses at about 6 kpc, sources at 8 kpc and speeds of 150 km/s.',
+      deduce: 'The typical mass of the lenses, and from the number and length of events toward the LMC, how much of the halo compact objects can make up.',
+      question: 'The typical microlensing event toward the bulge lasts about three weeks. The typical lens is…',
+      choices: [['planet', 'a Jupiter-mass planet'], ['dwarf', 'a red dwarf of a few tenths of a solar mass'], ['bh', 'a black hole of tens of solar masses']],
+      answer: 'dwarf',
+      setup: function (app, st) {
+        return app.open('ogle_events', { x: 'tE', y: '#' }).then(function () {
+          app.chart.bins = 30; app.chart.setView({ x0: 0.5, x1: 400 }); app.refresh();
+          app.sky.goTo(268, -29, 25, { mode: 'dome', frame: 'equ', photo: true });
+          var t = OBS.column(app.chart.ds, 'tE').slice().sort(function (a, b) { return a - b; }); st.med = t[t.length >> 1];
+          function tE(M) { return 22.1 * Math.sqrt(M / 0.3); }
+          var line = app.chart.add({ type: 'vline', id: 'pred', value: tE(0.001), label: 'predicted t_E', colour: OBS.colours().accent });
+          var out = OBS.ui.readout(app.tools);
+          st.slider = OBS.ui.slider(app.tools, { label: 'Lens mass', min: 0.0003, max: 30, value: 0.001, log: true, fmt: function (x) { return x < 0.01 ? (x / 0.000954).toFixed(1) + ' M_Jup' : x.toFixed(2) + ' M☉'; },
+            oninput: function (M) { st.M = M; line.value = tE(M); app.chart.draw(); out.innerHTML = 'A lens of ' + (M < 0.01 ? fix(M / 0.000954, 1) + ' Jupiter masses' : fix(M, 2) + ' M☉') + ' gives t_E ≈ <span class="num">' + fix(tE(M), 1) + ' days</span>. The median of the real events: ' + fix(st.med, 1) + ' days.'; } });
+          st.M = 0.001; st.slider.set(0.001);
+          app.tools.appendChild(out);
+        });
+      },
+      task: 'The histogram counts events by duration t_E (log axis). Slide the lens mass until the predicted time scale sits at the middle of the real events.',
+      progress: function (app, st) { var t = 22.1 * Math.sqrt(st.M / 0.3), ok = Math.abs(Math.log10(t / st.med)) < 0.08; return { done: ok, text: 'Predicted ' + t.toFixed(1) + ' d against a median of ' + st.med.toFixed(1) + ' d' + (ok ? '' : t < st.med ? ': heavier' : ': lighter') }; },
+      result: function (app, st) {
+        return 'Typical lenses toward the bulge weigh about ' + fix(st.M, 2) + ' M☉: ordinary red dwarfs, the most common stars. Toward the LMC the same physics predicts, for a halo made entirely of 1 M☉ MACHOs, about a hundred events in five years among 10 million stars, each lasting months; for Jupiter-mass ones, thousands of events lasting days. MACHO and EROS saw a handful.';
+      },
+      explain: 'Event durations weigh the lenses only statistically (each t_E mixes mass, distance and speed), but the distribution is clear: toward the bulge, lenses are normal stars. Toward the Magellanic Clouds, through the halo, the rate was what mattered: MACHO (13–17 events in 5.7 years, 11.9 million stars) and EROS (1 event) put compact objects between 10⁻⁷ and 10 M☉ at no more than about 10–20% of the halo. Dark matter is not dim stars, planets or stellar black holes.',
+      real: 'Paczyński proposed the test in 1986; MACHO, EROS and OGLE all started in 1992–93. OGLE now finds about 2,000 events a year toward the bulge, a few with planets.'
     },
     // =================================================================================== chapter 5
     {
@@ -784,6 +929,34 @@
       },
       explain: 'Twice the speed means about 2⁴ = 16 times the light. The relation is tight in the infrared, where the light follows the stellar mass, and tighter still when the gas mass is added (the baryonic Tully–Fisher relation), with a slope close to 4. For elliptical galaxies the same idea with the spread of star speeds σ is the Faber–Jackson relation, L ∝ σ⁴.',
       real: 'Tully and Fisher published the relation in 1977 and used it to measure distances to the Virgo cluster. Lelli, McGaugh and Schombert’s SPARC sample (2016) measures it with Spitzer 3.6 μm photometry.'
+    },
+    {
+      id: 'fj', ch: 5, title: 'Speed tells power, for ellipticals', era: '1976', who: 'Sandra Faber and Robert Jackson', course: 'Lecture 5 (scaling relations: Faber–Jackson)',
+      brief: 'Ellipticals do not rotate much; their stars swarm in random orbits with a spread of speeds σ, measured from the width of the absorption lines. Faber and Jackson found that brighter ellipticals have faster stars, as Tully and Fisher did for spirals. Here are 8,000 Galaxy Zoo ellipticals from SDSS.',
+      vars: [['σ', 'Velocity dispersion', 'km/s', 'Width of the absorption lines'], ['L', 'Luminosity in r', 'L☉', 'From the magnitude and cz/H₀']],
+      relation: 'L ∝ σ^n with n ≈ 4: the virial theorem (M ∝ σ²R) and similar surface brightness (L ∝ R²) give L ∝ σ⁴.',
+      deduce: 'A distance indicator for ellipticals, and a test of the virial theorem.',
+      question: 'One elliptical’s stars move twice as fast as another’s. It is about…',
+      choices: [['2', '2 times as luminous'], ['16', '10 to 16 times as luminous'], ['1000', 'a thousand times as luminous']],
+      answer: '16',
+      setup: function (app) {
+        return app.open('ellipticals', { x: 'Lr', y: 'sigma' }).then(function () {
+          app.chart.setView({ x0: 1e9, x1: 3e11, y0: 60, y1: 420 });
+          app.sky.goTo(180, 30, 200, { mode: 'allsky', frame: 'equ', photo: false });
+          app.chart.add({ type: 'line', id: 'fj', x1: 2e9, y1: 150, x2: 2e11, y2: 160, colour: OBS.colours().accent, label: 'your line' });
+        });
+      },
+      task: 'Each dot is an elliptical: velocity dispersion σ against luminosity, on log axes. Drag the line through the middle of the cloud. Its slope b gives σ ∝ L^b, that is L ∝ σ^(1/b).',
+      progress: function (app) {
+        var L = app.chart.lineFit('fj'), r = app.chart.lineRms('fj'), n = 1 / L.slope, ok = L.slope > 0 && n > 2.6 && n < 5.2 && r < 0.15;
+        return { done: ok, text: 'Slope b = ' + L.slope.toFixed(3) + (L.slope > 0 ? ' → L ∝ σ^' + n.toFixed(2) : '') + ', scatter ' + r.toFixed(2) + ' dex' + (ok ? '' : r >= 0.15 ? ': move it into the middle of the cloud' : n <= 2.6 || L.slope <= 0 ? ': too steep' : ': too flat') };
+      },
+      result: function (app) {
+        var L = app.chart.lineFit('fj'), n = 1 / L.slope;
+        return 'Your relation: L ∝ σ^' + fix(n, 2) + '. Twice the speed means ' + fix(Math.pow(2, n), 0) + ' times the light. Fitted the other way round, L against σ, the same galaxies give only L ∝ σ^1.8: a survey that sees only galaxies brighter than its limit cuts off the faint end at every σ, which flattens that fit (Malmquist bias), while σ at a given L is barely affected. Which way round you fit matters.';
+      },
+      explain: 'The virial theorem ties the speeds to the mass and size, and ellipticals have similar mass-to-light ratios and surface brightnesses, so L ∝ σ⁴ roughly. The scatter is large because ellipticals of one σ come in different sizes; adding the size as a third variable gives the much tighter fundamental plane, which measured distances to clusters before supernovae did. Black holes follow the same speeds: M_BH ∝ σ^4–5 (the M–σ relation).',
+      real: 'Faber and Jackson (1976) used 25 ellipticals; Djorgovski & Davis and Dressler et al. (1987) found the fundamental plane. SDSS gave it with tens of thousands of galaxies (Bernardi et al. 2003).'
     },
     // =================================================================================== chapter 6 (lecture 7)
     {
@@ -952,10 +1125,37 @@
         });
       },
       task: 'The dashed lines are a quasar’s emission lines (Lyα, C IV, C III], …) at the trial redshift. Slide z until they sit on the broad bumps; the shaded band then marks where intervening hydrogen would absorb.',
-      progress: function (app, st) { var d = Math.abs(st.fit.z - st.meta.z); return { done: d < 0.01, text: 'z = ' + st.fit.z.toFixed(3) + (d < 0.01 ? '' : d < 0.05 ? ': close, use the fine tune' : '') }; },
+      progress: function (app, st) {
+        var d = Math.abs(st.fit.z - st.meta.z);
+        if (!st.stage) {
+          if (d >= 0.01) return { done: false, text: 'z = ' + st.fit.z.toFixed(3) + (d < 0.05 ? ': close, use the fine tune' : '') };
+          // stage 2: read the forest. The continuum is the upper envelope of the spectrum in 6 nm windows.
+          st.stage = 1; st.z = st.fit.z; st.marks = [];
+          var ch = app.chart, c = ch.ds.table.cols, lam = [], f = [];
+          for (var i = 0; i < ch.ds.table.n; i++) if (ch.mask[i]) { lam.push(c.lam[i]); f.push(c.f[i]); }
+          st.lam = lam; st.f = f; st.lya = 121.567 * (1 + st.z);
+          st.cont = function (x) { var w = f.filter(function (v, k) { return Math.abs(lam[k] - x) < 3; }).sort(function (a, b) { return a - b; }); return w.length ? w[Math.floor(0.9 * (w.length - 1))] : NaN; };
+          var tr = 0, nt = 0; lam.forEach(function (x, k) { if (x > 395 && x < st.lya - 4) { var cc = st.cont(x); if (cc > 0) { tr += Math.min(1.2, f[k] / cc); nt++; } } });
+          st.F = tr / nt;
+          ch.add({ type: 'vline', id: 'abs', value: 0.5 * (395 + st.lya), label: 'absorber?', colour: OBS.colours().sel });
+          var row = OBS.ui.row(app.tools), out = OBS.ui.readout(app.tools);
+          OBS.ui.button(row, 'Mark this absorber', function () {
+            var x = ch.get('abs').value, k = -1, best = Infinity;
+            lam.forEach(function (l, j) { if (Math.abs(l - x) < 0.5 && f[j] < best) { best = f[j]; k = j; } });
+            var ok = x > 385 && x < st.lya - 2 && k >= 0 && best < 0.75 * st.cont(lam[k]) && st.marks.every(function (m) { return Math.abs(m - lam[k]) > 2; });
+            if (ok) st.marks.push(lam[k]);
+            out.innerHTML = (ok ? '' : 'That is not a clear dip inside the forest (or you marked it already). ') + st.marks.map(function (l) { var za = l / 121.567 - 1; return 'λ = ' + l.toFixed(1) + ' nm → <b>z = ' + za.toFixed(3) + '</b>, light ' + A.lookback(za, 70, 0.3, 0.7).toFixed(1) + ' Gyr old'; }).join('<br>');
+          }, 'small primary');
+          app.tools.appendChild(out);
+          return { done: false, text: 'Stage 2: mark four absorbers in the forest', task: 'Stage 2: the forest lies between 380 nm and Lyα at ' + st.lya.toFixed(0) + ' nm. Drag the “absorber?” line onto four separate dips and press “Mark this absorber” each time: each dip is a hydrogen cloud at its own redshift.' };
+        }
+        var n = st.marks.length;
+        return { done: n >= 4, text: n + ' of 4 absorbers marked' };
+      },
       result: function (app, st) {
-        var z = st.fit.z, lya = 121.6 * (1 + z), zlo = 380 / 121.6 - 1;
-        return 'Your redshift: z = ' + fix(z, 3) + ' (SDSS: ' + fix(st.meta.z, 3) + '). Its Lyman-α line is at ' + fix(lya, 0) + ' nm, in blue-green light. Every dip between 380 and ' + fix(lya, 0) + ' nm is Lyα absorbed by a hydrogen cloud at a redshift between ' + fix(zlo, 2) + ' and ' + fix(z, 2) + '. The light left the quasar when the Universe was ' + fix(A.age(z, 67.4, 0.315, 0.685), 1) + ' billion years old.';
+        var z = st.z || st.fit.z, lya = 121.6 * (1 + z), zlo = 380 / 121.6 - 1;
+        var zf = 0.5 * (zlo + z), tau = -Math.log(st.F || 0.7), xhi = tau / (1.8e5 * Math.pow((1 + zf) / 4, 1.5));
+        return (st.marks ? 'Your absorbers sit at z = ' + st.marks.map(function (l) { return (l / 121.567 - 1).toFixed(3); }).join(', ') + ', clouds between us and the quasar. In the forest the spectrum keeps on average ' + pct(st.F) + ' of the continuum: an optical depth τ ≈ ' + fix(tau, 2) + ', so only about ' + fmt(xhi, 1) + ' of the hydrogen there is neutral (Gunn–Peterson). ' : '') + 'Your redshift: z = ' + fix(z, 3) + ' (SDSS: ' + fix(st.meta.z, 3) + '). Its Lyman-α line is at ' + fix(lya, 0) + ' nm, in blue-green light. Every dip between 380 and ' + fix(lya, 0) + ' nm is Lyα absorbed by a hydrogen cloud at a redshift between ' + fix(zlo, 2) + ' and ' + fix(z, 2) + '. The light left the quasar when the Universe was ' + fix(A.age(z, 67.4, 0.315, 0.685), 1) + ' billion years old.';
       },
       explain: 'Each cloud along the line of sight absorbs at its own redshift, so the spectrum blueward of Lyα becomes a forest of lines, a one-dimensional map of hydrogen through billions of light-years. Only about 1 atom in 10,000 of that gas is neutral: the intergalactic medium was ionised by the first stars and quasars (reionization, finished by z ≈ 6). Metal lines in the clouds show they are nearly pristine, and their deuterium checks Big Bang nucleosynthesis.',
       real: 'Schmidt identified 3C 273’s lines at z = 0.158 in 1963. Lynds described the “forest” in 1971. Gunn and Peterson (1965) predicted that fully neutral gas would black out everything blueward of Lyα; the first such trough was seen in a z = 6.28 SDSS quasar in 2001, marking the end of reionization.'
@@ -1036,7 +1236,7 @@
           app.chart.bins = 20; app.chart.setView({ x0: -1, x1: 1 });
           app.sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal', photo: false });
           var out = OBS.ui.readout(app.tools), row = OBS.ui.row(app.tools);
-          function show() { var s = OBS.isotropy(app.chart.ds, app.chart.mask); out.innerHTML = '<b>' + app.chart.ds.title + '</b>: ' + s.n + ' objects; within 10° of the plane: <span class="num">' + Math.round(100 * s.plane) + '%</span> (an even sky: 17%). Toward the Galactic centre, ⟨cos θ⟩ = <span class="num">' + s.cosgc.toFixed(3) + '</span>; flattening ⟨sin² b − ⅓⟩ = <span class="num">' + s.sinb2.toFixed(3) + '</span> (both 0 ± ' + s.err.toFixed(3) + ' if even).'; }
+          function show() { var s = OBS.isotropy(app.chart.ds, app.chart.mask); out.innerHTML = '<b>' + app.chart.ds.title + '</b>: ' + s.n + ' objects; within 10° of the plane: <span class="num">' + Math.round(100 * s.plane) + '%</span> (an even sky: 17%). Toward the Galactic centre, ⟨cos θ⟩ = <span class="num">' + s.cosgc.toFixed(3) + '</span> (0 ± ' + s.errCos.toFixed(3) + ' if even); flattening ⟨sin² b − ⅓⟩ = <span class="num">' + s.sinb2.toFixed(3) + '</span> (0 ± ' + s.errSin.toFixed(3) + ' if even).'; }
           function go(id) { return app.open(id, { x: 'sinb', y: '#' }).then(function () { app.chart.bins = 20; app.chart.setView({ x0: -1, x1: 1 }); if (id === 'pulsars') st.sawPulsars = true; show(); }); }
           OBS.ui.button(row, 'Compare with the pulsars', function () { go('pulsars'); });
           OBS.ui.button(row, 'Back to the bursts', function () { go('grbs'); });
@@ -1052,7 +1252,7 @@
       },
       result: function (app, st) {
         var g = OBS.isotropy(app.chart.ds, app.chart.mask), n = app.chart.selected().length;
-        return 'You selected ' + n + ' of ' + g.n + ' bursts, ' + pct(n / g.n) + ', near the plane; an even sky puts 17% there. Their mean ⟨cos θ⟩ toward the Galactic centre is ' + fix(g.cosgc, 3) + ' and ⟨sin² b − ⅓⟩ = ' + fix(g.sinb2, 3) + ': zero within ±' + fix(g.err, 3) + '. Pulsars, by contrast, have most of their number within 10° of the plane.';
+        return 'You selected ' + n + ' of ' + g.n + ' bursts, ' + pct(n / g.n) + ', near the plane; an even sky puts 17% there. Their mean ⟨cos θ⟩ toward the Galactic centre is ' + fix(g.cosgc, 3) + ' (± ' + fix(g.errCos, 3) + ') and ⟨sin² b − ⅓⟩ = ' + fix(g.sinb2, 3) + ' (± ' + fix(g.errSin, 3) + '): both zero within their errors. Pulsars, by contrast, have most of their number within 10° of the plane.';
       },
       explain: 'An even sky leaves three possibilities. The bursts could be very near, within a few hundred parsecs, closer than the thickness of the Milky Way’s disk; but then the faint ones would be as evenly spread and as numerous as an even, nearby population predicts, and they are too few. They could fill a huge halo around the Milky Way, far bigger than its disk, so that our off-centre position barely shows; that was the Galactic side of the 1995 debate. Or they are cosmological, far beyond all Galactic structure. BATSE’s 2,700 bursts were already isotropic in 1991–2000, and their faint ones were too few for an even, nearby population. In 1997 BeppoSAX found X-ray afterglows, and GRB 970508’s spectrum gave z = 0.835: billions of light-years. To be seen so far, a burst must release as much energy in seconds as the Sun in its whole life, almost certainly beamed into jets.',
       real: 'Meegan et al. (1992) showed BATSE’s isotropy; the Great Debate of 1995 (Lamb vs Paczyński) argued Galactic halo vs cosmological. Swift (2004) and Fermi (2008) followed; GRB 170817A, 1.7 s after GW170817, tied short bursts to neutron-star mergers.'
@@ -1101,7 +1301,7 @@
       answer: 'less',
       setup: function (app, st) {
         // the mass that disappears, against the total: a 4% effect is a clear slope here, invisible on final-against-total
-        return app.open('gw', { x: 'mtot', y: 'mrad', colourBy: 'kind' }).then(function () {
+        return app.open('gw', { x: 'mtot', y: 'mrad', colourBy: 'kind', filter: function (c, i) { return c.m1[i] + c.m2[i] - c.mfinal[i] > 0; } }).then(function () {      // a radiated mass of zero or less is a posterior artefact
           app.chart.setView({ y0: -1, y1: 14 });
           app.sky.goTo(266.4, -28.9, 200, { mode: 'allsky', frame: 'gal', band: 'visible', photo: true });
           var c = app.chart.ds.table.cols;

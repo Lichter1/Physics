@@ -16,6 +16,7 @@ IMAGES = [
     ('xdf', ESAH.format('heic1214a'), 'NASA, ESA, G. Illingworth, D. Magee, P. Oesch, R. Bouwens and the HUDF09 Team (ESA/Hubble heic1214a), CC BY 4.0'),
     ('m82', ESAH.format('heic0604a'), 'NASA, ESA and the Hubble Heritage Team (STScI/AURA) (ESA/Hubble heic0604a), CC BY 4.0'),
     ('h0licow', ESAH.format('heic1702a'), 'ESA/Hubble, NASA, Suyu et al. (ESA/Hubble heic1702a), CC BY 4.0'),
+    ('ss_lep', ESO.format('eso1148a'), 'ESO/PIONIER/IPAG (ESO eso1148a), CC BY 4.0'),
     ('neptune_ao', ESO.format('eso1824a'), 'ESO/P. Weilbacher (AIP) (ESO eso1824a), CC BY 4.0'),
     ('wr124', ESAW.format('weic2307a'), 'ESA/Webb, NASA, CSA, STScI, Webb ERO Production Team (ESA/Webb weic2307a), CC BY 4.0'),
     ('wise_obs', 'https://commons.wikimedia.org/wiki/Special:FilePath/WiseObservatory.jpg?width=1280', 'Etan J. Tal (Wikimedia Commons, File:WiseObservatory.jpg), CC BY 3.0'),

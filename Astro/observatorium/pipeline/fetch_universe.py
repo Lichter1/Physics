@@ -264,6 +264,8 @@ def skymaps():
         path = os.path.join(CACHE, fn)
         skyview(fn)
         d = np.asarray(fits.open(path)[0].data, float)
+        # survey gaps (IRAS's unscanned stripes, ROSAT's unexposed arcs) are painted neutral grey, not as sky
+        gap = ~np.isfinite(d) | ((d <= 0) if key == 'xray' else False)
         d = np.nan_to_num(d, nan=np.nanmedian(d))
         if tr == 'logsmooth':
             d = gaussian_filter(np.clip(d, 0, None), 2.0 if key == 'gamma' else 0.8)
@@ -276,6 +278,7 @@ def skymaps():
             lim = np.percentile(np.abs(d), 99.5); lo, hi = -lim, lim
         x = np.clip((d - lo) / (hi - lo), 0, 1)[::-1]          # FITS row 0 is the south pole; images start at the top
         rgb = (matplotlib.colormaps[cmap](x)[..., :3] * 255).astype(np.uint8)
+        if np.any(gap): rgb[gap[::-1]] = (92, 92, 98); credit = credit + '. Grey: no data'
         Image.fromarray(rgb).save(os.path.join(IMG, f'sky_{key}.jpg'), quality=85, optimize=True)
         meta['bands'].append({'id': key, 'label': label, 'file': f'img/sky_{key}.jpg', 'w': rgb.shape[1], 'h': rgb.shape[0],
                               'frame': 'gal', 'proj': 'car', 'lon_center': 0, 'lon_left': True, 'credit': credit})

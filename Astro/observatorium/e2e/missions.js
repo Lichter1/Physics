@@ -38,6 +38,11 @@ const SOLVE = {
   census: (OBS) => { const ch = OBS.app.chart, P = OBS.column(ch.ds, 'P'), M = OBS.column(ch.ds, 'Mp'), idx = []; for (let i = 0; i < P.length; i++) if (P[i] < 10 && M[i] > 0.3) idx.push(i); ch.setSel(idx); },
   microlens: (OBS, st) => { const e = st.ews; const s = st.model.sliders; s.t0.set(e.tmax - 2450000); s.tE.set(e.tE); s.u0.set(e.u0); s.fbl.set(e.fbl); s.I0.set(e.I0); },
   density: (OBS) => { const ch = OBS.app.chart, r = OBS.column(ch.ds, 'rho'), rp = OBS.column(ch.ds, 'Rp'), idx = []; for (let i = 0; i < r.length; i++) if (ch.mask[i] && r[i] > 4 && rp[i] < 0.2) idx.push(i); ch.setSel(idx); },
+  rv: async (OBS, st) => { st.fold.coarse.set(4.230785); document.getElementById('fold-on').click(); const ch = OBS.app.chart; ch.get('top').value = 56; ch.get('bot').value = -56; await new Promise((r) => setTimeout(r, 300)); },
+  imf: (OBS, st) => { const s = st.model.sliders; s.G.set(1.4); s.N0.set(2700); },
+  sgra: (OBS, st) => { const s = st.model.sliders; s.a.set(125.5); s.P.set(16.0); },
+  macho: (OBS, st) => { st.slider.set(0.28); },
+  fj: (OBS) => { Object.assign(OBS.app.chart.get('fj'), { x1: 3e9, y1: Math.pow(10, 2.17 + 0.3 * Math.log10(3e9 / 3e10)), x2: 2e11, y2: Math.pow(10, 2.17 + 0.3 * Math.log10(2e11 / 3e10)) }); },
   kirkwood: (OBS) => { const ch = OBS.app.chart; ch.get('g1').value = 2.502; ch.get('g2').value = 2.825; ch.get('g3').value = 2.958; },
   shapley: (OBS) => { const p = OBS.app.chart.get('centre'); p.x = 7.2; p.y = 0.3; },
   rotation: (OBS, st) => { const s = st.model.sliders; s.Y.set(0.9); s.Y.set(0.58); s.vh.set(142); s.rc.set(3.12); },
@@ -53,7 +58,14 @@ const SOLVE = {
   accel: (OBS, st) => { const s = st.model.sliders; s.Om.set(0.36); s.OL.set(0.64); s.H0.set(72.6); },
   cmb: (OBS, st) => { const s = st.model.sliders; s.T.set(2.725); s.dT.set(0); },
   peaks: (OBS, st) => { const s = st.model.sliders; s.Ot.set(1.0); s.dO.set(0); },
-  forest: (OBS, st) => st.fit.set(st.meta.z),
+  forest: async (OBS, st) => {
+    st.fit.set(st.meta.z); await OBS.MISSIONS.find((m) => m.id === 'forest').progress(OBS.app, st);     // into stage 2
+    const btn = [...document.querySelectorAll('#tools button')].find((b) => b.textContent === 'Mark this absorber'), ch = OBS.app.chart;
+    for (let k = 1, n = 0; k < st.lam.length - 1 && n < 6; k++) {
+      const x = st.lam[k]; if (x < 390 || x > st.lya - 5) continue;
+      if (st.f[k] < st.f[k - 1] && st.f[k] < st.f[k + 1] && st.f[k] < 0.6 * st.cont(x) && st.marks.every((m) => Math.abs(m - x) > 3)) { ch.get('abs').value = x; btn.click(); n++; }
+    }
+  },
   night: (OBS, st) => {
     const p = st.planner; p.sd.set(167); p.sh.set(24);
     let h = p.transit; while (h < 16) h += 24; while (h > 32) h -= 24; p.sh.set(Math.round(h * 4) / 4);

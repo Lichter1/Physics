@@ -272,6 +272,14 @@
   "source": "https://cdn.esahubble.org/archives/images/screen/heic1702a.jpg"
  },
  {
+  "id": "ss_lep",
+  "file": "img/lec/ss_lep.jpg",
+  "w": 1280,
+  "h": 591,
+  "credit": "ESO/PIONIER/IPAG (ESO eso1148a), CC BY 4.0",
+  "source": "https://cdn.eso.org/images/screen/eso1148a.jpg"
+ },
+ {
   "id": "neptune_ao",
   "file": "img/lec/neptune_ao.jpg",
   "w": 1280,

@@ -194,4 +194,104 @@
     UI.button(s.ctl, 'Recycle it with a companion', function () { st.recycled = !st.recycled; draw(); }, 'small');
     draw(); return { stop: function () { } };
   };
+
+  // ------------------------------------------------------------------------------------------ 8.2 de-disperse a burst
+  X.dedisperse = function (host) {
+    var s = stage(host, 0.62), NCH = 48, NT = 240, T = 4.0, DMtrue = 180, st = { dm: 0 }, F0 = 0.4, F1 = 0.8;   // CHIME's 400-800 MHz band
+    var rnd = (function (seed) { return function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }; })(12345);
+    function gauss() { return Math.sqrt(-2 * Math.log(rnd() + 1e-12)) * Math.cos(2 * Math.PI * rnd()); }
+    function delay(dm, f) { return 4.149e-3 * dm * (1 / (f * f) - 1 / (F1 * F1)); }               // seconds, f in GHz
+    var data = [];
+    for (var c = 0; c < NCH; c++) { var f = F1 - (F1 - F0) * (c + 0.5) / NCH, t0 = 0.4 + delay(DMtrue, f), row = [];
+      for (var k = 0; k < NT; k++) { var t = (k + 0.5) * T / NT; row.push(gauss() + 2.2 * Math.exp(-0.5 * Math.pow((t - t0) / 0.012, 2)) * (T / NT / 0.012 > 1 ? 1 : 1) + (Math.abs(t - t0) < T / NT ? 2.2 : 0)); }
+      data.push(row); }
+    function draw() {
+      s.fit(); var c = s.ctx, C = s.C, L = 54, R = s.W - 12, top = 10, H1 = s.H * 0.58, H2 = s.H * 0.22, y2 = top + H1 + 26;
+      var prof = new Array(NT).fill(0);
+      for (var ch = 0; ch < NCH; ch++) {
+        var f = F1 - (F1 - F0) * (ch + 0.5) / NCH, sh = Math.round(delay(st.dm, f) / T * NT);
+        for (var k = 0; k < NT; k++) {
+          var v = data[ch][k + sh]; if (v === undefined) continue; prof[k] += v / NCH;
+          var g = Math.max(0, Math.min(255, Math.round(60 + 45 * v))); c.fillStyle = 'rgb(' + g + ',' + g + ',' + Math.min(255, g + 20) + ')';
+          c.fillRect(L + (R - L) * k / NT, top + H1 * ch / NCH, (R - L) / NT + 0.6, H1 / NCH + 0.6);
+        }
+      }
+      c.strokeStyle = C.rule; c.strokeRect(L + 0.5, top + 0.5, R - L, H1);
+      text(c, '800 MHz', L - 4, top + 10, C['ink-3'], 'right'); text(c, '400 MHz', L - 4, top + H1, C['ink-3'], 'right');
+      var mx = Math.max.apply(null, prof), sd = Math.sqrt(1 / NCH), pts = prof.map(function (v, k) { return [L + (R - L) * (k + 0.5) / NT, y2 + H2 - H2 * Math.max(0, v) / Math.max(0.5, 2.3)]; });
+      c.strokeStyle = C.rule; c.strokeRect(L + 0.5, y2 + 0.5, R - L, H2); line(c, pts, C.accent, 1.6);
+      text(c, 'all channels added', L + 6, y2 + 12, C['ink-3']); text(c, 'time (4 s)', (L + R) / 2, s.H - 4, C['ink-3'], 'center');
+      var snr = mx / sd;
+      s.out.innerHTML = 'Trial DM = <b>' + Math.round(st.dm) + ' pc/cm³</b>: the summed pulse peaks at S/N ≈ <b>' + fx(snr, 1) + '</b>. Low frequencies arrive later, by Δt = 4.15 ms × DM × (ν⁻² − ν_top⁻²) with ν in GHz. At the right DM the sweep stands upright and the burst adds up across all 48 channels; at a wrong one it smears and sinks into the noise. Searches try thousands of trial DMs on every beam, every second.';
+    }
+    UI.slider(s.ctl, { label: 'Trial dispersion measure', min: 0, max: 400, value: 0, step: 1, unit: 'pc/cm³', fmt: function (x) { return Math.round(x); }, oninput: function (x) { st.dm = x; draw(); } });
+    draw(); return { stop: function () { } };
+  };
+
+  // ------------------------------------------------------------------------------------------ 4.1 the solar system from above
+  var PLANETS = [   // J2000 elements (Standish): a, e, i, L, ϖ, Ω, and L's rate in degrees per century
+    ['Mercury', 0.38710, 0.20563, 7.005, 252.2503, 77.4578, 48.3308, 149472.674], ['Venus', 0.72333, 0.00677, 3.3947, 181.9791, 131.6025, 76.68, 58517.8156],
+    ['Earth', 1.00000, 0.01671, 0, 100.4644, 102.9377, 0, 35999.3724], ['Mars', 1.52371, 0.09339, 1.8497, -4.5534, -23.9436, 49.5596, 19140.3027],
+    ['Jupiter', 5.20289, 0.04839, 1.3044, 34.3965, 14.7284, 100.474, 3034.7461], ['Saturn', 9.53668, 0.05386, 2.4859, 49.9548, 92.5989, 113.6624, 1222.4936],
+    ['Uranus', 19.18916, 0.04726, 0.7726, 313.2381, 170.9543, 74.0168, 428.482], ['Neptune', 30.06992, 0.00859, 1.77, -55.1203, 44.9648, 131.7841, 218.4562]];
+  function kep(a, e, i, Om, w, M) {      // heliocentric ecliptic x, y (AU); angles in degrees
+    var d = Math.PI / 180, Mr = M * d, E = Mr; for (var k = 0; k < 12; k++) E -= (E - e * Math.sin(E) - Mr) / (1 - e * Math.cos(E));
+    var xv = a * (Math.cos(E) - e), yv = a * Math.sqrt(1 - e * e) * Math.sin(E), ww = w * d, OO = Om * d, ii = i * d;
+    var xo = xv * Math.cos(ww) - yv * Math.sin(ww), yo = xv * Math.sin(ww) + yv * Math.cos(ww);
+    return [xo * Math.cos(OO) - yo * Math.sin(OO) * Math.cos(ii), xo * Math.sin(OO) + yo * Math.cos(OO) * Math.cos(ii)];
+  }
+  function planetAt(p, years) { var T = 0.26 + years / 100, L = p[4] + p[7] * T; return kep(p[1], p[2], p[3], p[6], p[5] - p[6], L - p[5]); }   // 2026 Jan 1 is T = 0.26
+  X.solartop = function (host) {
+    var s = stage(host, 0.85), st = { yr: 0, zoom: 6, play: false }, data = null, raf = 0;
+    var COL = { MBA: '#9fb3d9', OMB: '#c9a3e6', IMB: '#9fb3d9', TJN: '#ffb35c', TNO: '#7fd6a8', CEN: '#e87f7f', MCA: '#e8e87f' };
+    function draw() {
+      s.fit(); var c = s.ctx, C = s.C, cx = s.W / 2, cy = s.H / 2, sc = Math.min(s.W, s.H) / 2 / st.zoom;
+      function P(x, y) { return [cx + x * sc, cy - y * sc]; }
+      PLANETS.forEach(function (p) { if (p[1] > st.zoom * 1.5) return; c.strokeStyle = C.rule; c.beginPath(); for (var m = 0; m <= 360; m += 4) { var q = kep(p[1], p[2], p[3], p[6], p[5] - p[6], m), r = P(q[0], q[1]); if (m) c.lineTo(r[0], r[1]); else c.moveTo(r[0], r[1]); } c.stroke(); });
+      if (data) for (var i = 0; i < data.a.length; i++) {
+        var n = 0.9856076686 / Math.pow(data.a[i], 1.5), q = kep(data.a[i], data.e[i], data.i[i], data.om[i], data.w[i], data.M[i] + n * st.yr * 365.25), r = P(q[0], q[1]);
+        if (r[0] < 0 || r[0] > s.W || r[1] < 0 || r[1] > s.H) continue; c.fillStyle = COL[data.cls[i]] || C['ink-3']; c.fillRect(r[0] - 0.7, r[1] - 0.7, 1.5, 1.5);
+      }
+      disc(c, cx, cy, 4, '#ffd34d');
+      PLANETS.forEach(function (p) { if (p[1] > st.zoom * 1.2) return; var q = planetAt(p, st.yr), r = P(q[0], q[1]); disc(c, r[0], r[1], p[0] === 'Jupiter' ? 5 : 3.5, C.ink); text(c, p[0], r[0] + 6, r[1] - 4, C.ink); });
+      text(c, 'orange: Jupiter’s Trojans · violet: outer belt and Hildas · blue: main belt · green: beyond Neptune · red: centaurs', 8, s.H - 8, C['ink-3']);
+      s.out.innerHTML = '<b>' + (2026 + st.yr).toFixed(1) + '</b>, seen from above the ecliptic, ' + Math.round(2 * st.zoom) + ' AU across. The Kirkwood gaps, so clear in a histogram of orbit sizes, vanish here: eccentric orbits smear every asteroid over a range of distances. What does stand out is resonance in angle: the Trojans travel 60° ahead of and behind Jupiter, and as time runs the Hildas keep a triangle with Jupiter at one corner (3:2).';
+    }
+    UI.slider(s.ctl, { label: 'Years from 2026', min: 0, max: 24, value: 0, fmt: function (x) { return x.toFixed(1); }, oninput: function (x) { st.yr = x; draw(); } });
+    UI.slider(s.ctl, { label: 'Field (half-width)', min: 2, max: 60, value: 6, log: true, unit: 'AU', fmt: function (x) { return x.toFixed(1); }, oninput: function (x) { st.zoom = x; draw(); } });
+    OBS.open('orbits').then(function (ds) { var c = ds.table.cols; data = { a: c.a, e: c.e, i: c.i, om: c.om, w: c.w, M: c.M, cls: c['class'] }; draw(); });
+    draw(); return { stop: function () { st.play = false; G.cancelAnimationFrame(raf); } };
+  };
+
+  // ------------------------------------------------------------------------------------------ the scale ladder: powers of ten
+  X.powers = function (host) {
+    var s = stage(host, 0.75), st = { lw: 1.3 }, D = {}, AU = 1, PC = 206265, KPC = 2.06265e8, MPC = 2.06265e11;
+    function load(id, f) { OBS.open(id).then(function (ds) { D[id] = f(ds.table.cols, ds.table.n); draw(); }); }
+    function xyz(ra, dec, d) { var r = Math.PI / 180; return [d * Math.cos(dec * r) * Math.cos(ra * r), d * Math.cos(dec * r) * Math.sin(ra * r)]; }
+    load('orbits', function (c, n) { var o = [], b = []; for (var i = 0; i < n; i++) if (c['class'][i] === 'TNO' || i % 4 === 0) { var q = kep(c.a[i], c.e[i], c.i[i], c.om[i], c.w[i], c.M[i]); (c['class'][i] === 'TNO' ? o : b).push(q); } D.belt = b; return o; });
+    load('nearby', function (c, n) { var o = []; for (var i = 0; i < n; i++) { var d = 1000 / (c.parallax[i] + 0.017); if (d > 0) o.push(xyz(c.ra[i], c.dec[i], d * PC)); } return o; });
+    load('globulars', function (c, n) { var o = []; for (var i = 0; i < n; i++) if (isFinite(c.X[i])) o.push([-c.X[i] * KPC, c.Y[i] * KPC]); return o; });     // the catalogue's X points from the Sun to the centre, drawn to the left
+    load('galaxies', function (c, n) { var o = []; for (var i = 0; i < n; i++) o.push(xyz(c.ra[i], c.dec[i], c.z[i] * 299792.458 / 70 * MPC)); return o; });
+    load('supernovae', function (c, n) { var o = []; for (var i = 0; i < n; i++) o.push(xyz(c.ra[i], c.dec[i], OBS.astro.dM(c.z[i], 0.31, 0.69) * 299792.458 / 70 * MPC)); return o; });
+    function unit(au) { return au < 0.5 * PC ? fm(au, 2) + ' AU' : au < 0.5 * KPC ? fm(au / PC, 2) + ' pc (' + fm(au / PC * 3.26, 2) + ' light-years)' : au < 0.5 * MPC ? fm(au / KPC, 2) + ' kpc' : au < 2000 * MPC ? fm(au / MPC, 2) + ' Mpc' : fm(au / MPC / 1000, 2) + ' Gpc'; }
+    function draw() {
+      s.fit(); var c = s.ctx, C = s.C, W = Math.pow(10, st.lw), cx = s.W / 2, cy = s.H / 2, sc = Math.min(s.W, s.H) / W;
+      function pt(set, col, sz, alpha) { if (!set) return; c.fillStyle = col; c.globalAlpha = alpha || 1; set.forEach(function (q) { var x = cx + q[0] * sc, y = cy - q[1] * sc; if (x > -2 && x < s.W + 2 && y > -2 && y < s.H + 2) c.fillRect(x - sz / 2, y - sz / 2, sz, sz); }); c.globalAlpha = 1; }
+      function ring(r, col, lab, dash) { if (r * sc < 3 || r * sc > s.W * 3) return; c.strokeStyle = col; c.setLineDash(dash || []); c.beginPath(); c.arc(cx, cy, r * sc, 0, 7); c.stroke(); c.setLineDash([]); if (lab) text(c, lab, cx + r * sc * 0.72 + 4, cy - r * sc * 0.72, col); }
+      PLANETS.forEach(function (p) { ring(p[1], C.rule, W < 80 ? p[0] : ''); });
+      if (W > 5 && W < 2e3) { pt(D.belt, '#9fb3d9', 1.3, 0.7); pt(D.orbits, '#7fd6a8', 1.5, 0.85); }
+      ring(2000, C.c4, W > 3e3 && W < 4e5 ? 'inner Oort cloud (inferred)' : '', [3, 3]); ring(1e5, C.c4, W > 1e5 && W < 4e6 ? 'outer Oort cloud' : '', [3, 3]);
+      if (W > 2e5 && W < 3e8) pt(D.nearby, '#cfd8ff', 1.4, 0.7);
+      if (W > 3e8 && W < 3e10) { ring(8.2 * KPC, C.rule, 'the Sun’s orbit', [2, 4]); pt(D.globulars, C.accent, 3, 0.9); c.fillStyle = 'rgba(200,190,160,0.10)'; c.beginPath(); c.arc(cx - 8.2 * KPC * sc, cy, 15 * KPC * sc, 0, 7); c.fill(); text(c, 'Galactic centre', cx - 8.2 * KPC * sc + 6, cy - 6, C['ink-2']); }
+      if (W > 3e10 && W < 1e13) { [['M31', 780 * 1000 * PC, 2.3], ['LMC', 50 * KPC, 1.3]].forEach(function (g) { var x = cx + g[1] * Math.cos(g[2]) * sc, y = cy - g[1] * Math.sin(g[2]) * sc; disc(c, x, y, 3, C.ink); text(c, g[0], x + 5, y - 4, C.ink); }); }
+      if (W > 1e12 && W < 5e15) pt(D.galaxies, '#ffb35c', 1.4, 0.75);
+      if (W > 3e13) { pt(D.supernovae, '#ff7f9f', 2, 0.9); ring(14000 * MPC, C.c1, 'the CMB: the farthest we can see', [5, 3]); }
+      disc(c, cx, cy, 3, '#ffd34d'); text(c, W < 1e4 ? 'Sun' : 'you are here', cx + 5, cy + 13, '#ffd34d');
+      var bar = W / 5; c.strokeStyle = C.ink; c.beginPath(); c.moveTo(14, s.H - 18); c.lineTo(14 + bar * sc, s.H - 18); c.stroke(); text(c, unit(bar), 14, s.H - 24, C.ink);
+      var what = W < 80 ? 'the planets' : W < 2e5 ? 'the asteroid belt (blue), the Kuiper belt (green) and, far beyond, the Oort cloud of comets' : W < 3e8 ? 'the nearest stars, from Gaia: within 100 pc they look evenly spread' : W < 3e10 ? 'the Milky Way: globular clusters (gold) around the centre that Shapley found' : W < 1e13 ? 'the Local Group: the Magellanic Clouds and Andromeda' : W < 5e15 ? 'galaxies from SDSS (orange) in walls and voids' : 'type Ia supernovae (pink) out to z ≈ 2, and the CMB beyond them';
+      s.out.innerHTML = 'Field <b>' + unit(W) + '</b> across: ' + what + '. Each step of the slider is a factor of ten; the whole range is 26 of them.';
+    }
+    UI.slider(s.ctl, { label: 'Field of view (powers of ten)', min: 0.6, max: 15.5, value: st.lw, step: 0.05, fmt: function (x) { return unit(Math.pow(10, x)); }, oninput: function (x) { st.lw = x; draw(); } });
+    draw(); return { stop: function () { } };
+  };
 })(typeof window !== 'undefined' ? window : globalThis);

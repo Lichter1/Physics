@@ -197,12 +197,24 @@
   };
 
   // ------------------------------------------------------------------------------------------ drawing
+  /** Draw an overlay label, stepping it down past labels already drawn and keeping it inside the canvas. */
+  P._label = function (ctx, text, x, y) {
+    var w = ctx.measureText(text).width, h = 13, al = ctx.textAlign, bl = ctx.textBaseline;
+    function box(yy) { var x0 = al === 'center' ? x - w / 2 : al === 'right' ? x - w : x, top = bl === 'top' ? yy : bl === 'bottom' ? yy - h : yy - h + 3; return { x0: x0, x1: x0 + w, y0: top, y1: top + h }; }
+    var lb = this._lbl || (this._lbl = []), b = box(y);
+    var right = this.W - PAD.r - 2;
+    if (b.x1 > right) { x -= b.x1 - right; b = box(y); }
+    if (b.x0 < 2) { x += 2 - b.x0; b = box(y); }
+    for (var k = 0; k < 8 && lb.some(function (q) { return b.x0 < q.x1 && b.x1 > q.x0 && b.y0 < q.y1 && b.y1 > q.y0; }); k++) { y += h + 1; b = box(y); }
+    lb.push(b); ctx.fillText(text, x, y);
+  };
   P.draw = function () {
     var self = this;
     if (this._raf) return;
     this._raf = G.requestAnimationFrame(function () { self._raf = 0; self._draw(); });
   };
   P._draw = function () {
+    this._lbl = [];      // label boxes drawn so far, so overlay labels can step aside
     if (!this.ds) return;
     this.size();
     var ctx = this.ctx, W = this.W, H = this.H, C = OBS.colours(), dpr = this.dpr;
@@ -362,14 +374,14 @@
       ctx.beginPath(); ctx.moveTo(a[0] + t0 * dx, a[1] + t0 * dy); ctx.lineTo(a[0] + t1 * dx, a[1] + t1 * dy); ctx.stroke();
       ctx.setLineDash([]);
       if (o.drag !== false) [a, b].forEach(function (p) { ctx.beginPath(); ctx.arc(p[0], p[1], 6, 0, 7); ctx.fillStyle = C.panel; ctx.fill(); ctx.stroke(); });
-      if (o.label) { ctx.fillStyle = col; ctx.textAlign = o.segment ? 'center' : 'left'; ctx.fillText(o.label, o.segment ? (a[0] + b[0]) / 2 : b[0] + 9, o.segment ? (a[1] + b[1]) / 2 - 8 : b[1] - 9); ctx.textAlign = 'left'; }
+      if (o.label) { ctx.fillStyle = col; ctx.textAlign = o.segment ? 'center' : 'left'; this._label(ctx, o.label, o.segment ? (a[0] + b[0]) / 2 : b[0] + 9, o.segment ? (a[1] + b[1]) / 2 - 8 : b[1] - 9); ctx.textAlign = 'left'; }
     } else if (o.type === 'hline' || o.type === 'vline') {
       var p = o.type === 'hline' ? this.py(ax(o.value, ly)) : this.px(ax(o.value, lx));
       ctx.beginPath();
       if (o.type === 'hline') { ctx.moveTo(PAD.l, p); ctx.lineTo(this.W - PAD.r, p); } else { ctx.moveTo(p, PAD.t); ctx.lineTo(p, this.H - PAD.b); }
       ctx.stroke(); ctx.setLineDash([]);
       ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
-      if (o.label) ctx.fillText(o.label, o.type === 'hline' ? PAD.l + 6 : p + 5, o.type === 'hline' ? p - 3 : PAD.t + 14);
+      if (o.label) this._label(ctx, o.label, o.type === 'hline' ? PAD.l + 6 : p + 5, o.type === 'hline' ? p - 3 : PAD.t + 14);
       if (o.drag !== false) {
         var hx = o.type === 'hline' ? this.W - PAD.r - 12 : p, hy = o.type === 'hline' ? p : this.H - PAD.b - 12;
         ctx.beginPath(); ctx.arc(hx, hy, 6, 0, 7); ctx.fillStyle = C.panel; ctx.fill(); ctx.stroke();
@@ -385,7 +397,7 @@
         ctx.beginPath(); ctx.arc(q[0], q[1], 1.4, 0, 7); ctx.fill();
       }
       ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
-      if (o.label) ctx.fillText(o.label, q[0] + 9, q[1] - 6);
+      if (o.label) this._label(ctx, o.label, q[0] + 9, q[1] - 6);
     } else if (o.type === 'curve') {
       var v = this.view, N = 240, started = false;
       ctx.beginPath();
@@ -400,12 +412,12 @@
       ctx.stroke();
       if (o.label) {
         var xl = o.labelAt !== undefined ? o.labelAt : unax(v.x0 + 0.82 * (v.x1 - v.x0), lx), yl = o.f(xl);
-        if (isFinite(yl)) { var lp = this.toPx(xl, yl); ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText(o.label, lp[0] + 4, lp[1] - 4); }
+        if (isFinite(yl)) { var lp = this.toPx(xl, yl); ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; this._label(ctx, o.label, lp[0] + 4, lp[1] - 4); }
       }
     } else if (o.type === 'span') {   // a shaded band between two x values
       var sa = this.px(ax(o.x0, lx)), sb = this.px(ax(o.x1, lx));
       ctx.globalAlpha = o.alpha || 0.13; ctx.fillRect(Math.min(sa, sb), PAD.t, Math.abs(sb - sa), this.H - PAD.t - PAD.b); ctx.globalAlpha = 1;
-      if (o.label) { ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(o.label, (sa + sb) / 2, PAD.t + 4); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; }
+      if (o.label) { ctx.textAlign = 'center'; ctx.textBaseline = 'top'; this._label(ctx, o.label, (sa + sb) / 2, PAD.t + 4); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; }
     } else if (o.type === 'ref') {
       ctx.globalAlpha = o.alpha || 0.5;
       var s = o.size || 1.6;

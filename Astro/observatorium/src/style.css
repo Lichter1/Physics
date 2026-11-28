@@ -436,3 +436,10 @@ table.kv tr.locked td { color: var(--ink-3); font-style: italic; }
   .skywrap { min-height: 52vh; height: 52vh; }
   .chartwrap { min-height: 52vh; height: 52vh; }
 }
+
+/* a window over the page (powers of ten) */
+.modal { position: fixed; inset: 0; z-index: 90; background: rgba(2, 5, 12, 0.66); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal-panel { width: min(900px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r); padding: 12px 16px 16px; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.modal-head h3 { margin: 0; }
+.lv-pow { border-top: 1px dashed var(--rule); }

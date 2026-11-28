@@ -159,6 +159,8 @@
     // ============================================================================== chapter 4 (lecture 4)
     kirkwood: {
       beats: [
+        { after: 'The Sun’s smaller family', h: 'The belt seen from above', ex: { id: 'solartop' },
+          html: '<p>Here are 8,843 of the brightest asteroids and trans-Neptunian objects, each on its own real orbit from JPL, placed where it is on 1 January 2026, with the planets. Run the time forward. Look for the Kirkwood gaps: you will not find them in this view, because each orbit is eccentric and sweeps over a range of distances. They show only when the orbits are sorted by size, as in your exercise. What resonances do show here is angles: the Trojans, gathered 60° ahead of and behind Jupiter, and the Hildas, whose 3:2 resonance keeps them in a triangle with Jupiter.</p>' },
         { after: 'Beyond Neptune', h: 'Seeing a 1 km body at 40 AU',
           eq: 'F = \\sqrt{\\frac{\\lambda a}{2}}',
           html: '<p>Most Kuiper-belt objects are far too small and faint to see. They can be detected when one passes in front of a distant star: an <b>occultation</b>. But a body only a kilometre across is smaller than the <b>Fresnel scale</b>, so it casts a diffraction pattern rather than a sharp shadow, and the dip lasts a fraction of a second as the Earth sweeps through it at about 25 km/s. Finding them needs small, distant stars and fast photometry (HW4 Q1).</p>',
@@ -322,6 +324,74 @@
       }
     },
 
+    rv: { full: {
+      beats: [
+        { h: 'A star pulled in a circle', sky: { ra: 344.37, dec: 20.77, fov: 30, mode: 'dome', frame: 'equ', markers: [mk(344.37, 20.77, '51 Pegasi')] },
+          eq: 'M_\\star v_\\star = m_p v_p \;\\Rightarrow\; K = \\left(\\frac{2\\pi G}{P}\\right)^{1/3} \\frac{m_p \\sin i}{M_\\star^{2/3}}',
+          html: '<p>A planet and its star orbit their common centre of mass, the star on a tiny orbit. Its velocity toward and away from us swings by \\(\\pm K\\) once per orbit, shifting every spectral line by \\(\\Delta\\lambda/\\lambda = v/c\\): for 56 m/s, about one part in five million. Spectrographs reach that by comparing the star’s lines with an iodine cell (Lick) or a laser frequency comb (ESPRESSO).</p>' },
+        { h: 'Folding a velocity curve',
+          html: '<p>Observations come at irregular times over years. Folding them on a trial period stacks the cycles: at the right period the points line up into one sine wave (a circular orbit; eccentric ones look lopsided). As for Cepheids (mission 2.2), the sharpness against trial period has dips at the period and its aliases. Half the peak-to-peak swing is \\(K\\).</p>' },
+        { h: 'Only a minimum mass',
+          html: '<p>The Doppler shift sees only the motion along our line of sight, so the method gives \\(m_p \\sin i\\), with \\(i\\) the tilt of the orbit. For a random tilt, \\(\\sin i\\) is usually close to 1 (the average is 0.79), so \\(m \\sin i\\) is usually close to the true mass. A transit (mission 3.1) proves \\(i \\approx 90°\\) and turns the minimum into a true mass.</p>',
+          example: '<p>51 Peg: \\(P = 4.23\\) d, \\(K = 56\\) m/s, \\(M_\\star = 1.11\\,M_\\odot\\). \\((2\\pi G/P)^{1/3} = 1.05\\times10^{-5}\\), \\(M_\\star^{2/3} = 1.70\\times10^{20}\\) kg\\(^{2/3}\\): \\(m \\sin i = 56 \\times 1.70\\times10^{20}/1.05\\times10^{-5} = 9.1\\times10^{26}\\) kg \\(= 0.48\\,M_J\\) (published: 0.46).</p>' }
+      ],
+      practice: [ { q: 'A Sun-like star (1 M☉) wobbles with K = 12.5 m/s and P = 11.86 yr. What is m sin i, in Jupiter masses?', a: 0.99, tol: 0.04, unit: 'M_Jup', sol: '\\((2\\pi G/P)^{1/3} = (2\\pi \\times 6.674\\times10^{-11}/3.743\\times10^8)^{1/3} = 1.04\\times10^{-6}\\); \\(M_\\odot^{2/3} = 1.58\\times10^{20}\\); \\(m = 12.5 \\times 1.58\\times10^{20}/1.04\\times10^{-6} = 1.90\\times10^{27}\\) kg: Jupiter.' } ] } },
+    imf: { full: {
+      beats: [
+        { h: 'Counting stars by mass', sky: { ra: 0, dec: 0, fov: 200, mode: 'allsky', frame: 'equ', photo: false },
+          eq: '\\frac{dN}{d\\log M} \\propto M^{-\\Gamma}, \\qquad \\Gamma_\\text{Salpeter} = 1.35',
+          html: '<p>The <b>initial mass function</b> says how many stars of each mass a cloud makes. Within 100 pc Gaia sees every star down to the faintest red dwarfs, and your mass–luminosity law gives each main-sequence star a mass. Counting them in equal steps of log mass gives the slope directly.</p>' },
+        { h: 'Present day, not birth',
+          html: '<p>Stars of more than about 1 M☉ live less than the 10 Gyr the disk has been forming stars: many that were born are already gone, so today’s count above 1 M☉ falls more steeply than the birth function. Below about 1 M☉ every star ever born is still here, so the present count follows the IMF, which is why the fit range is 0.4–1 M☉. Below about 0.5 M☉ the IMF flattens (Kroupa 2001, Chabrier 2003), so the slope there is shallower.</p>' },
+        { h: 'Where the mass and the light are',
+          html: '<p>With Γ = 1.35, most stars, and most of the mass, are small; but since \\(L \\propto M^{3.9}\\), a young population’s light comes almost entirely from its few massive stars. HW3 Q1 asks exactly this.</p>',
+          example: '<p>Number per log mass ∝ \\(M^{-1.35}\\), so between 0.5 and 1 M☉ the count falls by \\(2^{1.35} = 2.5\\). Light per log mass ∝ \\(M^{-1.35} M^{3.9} = M^{2.55}\\): a 10 M☉ bin outshines a 1 M☉ bin by \\(10^{2.55} = 350\\).</p>' }
+      ],
+      practice: [ { q: 'With dN/dlog M ∝ M^−1.35, how many times fewer stars per bin of log mass are there at 10 M☉ than at 1 M☉?', a: 22.4, tol: 0.03, unit: '×', sol: '\\(10^{1.35} = 22.4\\).' } ] } },
+    sgra: { full: {
+      beats: [
+        { h: 'Stars around nothing', sky: { ra: 266.417, dec: -29.008, fov: 2, mode: 'dome', frame: 'equ', photo: true, markers: [mk(266.417, -29.008, 'Sgr A*')] },
+          fig: { img: 's2_motion', caption: 'Stars orbiting Sgr A*, followed for decades (ESO).' },
+          html: '<p>Dust hides the Galactic centre from visible light, but near-infrared light gets through. With adaptive optics, the VLT and Keck resolve individual stars a few thousandths of an arcsecond apart, and follow them year after year. They orbit a point where nothing shines except the faint radio source Sgr A*.</p>' },
+        { h: 'Kepler’s third law in solar units',
+          eq: 'M = \\frac{a^3}{P^2} \\quad (M\\ \\text{in}\\ M_\\odot,\\ a\\ \\text{in AU},\\ P\\ \\text{in years})',
+          html: '<p>The orbit’s angular size times the distance to the centre (8.3 kpc) gives its size in AU; one orbit gives its period. For the Earth, \\(1^3/1^2 = 1\\) solar mass. The shape and orientation need a full fit (seven numbers); the mass needs only the size and the period.</p>',
+          example: '<p>S2: \\(a = 0.1255″ \\times 8{,}320\\ \\text{pc} = 1{,}044\\) AU, \\(P = 16.0\\) yr: \\(M = 1044^3/16^2 = 4.4\\times10^6\\,M_\\odot\\).</p>' },
+        { h: 'Why it must be a black hole',
+          html: '<p>S2 passes within 120 AU, so four million solar masses fit inside a region smaller than the orbit of Neptune times four. A cluster of so many stars, white dwarfs or neutron stars that dense would collide or evaporate in much less than the Galaxy’s age. In 2018–2020 GRAVITY measured the gravitational redshift of S2’s light and its orbit’s precession, both as general relativity predicts; in 2022 the EHT imaged the shadow.</p>' }
+      ],
+      practice: [ { q: 'A star orbits a central mass with a = 2,000 AU and P = 50 yr. What is the mass, in millions of solar masses?', a: 3.2, tol: 0.02, unit: '×10⁶ M☉', sol: '\\(2000^3/50^2 = 8\\times10^9/2500 = 3.2\\times10^6\\).' } ] } },
+    macho: { full: {
+      beats: [
+        { h: 'A test for dim matter', sky: { ra: 80.9, dec: -69.75, fov: 30, mode: 'dome', frame: 'equ', markers: [mk(80.9, -69.75, 'Large Magellanic Cloud')] },
+          html: '<p>Paczyński (1986) proposed counting microlensing events toward the Magellanic Clouds: if the halo were made of compact objects, about one star in a million would be lensed at any moment (mission 3.3). The duration tells the mass, statistically, because \\(t_E \\propto \\sqrt{M}\\).</p>' },
+        { h: 'Durations weigh the lenses',
+          eq: 't_E = \\frac{R_E}{v}, \\qquad R_E = \\sqrt{\\frac{4GM}{c^2} \\frac{D_L D_{LS}}{D_S}} \\propto \\sqrt{M}',
+          html: '<p>Each event mixes the lens’s mass, distance and speed, so a single \\(t_E\\) does not give a mass. A thousand events do: their typical duration, compared with the expected distances and speeds, gives the typical mass. Toward the bulge most lenses are ordinary stars.</p>',
+          example: '<p>A lens at 6 kpc, a source at 8 kpc, \\(v = 150\\) km/s: \\(M = 0.3\\,M_\\odot\\) gives \\(R_E = 2.0\\) AU and \\(t_E = 22\\) d; a Jupiter mass gives 1.3 d; 10 M☉, 130 d.</p>' },
+        { h: 'The verdict',
+          html: '<p>Toward the LMC, the MACHO project found 13–17 events in 5.7 years of watching 11.9 million stars, and EROS found 1. A halo of compact objects would have given hundreds. Together they limit such objects, from 10⁻⁷ to 10 M☉, to at most about 10–20% of the halo. The dark matter is not in dim stars, brown dwarfs, planets or stellar black holes.</p>' }
+      ],
+      practice: [ { q: 'If t_E ∝ √M and a 0.3 M☉ lens gives 22 days, how long does a 3 M☉ lens take, in days?', a: 69.6, tol: 0.02, unit: 'days', sol: '\\(22 \\times \\sqrt{10} = 69.6\\) d.' } ] } },
+    fj: { full: {
+      beats: [
+        { h: 'Ellipticals do not spin, they swarm', sky: { ra: 187.7, dec: 12.4, fov: 2, mode: 'dome', frame: 'equ', photo: true, markers: [mk(187.706, 12.391, 'M87')] },
+          eq: 'M \\approx \\frac{k\\,\\sigma^2 R}{G}, \\qquad L \\propto R^2 \;\\Rightarrow\; L \\propto \\sigma^4',
+          html: '<p>Stars in an elliptical move on random orbits; the spread of their line-of-sight speeds, the velocity dispersion σ, broadens every absorption line. The virial theorem relates σ to the mass; if ellipticals have similar mass-to-light ratios and surface brightnesses, \\(L \\propto \\sigma^4\\), the same exponent as Tully–Fisher.</p>' },
+        { h: 'Which way to fit',
+          html: '<p>A survey sees only galaxies brighter than its limit. At a given σ the faint galaxies are missing, so the average L at each σ is too high, by more at small σ: fitting L against σ comes out too flat. The average σ at each L is not biased this way, so fitting σ against L recovers the true relation. With real data the direction of a fit is a physics decision, not a formality.</p>' },
+        { h: 'The fundamental plane',
+          html: '<p>At one σ, ellipticals still differ in size. Adding the effective radius as a third variable gives the <b>fundamental plane</b>, \\(R_e \\propto \\sigma^{1.2} I_e^{-0.8}\\), with a scatter of about 20% in distance. Supermassive black holes obey a similar law with σ, the M–σ relation, a sign that black holes and galaxies grow together.</p>' }
+      ],
+      practice: [ { q: 'With L ∝ σ⁴, how many times more luminous is an elliptical with σ = 300 km/s than one with σ = 150 km/s?', a: 16, tol: 0.01, unit: '×', sol: '\\(2^4 = 16\\).' } ] } },
+
+    frb: {
+      beats: [
+        { after: 'Radio pulses, dispersed', h: 'Finding a burst in the noise', ex: { id: 'dedisperse' },
+          html: '<p>A radio telescope records power in many frequency channels, many times a second: a <b>waterfall</b>. A dispersed burst is a curved sweep across it, often too faint to see in any one channel. Searches shift each channel by the delay a trial DM predicts and add them all up; at the right DM the sweep straightens and the pulse rises out of the noise. Try it: the burst below was given a DM of 180 pc/cm³.</p>' }
+      ]
+    },
+
     // ============================================================================== chapter 9 (lectures 12-13)
     redshift: {
       beats: [
@@ -363,6 +433,7 @@
     bpt: [['Star formation rates', 'm82', 'M82 (Hubble): a starburst galaxy. The red filaments are hydrogen glowing in Hα, blown out by thousands of supernovae.']],
     forest: [['Lensed quasars', 'h0licow', 'HE 0435−1223 (Hubble): one quasar seen four times around a lensing galaxy. The delays between the images measure H₀ (H0LiCOW).']],
     night: [['Telescopes', 'wise_obs', 'The Wise Observatory near Mitzpe Ramon, Israel’s optical observatory, at 875 m in the Negev.'], ['Resolution', 'neptune_ao', 'Neptune from the VLT with adaptive optics (MUSE/GALACSI): sharper than the atmosphere would allow.']],
+    binary: [['Stars in pairs', 'ss_lep', 'SS Leporis on three nights in 2010 (VLTI/PIONIER): a red giant and its hotter companion, 1.5 milliarcseconds apart, circling each other every 260 days. Colours mark their temperatures.']],
     thermometer: [['Light and the windows of the air', 'opacity', 'How far each wavelength gets through the atmosphere: visible light and radio reach the ground; most of the rest needs space.']]
   };
   OBS.MISSIONS.forEach(function (m) {

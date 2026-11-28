@@ -575,7 +575,9 @@
       if (Object.keys(touches).length === 2) { self.drag = { kind: 'pinch', d0: spread(), fov: self.fov }; e.preventDefault(); return; }
       cv.setPointerCapture(e.pointerId);
       if (self.anim) { G.cancelAnimationFrame(self.anim); self.anim = null; }
-      self.drag = (e.shiftKey || self.tool === 'circle') ? { kind: 'circle', x0: p[0], y0: p[1], r: 0, add: e.shiftKey && self.tool === 'circle' }
+      // as in the lens: with Select circle, a drag replaces the selection and shift-drag adds to it; with Turn, shift-drag draws a
+      // circle that replaces it and shift with Ctrl, Alt or ⌘ adds
+      self.drag = (e.shiftKey || self.tool === 'circle') ? { kind: 'circle', x0: p[0], y0: p[1], r: 0, add: self.tool === 'circle' ? e.shiftKey : (e.altKey || e.ctrlKey || e.metaKey) }
         : { kind: 'turn', x: p[0], y: p[1], lon: self.lon0, lat: self.lat0, moved: false };
       e.preventDefault();
     });

@@ -593,5 +593,50 @@
   "cuts": "Log stretch (radio, HI, IR, H-alpha), smoothed log stretch (X-ray and gamma counts), symmetric linear stretch (CMB)",
   "citation": "Haslam et al. 1982 (408 MHz all-sky survey), via NASA SkyView; HI4PI Collaboration 2016, via NASA SkyView; NASA/WMAP Science Team (9-year ILC map), via NASA SkyView; IRIS (Miville-Deschenes & Lagache 2005, reprocessed IRAS), via NASA SkyView; Finkbeiner 2003 (H-alpha composite), via NASA SkyView; ROSAT All-Sky Survey diffuse background, R6 band (Snowden et al. 1997), via NASA SkyView; CGRO/EGRET (NASA), via NASA SkyView",
   "license": "NASA SkyView; each survey with acknowledgement"
+ },
+ "rv51peg": {
+  "title": "Radial velocities of 51 Pegasi (Lick)",
+  "rows": 354,
+  "fetched": "2026-11-28",
+  "source": "VizieR J/ApJS/210/5, table2, Name = 217014",
+  "cuts": "All Lick velocities of HD 217014; JD − 2400000",
+  "citation": "Fischer et al. 2014, ApJS 210, 5",
+  "license": "VizieR / CDS, free with citation"
+ },
+ "s2": {
+  "title": "The star S2 around Sgr A*",
+  "rows": 189,
+  "fetched": "2026-11-28",
+  "source": "VizieR J/ApJ/837/30, table5 (S2 columns)",
+  "cuts": "Epochs with a position or a velocity of S2",
+  "citation": "Gillessen et al. 2017, ApJ 837, 30",
+  "license": "VizieR / CDS, free with citation"
+ },
+ "ellipticals": {
+  "title": "SDSS ellipticals with velocity dispersions",
+  "rows": 8000,
+  "fetched": "2026-11-28",
+  "source": "SkyServer DR18: SpecObj + PhotoObj + zooSpec",
+  "cuts": "0.02 < z < 0.08, Galaxy Zoo p_el (debiased) > 0.8, 60 < σ < 420 km/s with error < 15, r < 17.7 (extinction corrected); first 8,000",
+  "citation": "Abdurro'uf et al. 2022 (SDSS); Lintott et al. 2011 (Galaxy Zoo)",
+  "license": "SDSS, public with acknowledgement"
+ },
+ "ogle_events": {
+  "title": "OGLE-IV EWS microlensing events, 2019",
+  "rows": 1490,
+  "fetched": "2026-11-28",
+  "source": "ogle.astrouw.edu.pl/ogle4/ews/2019/ews.html",
+  "cuts": "Events with 0.3 < t_E < 600 d and u0 > 0 from OGLE's single-lens fits",
+  "citation": "Udalski et al. 2015, Acta Astron. 65, 1 (OGLE-IV); OGLE EWS",
+  "license": "OGLE: ask before use in publications"
+ },
+ "orbits": {
+  "title": "Full orbits of bright asteroids and TNOs",
+  "rows": 8843,
+  "fetched": "2026-11-28",
+  "source": "ssd-api.jpl.nasa.gov/sbdb_query.api",
+  "cuts": "Numbered objects with H < 13, a < 120 AU, bound; mean anomaly moved to JD 2461041.5 (2026 Jan 1)",
+  "citation": "JPL Solar System Dynamics, Small-Body Database",
+  "license": "Public (NASA/JPL)"
  }
 }

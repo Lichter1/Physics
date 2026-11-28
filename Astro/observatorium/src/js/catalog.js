@@ -380,7 +380,7 @@
       v('m2', 'Lighter object m₂', 'M☉', col('m2'), { scale: 'log' }),
       v('mtot', 'Total mass m₁ + m₂', 'M☉', function (c, i) { return c.m1[i] + c.m2[i]; }, { scale: 'log' }),
       v('mfinal', 'Final mass', 'M☉', col('mfinal'), { scale: 'log', how: 'From the ringdown of the merged black hole.' }),
-      v('mrad', 'Mass radiated as waves', 'M☉', function (c, i) { return c.m1[i] + c.m2[i] - c.mfinal[i]; }, { how: 'm₁ + m₂ − M_final; times c² it is the energy carried off.' }),
+      v('mrad', 'Mass radiated as waves', 'M☉', function (c, i) { return c.m1[i] + c.m2[i] - c.mfinal[i]; }, { how: 'm₁ + m₂ − M_final; times c² it is the energy carried off. A few events come out at zero or below: each mass is the median of a wide posterior, and for light mergers the difference is smaller than their uncertainties. Mission 8.3 leaves them out.' }),
       v('mchirp', 'Chirp mass', 'M☉', col('mchirp'), { scale: 'log', how: '(m₁m₂)^{3/5} / (m₁+m₂)^{1/5}: what sets how fast the frequency sweeps up.' }),
       v('dl', 'Luminosity distance', 'Mpc', col('dl'), { scale: 'log', how: 'From the amplitude of the waves: a standard siren, no ladder needed.' }),
       v('z', 'Redshift', '', col('z')),
@@ -476,6 +476,40 @@
       OBS.CLUSTERS[k].n = p.length;
     });
   }
+  // ---------------------------------------------------------------------------------------------- added after the audit
+  def({
+    id: 'rv51peg', file: 'rv51peg', level: 'stars', title: 'Radial velocities of 51 Pegasi', sub: 'Lick Observatory, 1995–2011: 354 velocities (Fischer et al. 2014)',
+    pos: false, x: 't', y: 'rv', name: function (c, i) { return '51 Peg on JD ' + (2400000 + c.t[i]).toFixed(2); },
+    vars: [v('t', 'Time', 'JD − 2400000', col('t'), { plain: true }), v('rv', 'Velocity toward (−) or away (+)', 'm/s', col('rv'), { how: 'Doppler shift of thousands of iodine-calibrated lines; the zero is arbitrary.' }), v('erv', 'Velocity error', 'm/s', col('erv'))]
+  });
+  def({
+    id: 's2', file: 's2', level: 'galaxy', title: 'The star S2 at the Galactic centre', sub: 'Positions relative to Sgr A* and radial velocities, 1992–2016 (Gillessen et al. 2017)',
+    pos: false, x: 'year', y: 'y', name: function (c, i) { return 'S2 in ' + c.year[i].toFixed(2) + ' (' + c.inst[i] + ')'; },
+    vars: [v('year', 'Year', '', col('year'), { plain: true }), v('x', 'Offset east of Sgr A*', 'mas', col('x'), { rev: true, how: 'Right-ascension offset in milliarcseconds; east is to the left on the sky.' }),
+      v('y', 'Offset north of Sgr A*', 'mas', col('y'), { how: 'Declination offset in milliarcseconds.' }), v('rv', 'Radial velocity', 'km/s', col('rv'), { how: 'From the star’s spectrum (SINFONI, Keck).' }),
+      v('inst', 'Instrument', '', col('inst'), { cat: true })]
+  });
+  def({
+    id: 'ogle_events', file: 'ogle_events', level: 'galaxy', title: 'Microlensing events of 2019', sub: 'OGLE Early Warning System: 1,490 events toward the bulge with fitted time scales (catalogue fits © OGLE)',
+    pos: true, x: 'tE', y: '#', name: function (c, i) { return 'OGLE-' + c.event[i]; },
+    vars: POS.concat([v('tE', 'Einstein time t_E', 'days', col('tE'), { scale: 'log', how: 'Time for the lens to cross one Einstein radius, from OGLE’s single-lens fit.' }),
+      v('u0', 'Closest approach u₀', 'R_E', col('u0'), { scale: 'log' }), v('Amax', 'Peak magnification', '', col('Amax'), { scale: 'log' })])
+  });
+  def({
+    id: 'ellipticals', file: 'ellipticals', level: 'galaxies', title: 'Elliptical galaxies with velocity dispersions', sub: 'SDSS DR18: 8,000 Galaxy Zoo ellipticals at 0.02 < z < 0.08 with σ measured to 15 km/s',
+    pos: true, mag: 'r', x: 'Lr', y: 'sigma', name: function (c, i) { return 'SDSS elliptical at z = ' + c.z[i].toFixed(4); },
+    vars: POS.concat([
+      v('sigma', 'Star speeds inside it σ', 'km/s', col('sigma'), { scale: 'log', how: 'Velocity dispersion: the width of the absorption lines.' }),
+      v('Mr', 'Absolute magnitude M_r', 'mag', function (c, i) { return c.r[i] - 5 * Math.log10(c.z[i] * (A.C.c / 1e3) / A.C.H0 * 1e5); }, { rev: true, how: 'M = r − 5 log₁₀(d / 10 pc), d = cz/H₀.' }),
+      v('Lr', 'Luminosity in r', 'L☉', function (c, i) { return Math.pow(10, -0.4 * (c.r[i] - 5 * Math.log10(c.z[i] * (A.C.c / 1e3) / A.C.H0 * 1e5) - 4.65)); }, { scale: 'log' }),
+      v('z', 'Redshift z', '', col('z')), v('r', 'Apparent brightness r', 'mag', col('r'), { rev: true })])
+  });
+  def({
+    id: 'orbits', file: 'orbits', level: 'solar', title: 'Full orbits of bright asteroids', sub: 'JPL SBDB: 8,843 numbered asteroids and TNOs with H < 13, positions for 2026 Jan 1',
+    pos: false, x: 'a', y: 'e', name: function (c, i) { return c['class'][i] + ' asteroid'; },
+    vars: [v('a', 'Orbit size a', 'AU', col('a')), v('e', 'Eccentricity e', '', col('e')), v('i', 'Inclination i', '°', col('i')), v('cls', 'Orbit class', '', col('class'), { cat: true })]
+  });
+
   OBS.LEVELS = [
     { id: 'sky', label: 'The sky', scale: 'all directions', note: 'Positions, brightness and colour: what anyone can measure.' },
     { id: 'solar', label: 'Solar system', scale: '1–100 AU', note: 'The Sun and its family.' },

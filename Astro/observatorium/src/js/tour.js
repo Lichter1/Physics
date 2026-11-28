@@ -41,7 +41,7 @@
         '<dt>Equatorial · Galactic · Horizon</dt><dd>Line the map up with the Earth’s equator or with the Milky Way, or see the sky over the Wise Observatory at any date and hour.</dd>' +
         '<dt>Light</dt><dd>The whole sky in radio, hydrogen’s 21 cm line, microwaves (the cosmic microwave background), far infrared, Hα, X-rays or gamma rays.</dd>' +
         '<dt>Milky Way · Lines · Grid · Names</dt><dd>Layers you can switch on and off.</dd>' +
-        '<dt>Turn · Select circle</dt><dd>What dragging does: turn the sky, or draw a circle that selects everything inside it.</dd></dl>' },
+        '<dt>Turn · Select circle</dt><dd>What dragging does: turn the sky, or draw a circle that selects everything inside it. With <i>Select circle</i> on, shift-drag adds a second circle, as shift-drag adds a box in the data lens.</dd></dl>' },
     { at: '#ladder', pane: 'sky', h: 'The scale ladder',
       html: '<p>Jump between scales: the naked-eye sky, the Solar System, the stars within 100 pc, star clusters, the Milky Way, other galaxies and the Universe itself. Each rung opens that scale’s data in the lens and turns the sky to match.</p>' },
     { at: '#pane-lens .chartwrap', pane: 'lens', lens: true, h: 'The data lens',
